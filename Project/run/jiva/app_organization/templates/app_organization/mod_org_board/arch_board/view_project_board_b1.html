@@ -1,0 +1,174 @@
+{% extends 'app_common/common_files/base_template.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load custom_tags %}
+{% load app_web_my_filters %}
+{% load markdown_extras %}
+{% load mptt_tags %}
+{% block content %}
+{% include 'app_common/common_files/navbar.html' %}
+{% include 'app_jivapms/mod_web/common_files/css.html' %}
+<style>
+    .kanban-board {
+    display: flex;
+    gap: 20px;
+    overflow-x: auto;
+    padding: 20px 0;
+}
+
+.kanban-column {
+    background: #f9f9f9;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    width: 300px;
+    min-width: 300px;
+    padding: 10px;
+    box-shadow: 0px 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.kanban-column h4 {
+    text-align: center;
+    margin-bottom: 10px;
+    color: #333;
+}
+
+.kanban-swimlane {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    min-height: 300px;
+}
+
+.kanban-card {
+    background: white;
+    border-radius: 6px;
+    padding: 10px;
+    border: 1px solid #ccc;
+    box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.1);
+    cursor: grab;
+}
+
+.kanban-card-placeholder {
+    background: #f0f0f0;
+    border: 1px dashed #aaa;
+    height: 60px;
+    border-radius: 6px;
+    margin: 5px 0;
+}
+
+.kanban-card h5 {
+    margin: 0;
+    font-size: 16px;
+    color: #007BFF;
+}
+
+.kanban-card p {
+    margin: 5px 0;
+    font-size: 14px;
+    color: #555;
+}
+
+.kanban-card .tag {
+    display: inline-block;
+    background: #007BFF;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 12px;
+}
+
+</style>
+<div class="content-wrapper">
+    {% include 'app_organization/mod_project/sidebar_menu.html' %}
+
+    <div class="contentbar mb-5" id="contentbar">
+        <div class="container-fluid">
+            <h3>Project Board</h3>
+            <div id="kanban-board" class="kanban-board">
+                <!-- Backlog Column -->
+                <div class="kanban-column" data-status="backlog">
+                    <h4>Backlog</h4>
+                    <div class="kanban-swimlane" id="backlog">
+                        {% for bi in backlog_items %}
+                        <div class="kanban-card" data-id="{{ bi.id }}">
+                            <h5>{{ bi.name }}</h5>
+                            <p>{{ bi.description | display_if_not_none}}</p>
+                            <span class="tag">{{ bi.tag }}</span>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+
+                <!-- To Do Column -->
+                <div class="kanban-column" data-status="todo">
+                    <h4>To Do</h4>
+                    <div class="kanban-swimlane" id="todo">
+                        <!-- Add items dynamically from backend -->
+                    </div>
+                </div>
+
+                <!-- In Progress Column -->
+                <div class="kanban-column" data-status="inprogress">
+                    <h4>In Progress</h4>
+                    <div class="kanban-swimlane" id="inprogress">
+                        <!-- Add items dynamically from backend -->
+                    </div>
+                </div>
+
+                <!-- Blocked Column -->
+                <div class="kanban-column" data-status="blocked">
+                    <h4>Blocked</h4>
+                    <div class="kanban-swimlane" id="blocked">
+                        <!-- Add items dynamically from backend -->
+                    </div>
+                </div>
+
+                <!-- Done Column -->
+                <div class="kanban-column" data-status="done">
+                    <h4>Done</h4>
+                    <div class="kanban-swimlane" id="done">
+                        <!-- Add items dynamically from backend -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Include jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+
+<script>
+    $(function () {
+        // Make swimlanes sortable
+        $(".kanban-swimlane").sortable({
+            connectWith: ".kanban-swimlane",
+            placeholder: "kanban-card-placeholder",
+            receive: function (event, ui) {
+                const cardId = ui.item.data("id");
+                const newStatus = $(this).closest(".kanban-column").data("status");
+
+                // Make an AJAX call to update the item's status
+                $.ajax({
+                    url: "/update_status/",
+                    type: "POST",
+                    headers: {
+                        "X-CSRFToken": "{{ csrf_token }}",
+                    },
+                    data: {
+                        card_id: cardId,
+                        status: newStatus,
+                    },
+                    success: function (response) {
+                        console.log("Status updated:", response);
+                    },
+                    error: function (error) {
+                        console.error("Error updating status:", error);
+                    },
+                });
+            },
+        }).disableSelection();
+    });
+</script>
+{% endblock content %}

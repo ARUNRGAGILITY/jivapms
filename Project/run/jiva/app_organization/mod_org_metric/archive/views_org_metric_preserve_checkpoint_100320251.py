@@ -1001,7 +1001,7 @@ def view_project_metrics_quality_tab(request, project_id):
     # Render template
     template_file = f"{app_name}/{module_path}/project_metrics/view_project_metrics_quality_tab.html"
     return render(request, template_file, context)
-from app_organization.mod_org_board.views_org_board import _UTILS_for_project_backlog, _GET_backlog_details
+from app_organization.mod_org_board.views_org_board import _UTILS_for_project_backlog
 @login_required
 def view_project_metrics_flow_tab(request, project_id):
     user = request.user
@@ -1010,10 +1010,6 @@ def view_project_metrics_flow_tab(request, project_id):
     tz = pytz.timezone('Asia/Kolkata')
     ist_tz = pytz.timezone('Asia/Kolkata')
     logger.debug(f">>> === PROJECT METRICS: ****FLOW TAB**** === <<<")
-
-    # backlog details for processing backlog items
-    backlog_details_of_project = _GET_backlog_details(request, project.id)
-    backlog_types = backlog_details_of_project['backlog_types']
     # Release and Iteration
     current_release = None
     current_iteration = None
@@ -1082,19 +1078,11 @@ def view_project_metrics_flow_tab(request, project_id):
     # NEW QUERY DESIGN    
     # Step5: Get the movements for each snapshot point
     for snapshot_time in snapshot_points:
-        ###############################################################################################################
         if CFD_BY == "DATE":
             #print(f">>> === CFD DATE BASED === <<<")
             s_date, s_time = snapshot_time.split('T')
             s_date_formatted = datetime.strptime(s_date, '%Y-%m-%d').strftime('%d-%m-%Y')
-            s_date_Y_m_d = datetime.strptime(s_date, '%Y-%m-%d')
-
-            #print(f">>> === CFD DATE BASED {snapshot_time} {s_date_formatted} === <<<")
-
-            # Initialize with defaultdict similar to TIME implementation
-            best_cfd_counts[str(s_date_formatted)] = {col.lower(): defaultdict(int) for col in active_columns}
-            best_cfd_counts[s_date_formatted]['BACKLOG_COUNT'] = 0
-            
+            best_cfd_counts[str(s_date_formatted)] = {col.lower(): 0 for col in active_columns}      
             # Find out movements between the dates chosen
             movements = ProjectBoardStateTransition.objects.filter(
                 board=project_board,
@@ -1103,70 +1091,49 @@ def view_project_metrics_flow_tab(request, project_id):
                 #transition_time__date=s_date,
                 active=True,
             ).order_by('card', '-transition_time')
-            #print(f">>> === MOVEMENTS: {movements.count()} === <<<")
             
             # Group transitions by current_iteration and card
-            card_transitions = defaultdict(list)
+            card_transitions = defaultdict(lambda: defaultdict(list))
             for mov in movements:
-                card_transitions[mov.card].append(mov)
-            #print(f">>> === UNIQUE CARDS WITH TRANSITIONS: {len(card_transitions)} === <<<")
-
-            # Process each card's transitions
-            last_backlog_count = 0
-            # Set backlog count
-            backlog_count = Backlog.objects.filter(pro=project, active=True, type__in=backlog_types, created_at__date__lte=s_date_Y_m_d).count()
-            if backlog_count == 0:
-                backlog_count = last_backlog_count
-            best_cfd_counts[s_date_formatted]['BACKLOG_COUNT'] = backlog_count
-            print(f">>> === {s_date_formatted} ==> BACKLOG COUNT: {backlog_count} === <<<")
-            for card, transitions in card_transitions.items():
-                # Get the latest transition for the card
-                which_transition = transitions[0]
-                to_state = which_transition.to_state
-                to_state_lc = str(to_state).lower()
-                reference_transition_time = which_transition.transition_time
-                
-              
-                
-                # Track card movement per column
-                if to_state and to_state_lc in best_cfd_counts[s_date_formatted]:
-                    best_cfd_counts[s_date_formatted][to_state_lc][card.id] += 1  # Track card presence
-                    
-                # Track full card transition data
-                best_cfd_data[card.id] = {
-                    'card_id': card.id,
-                    'from_state': which_transition.from_state,
-                    'to_state': which_transition.to_state,
-                    'date_field': which_transition.formatted_date(),
-                    'time_field': which_transition.formatted_time(),
-                }
+                card_transitions[current_iteration][mov.card].append(mov)
+      
             
-            # Add placeholder 0 for columns with no card counts (AFTER processing all cards)
-            for col in active_columns:
-                col_lc = col.lower()
-                if not best_cfd_counts[s_date_formatted][col_lc]:
-                    best_cfd_counts[s_date_formatted][col_lc][0] = 0  # Placeholder entry
+            # Process each card's transitions
+            for card, transitions in card_transitions[current_iteration].items():          
+                # Collect the card id, top most transition details, to state and date and time
+                which_transition = transitions[0]
+                date_field = which_transition.formatted_date()
+                time_field = which_transition.formatted_time()
+                to_state = which_transition.to_state
+                if current_iteration != None:  
+                    date_format = "%d-%m-%Y"  # Match the expected format
+                    ist_cisd = current_iteration.iteration_start_date.astimezone(ist_tz).strftime('%d-%m-%YT%H:%M')
+                    ist_cis_date, ist_cis_time = ist_cisd.split('T')
+                    ist_cied = current_iteration.iteration_end_date.astimezone(ist_tz).strftime('%d-%m-%YT%H:%M')
+                    ist_cie_date, ist_cie_time = ist_cied.split('T')
+                    # Convert string dates to datetime objects
+                    date_field_dt = datetime.strptime(date_field, date_format)
+                    ist_cis_date_dt = datetime.strptime(ist_cis_date, date_format)
+                    ist_cie_date_dt = datetime.strptime(ist_cie_date, date_format)      
+                   
+                    #print(f">>> === CURENT iteration {date_field} >= {ist_cis_date}  {date_field}  {ist_cie_date}=== <<<")
+                    #print(f">>> === CHECK DATES iteration {ist_cis_date} {ist_cis_time} {ist_cie_date} {ist_cie_time} === <<<")
+                    if (date_field_dt >= ist_cis_date_dt and date_field_dt <= ist_cie_date_dt):
+                        #print(f">>> === CFD DATE VALID ITERATION === <<<")                
+                        # Update CFD counts for the date and state
+                        to_state_lc = str(to_state).lower()                 
+                        if to_state and to_state_lc in best_cfd_counts[s_date_formatted]:
+                            best_cfd_counts[s_date_formatted][to_state_lc] += 1
 
-         
+                        best_cfd_data[card.id] = {
+                            'card_id': card.id,
+                            'from_state': which_transition.from_state,
+                            'to_state': which_transition.to_state,
+                            'date_field': which_transition.formatted_date(),
+                            'time_field': which_transition.formatted_time(),
+                        }
+    
 
-            # Build the data list with cumulative counts
-            data = []
-            previous_counts = {col.lower(): 0 for col in active_columns}  # Initialize previous counts
-
-            for entry_time, column_counts in best_cfd_counts.items():
-                backlog_value = best_cfd_counts.get(entry_time, {}).get('BACKLOG_COUNT', 0)
-                entry_data = {"date": entry_time, 'backlog': backlog_value}
-                
-                for col in active_columns:
-                    col_lc = col.lower()
-                    current_count = sum(column_counts[col_lc].values())  # Current count for the column
-                    cumulative_count = previous_counts[col_lc] + current_count  # Add previous count
-                    
-                    entry_data[col_lc] = cumulative_count  # Add cumulative count to the entry data
-                    previous_counts[col_lc] = cumulative_count  # Update previous counts for the next iteration
-                
-                data.append(entry_data)  # Add entry data to the data list
-        ###############################################################################################################
         elif CFD_BY == "TIME":
             # Extract and format the time
             s_date, s_time = snapshot_time.split('T')
@@ -1189,16 +1156,16 @@ def view_project_metrics_flow_tab(request, project_id):
             ).order_by('card', '-transition_time')
 
             movements_count = movements.count()
-            #print(f">>> === TOTAL MOVEMENTS: {movements.count()} === <<<")
+            print(f">>> === TOTAL MOVEMENTS: {movements.count()} === <<<")
 
             # Group transitions by card
             card_transitions = defaultdict(list)
             for mov in movements:
-                #print(f">>> === MOVEMENTS: {mov} === <<<")
+                print(f">>> === MOVEMENTS: {mov} === <<<")
                 card_transitions[mov.card].append(mov)
 
-            #print(f">>> === UNIQUE CARDS WITH TRANSITIONS: {len(card_transitions)} === <<<")
-            best_cfd_counts[s_time]['BACKLOG_COUNT'] = 0
+            print(f">>> === UNIQUE CARDS WITH TRANSITIONS: {len(card_transitions)} === <<<")
+
             # Process each card's transitions
             for card, transitions in card_transitions.items():
                 # Get the latest transition for the card
@@ -1207,13 +1174,11 @@ def view_project_metrics_flow_tab(request, project_id):
                 time_field = which_transition.formatted_time()
                 to_state = which_transition.to_state
                 to_state_lc = str(to_state).lower()
-                reference_transition_time = which_transition.transition_time
-                backlog_count = Backlog.objects.filter(pro=project, active=True, type__in=backlog_types, created_at__lte=reference_transition_time).count()
-                best_cfd_counts[s_time]['BACKLOG_COUNT'] = backlog_count
+
                 # ✅ Track card movement per column
                 if to_state and to_state_lc in best_cfd_counts[s_time]:
                     best_cfd_counts[s_time][to_state_lc][card.id] += 1  # Track card presence
-                    
+
                 # ✅ Track full card transition data
                 best_cfd_data[card.id] = {
                     'card_id': card.id,
@@ -1222,54 +1187,31 @@ def view_project_metrics_flow_tab(request, project_id):
                     'date_field': which_transition.formatted_date(),
                     'time_field': which_transition.formatted_time(),
                 }
-            
+
             # ✅ Add placeholder 0 for columns with no card counts
             for col in active_columns:
                 col_lc = col.lower()
                 if not best_cfd_counts[s_time][col_lc]:
                     best_cfd_counts[s_time][col_lc] = defaultdict(int, {0: 0})  # Add placeholder 0
-           
-            last_nonzero_backlog = 0
 
-            # ✅ Initialize BACKLOG_COUNT for each time step
-            for s_time in sorted(best_cfd_counts.keys()):  # Ensure sorted order
-                if 'BACKLOG_COUNT' not in best_cfd_counts[s_time]:
-                    best_cfd_counts[s_time]['BACKLOG_COUNT'] = 0  # Default to 0
-
-                # ✅ Fill with the previous non-zero backlog value if current is 0
-                if best_cfd_counts[s_time]['BACKLOG_COUNT'] == 0:
-                    best_cfd_counts[s_time]['BACKLOG_COUNT'] = last_nonzero_backlog
-                else:
-                    last_nonzero_backlog = best_cfd_counts[s_time]['BACKLOG_COUNT']  # Update non-zero backlog
-
-            # ✅ Build the data list with cumulative counts
+            # ✅ Build the data list
             data = []
-            previous_counts = {col.lower(): 0 for col in active_columns}  # Initialize previous counts
-            # check backlog
-            
             for entry_time, column_counts in best_cfd_counts.items():
-                # Initialize entry data with the time                
-                # backlog_count = Backlog.objects.filter(pro=project, active=True).count()
-                # entry_data = {"date": entry_time, 'backlog': backlog_count}
-                # entry_data = {"date": entry_time}
-                backlog_value = best_cfd_counts.get(entry_time, {}).get('BACKLOG_COUNT', 0)
-                entry_data = {"date": entry_time, 'backlog': backlog_value}
+                entry_data = {"date": entry_time}  # Initialize entry data with the time
                 for col in active_columns:
                     col_lc = col.lower()
-                    current_count = sum(column_counts[col_lc].values())  # Current count for the column
-                    cumulative_count = previous_counts[col_lc] + current_count  # Add previous count
-                    
-                    entry_data[col_lc] = cumulative_count  # Add cumulative count to the entry data
-                    previous_counts[col_lc] = cumulative_count  # Update previous counts for the next iteration
+                    card_count = sum(column_counts[col_lc].values())  # Sum card counts for the column
+                    entry_data[col_lc] = card_count  # Add column count to the entry data
                 data.append(entry_data)  # Add entry data to the data list
-            
+
             # ✅ Print the data list
-            #print("\n>>> === DATA LIST WITH CUMULATIVE COUNTS === <<<")
-            #print(data)
+            print("\n>>> === DATA LIST === <<<")
+            print(data)
+                        
         else:
             print(f">>> === CFD UNKNOWN === <<<")
             # exit
-    ## end of the data cfd preparation ##
+
 
 
 

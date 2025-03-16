@@ -1,0 +1,177 @@
+{% extends 'app_common/common_files/base_template.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load custom_tags %}
+{% load app_web_my_filters %}
+{% load markdown_extras %}
+{% load mptt_tags %}
+{% block content %}
+{% include 'app_common/common_files/navbar.html' %}
+{% include 'app_jivapms/mod_web/common_files/css.html' %}
+
+<style>
+
+.board {
+    display: flex;
+    justify-content: space-around;
+    padding: 20px;
+    min-height: 100vh; /* Changed height to min-height */
+    background-color: #f4f4f4;
+  }
+
+  .column {
+    width: 30%;
+    background: #fff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 10px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    display: flex;
+    flex-direction: column;
+  }
+
+  .column h2 {
+    text-align: center;
+  }
+
+  .task {
+    margin: 10px;
+    padding: 10px;
+    background: #e3f2fd;
+    border: 1px solid #90caf9;
+    border-radius: 5px;
+    cursor: move;
+  }
+
+  .droppable {
+    flex-grow: 1; /* Allows columns to grow based on content */
+    padding: 10px;
+    background-color: #f0f0f0;
+    border-radius: 5px;
+  }
+</style>
+
+
+<!-- CONTENT STARTS -->
+<div class="content-wrapper">
+    {% include 'app_organization/mod_project/sidebar_menu.html' %}
+    <div class="contentbar mb-5" id="contentbar">
+        <!-- CONTENT -->
+        <div class="container-fluid">
+
+            <div class="d-flex justify-content-between align-items-center">
+              <div class="display_topic"><b class="h3">Project Board: </b>{{ project }}</div>
+              <div class="dropdown">
+                  <select id="parentFilter" >
+                      <option value="">-- Select SwimLane --</option>
+                      <option value="0">-- All SwimLanes --</option>
+                      {% for efcc in efcc_backlog_items %}
+                          <option value="{{ efcc.id }}">{{ efcc }}</option>
+                      {% endfor %}
+                  </select>
+              </div>
+          </div>
+
+
+            <div class="board">
+
+                <div class="column">
+                  <h2>Backlog</h2>
+                  <div id="backlog" class="droppable">
+                    {% for item in backlog_items %}
+                      <div class="task" id="{{ item.id }}" draggable="true">{{item}}</div>
+                    {% endfor %}
+                  </div>                  
+                </div>
+                {% for state in project_board_states %}
+
+                  {% if state.name == 'ToDo' %}
+                    <div class="column">
+                    <h2>To Do</h2>
+                    <div id="todo" class="droppable">
+                        <!-- Tasks -->
+                        {% for item in todo_items %}
+                          <div class="task" id="{{ item.id }}" draggable="true">{{ item }}</div>
+                        {% endfor %}
+                    </div>
+                    </div>
+                  {% endif %}
+
+                  {% if state.name == 'In Progress' %}
+                    <div class="column">
+                    <h2>WIP</h2>
+                    <div id="wip" class="droppable">
+                      <!-- WIP -->
+                      {% for item in in_progress_items %}
+                        <div class="task" id="{{ item.id }}" draggable="true">{{ item }}</div>
+                      {% endfor %}
+                    </div>
+                    </div>
+
+                  {% endif %}
+
+                  {% if state.name == 'Done' %}
+                    <div class="column">
+                    <h2>Done</h2>
+                    <div id="done" class="droppable">
+                      {% for item in done_items %}
+                        <div class="task" id="{{ item.id }}" draggable="true">{{ item }}</div>
+                      {% endfor %}
+                    </div>
+                    </div>
+
+                  {% endif %}
+                {% endfor %}
+            </div>
+        </div>
+        <!-- CONTENT -->
+    </div>
+</div>
+<!-- CONTENT ENDS -->
+
+
+
+  <script>
+    const tasks = document.querySelectorAll('.task');
+    const droppables = document.querySelectorAll('.droppable');
+
+    tasks.forEach(task => {
+      task.addEventListener('dragstart', (e) => {
+        e.dataTransfer.setData('text/plain', task.id);
+      });
+    });
+
+    droppables.forEach((dropZone) => {
+      dropZone.addEventListener('dragover', (e) => {
+        e.preventDefault();
+      });
+
+      dropZone.addEventListener('drop', (e) => {
+        e.preventDefault();
+        const taskId = e.dataTransfer.getData('text/plain');
+        const task = document.getElementById(taskId);
+        dropZone.appendChild(task);
+
+        // Adjust height of all columns
+        adjustColumnHeights();
+      });
+    });
+
+    function adjustColumnHeights() {
+      const columns = document.querySelectorAll('.droppable');
+      let maxHeight = 0;
+
+      columns.forEach(col => {
+        const height = col.scrollHeight;
+        if (height > maxHeight) maxHeight = height;
+      });
+
+      columns.forEach(col => {
+        col.style.minHeight = `${maxHeight}px`;
+      });
+    }
+
+    // Initial adjustment
+    adjustColumnHeights();
+  </script>
+{% endblock content %}

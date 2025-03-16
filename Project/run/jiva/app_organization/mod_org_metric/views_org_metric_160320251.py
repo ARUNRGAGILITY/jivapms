@@ -1087,7 +1087,6 @@ def view_project_metrics_flow_tab(request, project_id):
             #print(f">>> === CFD DATE BASED === <<<")
             s_date, s_time = snapshot_time.split('T')
             s_date_formatted = datetime.strptime(s_date, '%Y-%m-%d').strftime('%d-%m-%Y')
-            s_date_Y_m_d = datetime.strptime(s_date, '%Y-%m-%d')
 
             #print(f">>> === CFD DATE BASED {snapshot_time} {s_date_formatted} === <<<")
 
@@ -1112,13 +1111,6 @@ def view_project_metrics_flow_tab(request, project_id):
             #print(f">>> === UNIQUE CARDS WITH TRANSITIONS: {len(card_transitions)} === <<<")
 
             # Process each card's transitions
-            last_backlog_count = 0
-            # Set backlog count
-            backlog_count = Backlog.objects.filter(pro=project, active=True, type__in=backlog_types, created_at__date__lte=s_date_Y_m_d).count()
-            if backlog_count == 0:
-                backlog_count = last_backlog_count
-            best_cfd_counts[s_date_formatted]['BACKLOG_COUNT'] = backlog_count
-            print(f">>> === {s_date_formatted} ==> BACKLOG COUNT: {backlog_count} === <<<")
             for card, transitions in card_transitions.items():
                 # Get the latest transition for the card
                 which_transition = transitions[0]
@@ -1126,7 +1118,9 @@ def view_project_metrics_flow_tab(request, project_id):
                 to_state_lc = str(to_state).lower()
                 reference_transition_time = which_transition.transition_time
                 
-              
+                # Set backlog count
+                backlog_count = Backlog.objects.filter(pro=project, active=True, type__in=backlog_types, created_at__lte=reference_transition_time).count()
+                best_cfd_counts[s_date_formatted]['BACKLOG_COUNT'] = backlog_count
                 
                 # Track card movement per column
                 if to_state and to_state_lc in best_cfd_counts[s_date_formatted]:
@@ -1147,7 +1141,17 @@ def view_project_metrics_flow_tab(request, project_id):
                 if not best_cfd_counts[s_date_formatted][col_lc]:
                     best_cfd_counts[s_date_formatted][col_lc][0] = 0  # Placeholder entry
 
-         
+            # OUTSIDE the if-else blocks - This should be common code for both DATE and TIME
+            # Initialize BACKLOG_COUNT for each time step
+            last_nonzero_backlog = 0  # Track the last known non-zero backlog value
+
+            for time_key in sorted(best_cfd_counts.keys()):  # Ensure sorted order
+                # Fill with the previous non-zero backlog value if current is 0
+                check_backlog_count = best_cfd_counts[time_key]['BACKLOG_COUNT']
+                if best_cfd_counts[time_key]['BACKLOG_COUNT'] == 0:
+                    best_cfd_counts[time_key]['BACKLOG_COUNT'] = last_nonzero_backlog
+                else:
+                    last_nonzero_backlog = best_cfd_counts[time_key]['BACKLOG_COUNT']
 
             # Build the data list with cumulative counts
             data = []
