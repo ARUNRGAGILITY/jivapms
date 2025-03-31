@@ -36,18 +36,24 @@ class ProjectBoardCard(BaseModelTrackDateImpl):
     )
     SUBSTATE_CHOICE = [
         ('Doing', 'Doing'),
-        ('Done', 'Done')
+        ('Done', 'Done'),
+        ('MVP', 'MVP'),
+        ('Persevere', 'Persevere'),
+        ('In-Progress', 'In-Progress'),
+        ('Ready', 'Ready'),
     ]
-    substate = models.CharField(max_length=10, choices=SUBSTATE_CHOICE, default='Doing')
+    substate = models.CharField(max_length=50, choices=SUBSTATE_CHOICE, default='Doing')
     class Meta:
         indexes = [
             models.Index(fields=['board', 'state']),
         ]
     def __str__(self):
-        if self.backlog.name:
-            return self.backlog.name
-        else:
-            return str(self.id)
+        # if self.backlog != None and self.backlog.name:
+        #     return self.backlog.name
+        # else:
+        #     return str(self.id)
+        
+        return f"{self.backlog} {self.backlog.id}"
 
 
 
@@ -98,7 +104,10 @@ class ProjectBoardStateTransition(BaseModelTrackDateImpl):
         return self.time_field.strftime('%H:%M') if self.time_field else None
 
     def __str__(self):
-        return f"CARD_MOVEMENT: {self.formatted_date()} {self.formatted_time()} - {self.card.id}: {self.from_state} → {self.to_state}"
+        if self.card.id:
+            return f"CARD_MOVEMENT: {self.formatted_date()} {self.formatted_time()} - {self.card.id}: {self.from_state} → {self.to_state}"
+        else:
+            return f"NEW_CARD_MOVEMENT: {self.formatted_date()} {self.formatted_time()} - {self.from_state} → {self.to_state}"
 
 
 

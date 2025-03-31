@@ -30,15 +30,15 @@
                     <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                         <li><a class="dropdown-item" href="{% url 'view_my_role' %}">My Role(s)</a></li>
                         <li><a class="dropdown-item" href="{% url 'display_profile' %}">Profile</a></li>
-                        <li><a class="dropdown-item" href="{% url 'at_logout' %}">Logout</a></li>
+                        <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
                     </ul>
                 </li>
                 {% else %}
                 <li class="nav-item">
-                    <a class="nav-link {% if page == 'at_register' %}active{% endif %}" href="{% url 'at_register' %}">Register</a>
+                    <a class="nav-link {% if page == 'register' %}active{% endif %}" href="{% url 'register' %}">Register</a>
                 </li>
                 <li class="nav-item">
-                    <a class="nav-link {% if page == 'at_login' %}active{% endif %}" href="{% url 'at_login' %}">Login</a>
+                    <a class="nav-link {% if page == 'login' %}active{% endif %}" href="{% url 'login' %}">Login</a>
                 </li>
                 {% endif %} 
               

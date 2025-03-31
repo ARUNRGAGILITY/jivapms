@@ -18,13 +18,34 @@ class ProjectBoardState(BaseModelTrackDateImpl):
         ('WIP', 'WIP'),
         ('Done', 'Done'),]
     column_type = models.CharField(max_length=10, choices=COLUMN_TYPE_CHOICES, default='ToDo')  
+    SUBCOLUMN_PAIRS = [
+        ("DOING_DONE", "Doing / Done"),
+        ("INPROGRESS_READY", "In Progress / Ready"),
+        ("MVP_PERSEVERE", "MVP / Persevere"),
+    ]
+    subcolumn_pair = models.CharField(
+        max_length=30,
+        choices=SUBCOLUMN_PAIRS,
+        default="DOING_DONE",  # sets default at the DB/model level
+        blank=True,
+        null=True,
+        help_text="Applicable only when buffer_column is True"
+    )
 
-    
-    
+
     author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
                                related_name="author_board_states")
    
-        
+    def get_subcolumns(self):
+        pair_mapping = {
+            "DOING_DONE": ("Doing", "Done"),
+            "INPROGRESS_READY": ("In Progress", "Ready"),
+            "MVP_PERSEVERE": ("MVP", "Persevere"),
+        }
+        default_pair = ("Doing", "Done")
+        return pair_mapping.get(self.subcolumn_pair, default_pair)
+
+
     def __str__(self):
         if self.name:
             return self.name

@@ -38,12 +38,12 @@
             <span>Backlog</span>
         </a>     
         {% if project.project_details.template.name != None and project.project_details.template.name == 'Scrum' %}
-        <a href="{% url 'view_project_tree_board' project.id %}?project_id={{project.id}}" class="nav-link" >
+        <a href="{% url 'view_project_tree_board_smart_kanban' project.id %}?project_id={{project.id}}" class="nav-link" >
             <i class="bi bi-kanban"></i>
             <span>Board</span>
         </a>
         {% else %}
-        <a href="{% url 'view_project_tree_board_custom' project.id %}?project_id={{project.id}}" class="nav-link" >
+        <a href="{% url 'view_project_tree_board_smart_kanban' project.id %}?project_id={{project.id}}" class="nav-link" >
             <i class="bi bi-kanban"></i>
             <span>Board</span>
         {% endif %}

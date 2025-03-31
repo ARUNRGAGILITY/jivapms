@@ -1,0 +1,16 @@
+{% extends "app_web/base/custom_base.html" %}
+{% load static %}
+{% load custom_tags %}
+{% block title %}
+Welcome
+{% endblock title %}
+{% block content %}
+{% include "app_web/includes/navbar.html" %}
+{% if user.is_authenticated %}
+{% include "app_web/welcome/_user_welcome.html" %}
+{% else %}
+{% include "app_web/welcome/_guest_welcome.html" %}
+{% endif %}
+{% include "app_web/includes/footer.html" %}
+{% endblock content %}
+

@@ -800,10 +800,13 @@ def backlog_to_column_update(positions, board_id, this_card_id, from_column, fro
     logger.debug(f">>> === BACKLOG_TO_COLUMN: {positions} {board_id} {this_card_id} {from_column} {from_state_id} {dest_column} {to_state_id}=== <<<") 
     try:
         # Fetch or create the ProjectBoardCard for the backlog item
+        print(f">>> === BACKLOG_TO_COLUMN1:  === <<<")
         card, created = ProjectBoardCard.objects.get_or_create(
+            board_id=board_id,
             backlog_id=this_card_id,
-            defaults={"board_id": board_id, "state_id": to_state_id, "position": 0}
+            defaults={ "state_id": to_state_id, "position": 0}
         )
+        print(f">>> === BACKLOG_TO_COLUMN2:  === <<<")
         if not created:
             card.state_id = to_state_id  # Move to column
             card.save()
@@ -825,7 +828,7 @@ def backlog_to_column_update(positions, board_id, this_card_id, from_column, fro
         return JsonResponse({"success": True})
 
     except Exception as e:
-        print(f"Error: {str(e)}")
+        print(f"Backlog_to_column Error: {str(e)}")
         return JsonResponse({"success": False, "error": str(e)})
 
 def within_column_update(positions, board_id, card_id, dest_column, to_state_id):   
@@ -883,6 +886,10 @@ def ajax_update_project_board_card_state(request):
         board_id = data.get('board_id')
         # just to set 
         to_column = dest_column
+        is_new_card = data.get('is_new_card')
+        card_text = data.get('title')
+        card_priority = data.get('priority')
+        card_substate = data.get('substate')
 
         #ProjectBoardStateTransition.objects.filter(board_id=board_id).delete()
         print(f">>> === positions: {positions} === <<<")
@@ -893,32 +900,56 @@ def ajax_update_project_board_card_state(request):
         print(f">>> === project_id: {project_id} === <<<")
         print(f">>> === board_id: {board_id} === <<<")
         print(f">>> === card_id: {card_id} === <<<")
+        print(f">>> === is_new_card: {is_new_card} === <<<")
+        print(f">>> === card_text: {card_text} === <<<")
+        print(f">>> === card_priority: {card_priority} === <<<")
+        print(f">>> === card_substate: {card_substate} === <<<")
         
-        if from_state_id == 0 and from_state_id == to_state_id and to_state_id == 0:
-            logger.debug(f">>> === Backlog: Within column movement === <<<")
-            within_backlog_update(positions, board_id, card_id)
-        elif from_state_id !=0 and to_state_id != 0 and from_state_id == to_state_id:
-            logger.debug(f">>> === {dest_column}: Within column movement  === <<<")
-            within_column_update(positions, board_id, card_id, dest_column, to_state_id)
-        elif from_state_id !=0 and to_state_id != 0 and from_state_id != to_state_id:
-            logger.debug(f">>> === {from_column} to {dest_column}: Between column movement  === <<<")
-            column_to_column_update(positions, board_id, card_id, from_column, from_state_id, dest_column, to_state_id)
-            actual_card = ProjectBoardCard.objects.filter(id=card_id).first()
-            actual_card_id = actual_card.backlog.id
-            update_backlog_text_status(actual_card_id, dest_column)
-        elif from_state_id == 0 and to_state_id != 0:
-            logger.debug(f">>> ===  {from_column} to {dest_column}: Between column movement (from Backlog) === <<<")
-            backlog_to_column_update(positions, board_id, card_id, from_column, from_state_id, dest_column, to_state_id)
-            update_backlog_text_status(card_id, dest_column)
-        elif to_state_id == 0 and from_state_id != 0:
-            logger.debug(f">>> ===   {from_column} to {dest_column}: Betwee Column Movement (to Backlog)   === <<<")
-            column_to_backlog_update(positions, board_id, card_id, from_column, from_state_id, dest_column, to_state_id)
-            update_backlog_text_status(card_id, dest_column)
+        if is_new_card:
+            # If it's a new card, create it and set its state
+            context = _GET_BACKLOG_TYPES(request, project_id)
+            story_type_id = context.get('story_type_id')
+            project_backlog_root_node = context.get('project_backlog_root_node')
+            print(f">>> === project_backlog_root_node: {story_type_id}  {story_type_id} === <<<")
+            backlog_item = Backlog.objects.create(name=card_text, pro_id=project_id, type_id=story_type_id, priority=card_priority,
+                                                  parent=project_backlog_root_node, author=request.user, status="Backlog")
+            from_state_id = 0
+            if to_state_id == 0: 
+                to_state_id = None
+            card = ProjectBoardCard.objects.create(
+                backlog=backlog_item,
+                board_id=board_id,
+                state_id=to_state_id,
+                position=0,  # Set the initial position
+            )
+            update_project_board_state_transition(board_id, card, from_state_id, to_state_id)
+            return JsonResponse({"success": True})
+        else:
+            if from_state_id == 0 and from_state_id == to_state_id and to_state_id == 0:
+                logger.debug(f">>> === Backlog: Within column movement === <<<")
+                within_backlog_update(positions, board_id, card_id)
+            elif from_state_id !=0 and to_state_id != 0 and from_state_id == to_state_id:
+                logger.debug(f">>> === {dest_column}: Within column movement  === <<<")
+                within_column_update(positions, board_id, card_id, dest_column, to_state_id)
+            elif from_state_id !=0 and to_state_id != 0 and from_state_id != to_state_id:
+                logger.debug(f">>> === {from_column} to {dest_column}: Between column movement  === <<<")
+                column_to_column_update(positions, board_id, card_id, from_column, from_state_id, dest_column, to_state_id)
+                actual_card = ProjectBoardCard.objects.filter(id=card_id).first()
+                actual_card_id = actual_card.backlog.id
+                update_backlog_text_status(actual_card_id, dest_column)
+            elif from_state_id == 0 and to_state_id != 0:
+                logger.debug(f">>> ===  {from_column} to {dest_column}: Between column movement (from Backlog) === <<<")
+                backlog_to_column_update(positions, board_id, card_id, from_column, from_state_id, dest_column, to_state_id)
+                update_backlog_text_status(card_id, dest_column)
+            elif to_state_id == 0 and from_state_id != 0:
+                logger.debug(f">>> ===   {from_column} to {dest_column}: Between Column Movement (to Backlog)   === <<<")
+                column_to_backlog_update(positions, board_id, card_id, from_column, from_state_id, dest_column, to_state_id)
+                update_backlog_text_status(card_id, dest_column)
 
-        # Update Movement: project_id, board_id, card_id, from_state_id, to_state_id, from_column, dest_column, positions
-        update_movement(project_id, board_id, card_id, from_state_id, to_state_id, from_column, to_column, positions)
+            # Update Movement: project_id, board_id, card_id, from_state_id, to_state_id, from_column, dest_column, positions
+            update_movement(project_id, board_id, card_id, from_state_id, to_state_id, from_column, to_column, positions)
 
-        return JsonResponse({"success": True})
+            return JsonResponse({"success": True})
 
     return JsonResponse({"error": "Invalid request method"}, status=405)
 
@@ -1000,6 +1031,58 @@ def ajax_update_project_board_card_order(request):
 
 
 from app_organization.mod_backlog.views_project_tree import create_or_update_tree_from_config, get_tree_name_id
+
+@login_required
+def _GET_BACKLOG_TYPES(request, project_id):
+    user = request.user
+    project = Project.objects.get(id=project_id, active=True)
+    org_id = project.org.id
+    organization = project.org
+    # Backlog types
+    pbst_name = f"{project.id}_PROJECT_TREE"
+    project_backlog_root_node = Backlog.objects.get(pro=project, name=pbst_name)
+    project_backlog_type, created = BacklogType.objects.get_or_create(pro=project, name=pbst_name)
+    config = PROJECT_WBS_TREE_CONFIG
+    backlog_type_node = create_or_update_tree_from_config(config, model_name="app_organization.BacklogType", parent=project_backlog_type, project=project)
+    bt_tree_name_and_id = get_tree_name_id(backlog_type_node)
+    epic_type_id = bt_tree_name_and_id.get("Epic")
+    epic_type_node = BacklogType.objects.get(id=epic_type_id)
+    epic_type_children = epic_type_node.get_active_children()
+    backlog_types = epic_type_children
+    backlog_types_count = backlog_types.count()
+    
+    bug_type_id = bt_tree_name_and_id.get("Bug")
+    story_type_id = bt_tree_name_and_id.get("User Story")
+    tech_task_type_id = bt_tree_name_and_id.get("Technical Task")
+    
+    feature_type_id = bt_tree_name_and_id.get("Feature")
+    component_type_id = bt_tree_name_and_id.get("Component")
+    capability_type_id = bt_tree_name_and_id.get("Capability")
+    
+    include_types = [bug_type_id, story_type_id, tech_task_type_id]
+    efcc_include_types = [epic_type_id, feature_type_id, component_type_id, capability_type_id] # meaning Epic, Feature, Component, Capability
+    efcc_backlog_items = Backlog.objects.filter(pro_id=project.id, type__in=efcc_include_types, active=True)
+
+    return {
+        'organization': organization,
+        'org_id': org_id,
+        'project': project,
+        'pro_id': project.id,
+        'backlog_types': backlog_types,
+        'backlog_types_count': backlog_types_count,
+        'include_types': include_types,
+        'efcc_include_types': efcc_include_types,
+        'efcc_backlog_items': efcc_backlog_items,
+        'story_type_id': story_type_id,
+        'bug_type_id': bug_type_id,
+        'tech_task_type_id': tech_task_type_id,
+        'feature_type_id': feature_type_id,
+        'component_type_id': component_type_id,
+        'capability_type_id': capability_type_id,
+        'epic_type_id': epic_type_id,
+        'project_backlog_root_node': project_backlog_root_node,
+    }
+
 @login_required
 def _COMMON_for_kanban(request, project_id):
     user = request.user
@@ -1128,24 +1211,37 @@ def _COMMON_for_kanban(request, project_id):
     if project_board:
         project_board_states = ProjectBoardState.objects.filter(board=project_board, active=True)
     # Step7: Collect the Backlog items
-    actual_project_backlog_items = Backlog.objects.filter(
-            pro_id=project.id,
-            type__in=backlog_types,
-            active=True,
-            iteration=current_iteration,
-            release=current_release,
-        ).exclude(
-            id__in=ProjectBoardCard.objects.filter(
-                board=project_board,
-                state__isnull=False  # Exclude items where state.id is NOT NULL (moved to other states)
-            ).values_list('backlog_id', flat=True)
-        ).order_by('position', '-created_at')   
+    if project.project_details.template.name == 'Scrum':
+        actual_project_backlog_items = Backlog.objects.filter(
+                pro_id=project.id,
+                type__in=backlog_types,
+                active=True,
+                iteration=current_iteration,
+                release=current_release,
+            ).exclude(
+                id__in=ProjectBoardCard.objects.filter(
+                    board=project_board,
+                    state__isnull=False  # Exclude items where state.id is NOT NULL (moved to other states)
+                ).values_list('backlog_id', flat=True)
+            ).order_by('position', '-created_at')   
+    else:
+        print(f">>> === project.project_details.template.name: {project.project_details.template.name} === <<<")
+        actual_project_backlog_items = Backlog.objects.filter(
+                pro_id=project.id,
+                type__in=backlog_types,
+                active=True,
+                
+            ).exclude(
+                id__in=ProjectBoardCard.objects.filter(
+                    board=project_board,
+                    state__isnull=False  # Exclude items where state.id is NOT NULL (moved to other states)
+                ).values_list('backlog_id', flat=True)
+            ).order_by('position', '-created_at')   
+        print(f">>> === actual_project_backlog_items: {actual_project_backlog_items.count()} === <<<")
     reference_backlog_items =  Backlog.objects.filter(
             pro_id=project.id,
             type__in=backlog_types,
-            active=True,
-          
-        
+            active=True,       
         ).order_by('position', '-created_at')  
     # Step8: Collect the state/column items
     # Fetch the project backlog items state
@@ -1218,7 +1314,10 @@ def _COMMON_for_kanban(request, project_id):
     print(f"SWIMLANES>>>>>>>>>>>>>>>>>>>>>>>>>>>>exists>>>>>>>>>>>>> {efcc_backlog_items_swimlane}")
 
     print(f">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> BACKLOG ITEMS {actual_project_backlog_items} ")
+    count_of_actual_backlog_items = actual_project_backlog_items.count()
+    print(f">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> BACKLOG ITEMS COUNT {count_of_actual_backlog_items} ")
     project_type = project.project_details.template.name
+    
     context = {
         'organization': organization,
         'org_id': org_id,

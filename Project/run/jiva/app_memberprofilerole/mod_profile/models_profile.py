@@ -4,7 +4,7 @@ from app_organization.mod_organization.models_organization import *
 from app_common.mod_common.models_common import *
 
 class Profile(BaseModelImpl):
-    user = models.OneToOneField(User, related_name='profile', on_delete=models.CASCADE, null=True, blank=True)  
+    user = models.OneToOneField(User, related_name='base_profile', on_delete=models.CASCADE, null=True, blank=True)  
     image = models.ImageField(default='user_default_icon.svg', upload_to='profile_pics', null=True, blank=True)
     bio = models.TextField(null=True, blank=True)
 

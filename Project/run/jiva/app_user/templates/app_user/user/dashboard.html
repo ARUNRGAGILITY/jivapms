@@ -1,0 +1,271 @@
+<!-- templates/users/dashboard.html -->
+{% extends 'app_user/user/base.html' %}
+
+{% block title %}Dashboard{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card bg-primary text-white shadow">
+            <div class="card-body">
+                <div class="d-flex justify-content-between align-items-center">
+                    <div>
+                        <h4 class="mb-1">Welcome back, {{ user.username }}!</h4>
+                        <p class="mb-0">Here's an overview of your user management system</p>
+                    </div>
+                    <div>
+                        <a href="{% url 'profile_update' %}" class="btn btn-light">
+                            <i class="fas fa-user-edit me-1"></i> Edit Profile
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- User Stats Card -->
+    <div class="col-md-6 col-xl-3 mb-4">
+        <div class="card border-left-primary shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                            Total Users</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ total_users }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-users fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Active Users Card -->
+    <div class="col-md-6 col-xl-3 mb-4">
+        <div class="card border-left-success shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                            Active Users</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ active_users }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-user-check fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- New Users This Month Card -->
+    <div class="col-md-6 col-xl-3 mb-4">
+        <div class="card border-left-info shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                            New Users (This Month)</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ new_users_this_month }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-user-plus fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profiles with Images Card -->
+    <div class="col-md-6 col-xl-3 mb-4">
+        <div class="card border-left-warning shadow h-100 py-2">
+            <div class="card-body">
+                <div class="row no-gutters align-items-center">
+                    <div class="col mr-2">
+                        <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                            Profiles with Images</div>
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">{{ profiles_with_images }}</div>
+                    </div>
+                    <div class="col-auto">
+                        <i class="fas fa-image fa-2x text-gray-300"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Recent Users Table -->
+    <div class="col-xl-8 col-lg-7 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold">Recent Users</h6>
+                <a href="{% url 'user_list' %}" class="btn btn-light btn-sm">
+                    View All
+                </a>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Username</th>
+                                <th>Full Name</th>
+                                <th>Joined</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for user in recent_users %}
+                            <tr>
+                                <td>{{ user.username }}</td>
+                                <td>{{ user.get_full_name|default:"-" }}</td>
+                                <td>{{ user.date_joined|date:"M d, Y" }}</td>
+                                <td>
+                                    <a href="{% url 'user_detail' user.username %}" class="btn btn-sm btn-primary">
+                                        <i class="fas fa-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% empty %}
+                            <tr>
+                                <td colspan="4" class="text-center">No users found.</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Profile Completion Card -->
+    <div class="col-xl-4 col-lg-5 mb-4">
+        <div class="card shadow">
+            <div class="card-header bg-primary text-white">
+                <h6 class="m-0 font-weight-bold">Your Profile Completion</h6>
+            </div>
+            <div class="card-body">
+                {% with completion=user_profile_completion %}
+                <h4 class="small font-weight-bold">Profile Image 
+                    <span class="float-end">{% if user_has_image %}100%{% else %}0%{% endif %}</span>
+                </h4>
+                <div class="progress mb-4">
+                    <div class="progress-bar" role="progressbar" style="width: {% if user_has_image %}100%{% else %}0%{% endif %}"
+                        aria-valuenow="{% if user_has_image %}100{% else %}0{% endif %}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <h4 class="small font-weight-bold">Profile Bio 
+                    <span class="float-end">{% if user_has_bio %}100%{% else %}0%{% endif %}</span>
+                </h4>
+                <div class="progress mb-4">
+                    <div class="progress-bar bg-info" role="progressbar" style="width: {% if user_has_bio %}100%{% else %}0%{% endif %}"
+                        aria-valuenow="{% if user_has_bio %}100{% else %}0{% endif %}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <h4 class="small font-weight-bold">Full Name 
+                    <span class="float-end">{% if user_has_full_name %}100%{% else %}0%{% endif %}</span>
+                </h4>
+                <div class="progress mb-4">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: {% if user_has_full_name %}100%{% else %}0%{% endif %}"
+                        aria-valuenow="{% if user_has_full_name %}100{% else %}0{% endif %}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <h4 class="small font-weight-bold">Email Verified 
+                    <span class="float-end">{% if user_email_verified %}100%{% else %}0%{% endif %}</span>
+                </h4>
+                <div class="progress mb-4">
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: {% if user_email_verified %}100%{% else %}0%{% endif %}"
+                        aria-valuenow="{% if user_email_verified %}100{% else %}0{% endif %}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                <h4 class="small font-weight-bold">Overall Completion 
+                    <span class="float-end">{{ completion }}%</span>
+                </h4>
+                <div class="progress mb-4">
+                    <div class="progress-bar bg-danger" role="progressbar" style="width: {{ completion }}%"
+                        aria-valuenow="{{ completion }}" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+                {% endwith %}
+                <div class="text-center mt-4">
+                    <a href="{% url 'profile_update' %}" class="btn btn-primary">
+                        <i class="fas fa-user-edit me-1"></i> Complete Your Profile
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Activity Log Card (Optional) -->
+<div class="row">
+    <div class="col-12">
+        <div class="card shadow mb-4">
+            <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <h6 class="m-0 font-weight-bold">Recent Activity</h6>
+                <button class="btn btn-light btn-sm" id="refreshActivityBtn">
+                    <i class="fas fa-sync-alt"></i> Refresh
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="list-group">
+                    <div class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">You updated your profile</h6>
+                            <small class="text-muted">3 days ago</small>
+                        </div>
+                        <p class="mb-1 text-muted small">Your profile information was updated successfully.</p>
+                    </div>
+                    <div class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">New user registered</h6>
+                            <small class="text-muted">1 week ago</small>
+                        </div>
+                        <p class="mb-1 text-muted small">User "johndoe" has joined the system.</p>
+                    </div>
+                    <div class="list-group-item list-group-item-action">
+                        <div class="d-flex w-100 justify-content-between">
+                            <h6 class="mb-1">System maintenance</h6>
+                            <small class="text-muted">2 weeks ago</small>
+                        </div>
+                        <p class="mb-1 text-muted small">The system was updated to the latest version.</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Refresh activity button animation
+        $('#refreshActivityBtn').click(function() {
+            var $icon = $(this).find('i');
+            $icon.addClass('fa-spin');
+            
+            // Simulated loading delay
+            setTimeout(function() {
+                $icon.removeClass('fa-spin');
+            }, 1000);
+        });
+        
+        // Highlight stats on hover
+        $('.card.border-left-primary, .card.border-left-success, .card.border-left-info, .card.border-left-warning').hover(
+            function() {
+                $(this).addClass('shadow-lg').css('cursor', 'pointer');
+            },
+            function() {
+                $(this).removeClass('shadow-lg');
+            }
+        );
+        
+        // Initialize tooltips if needed
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    });
+</script>
+{% endblock %}

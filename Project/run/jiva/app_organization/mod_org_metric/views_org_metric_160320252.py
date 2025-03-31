@@ -1125,7 +1125,6 @@ def view_project_metrics_flow_tab(request, project_id):
                 to_state = which_transition.to_state
                 to_state_lc = str(to_state).lower()
                 reference_transition_time = which_transition.transition_time
-                
               
                 
                 # Track card movement per column
@@ -1145,9 +1144,7 @@ def view_project_metrics_flow_tab(request, project_id):
             for col in active_columns:
                 col_lc = col.lower()
                 if not best_cfd_counts[s_date_formatted][col_lc]:
-                    best_cfd_counts[s_date_formatted][col_lc][0] = 0  # Placeholder entry
-
-         
+                    best_cfd_counts[s_date_formatted][col_lc][0] = 0  # Placeholder entry         
 
             # Build the data list with cumulative counts
             data = []

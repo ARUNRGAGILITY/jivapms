@@ -1,0 +1,78 @@
+<script>
+
+
+
+// static/js/script.js
+$(document).ready(function() {
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+
+    // Auto-dismiss alerts after 5 seconds
+    $('.alert').delay(5000).fadeOut(500);
+    
+    // File input preview for profile image upload
+    $('input[type="file"]').change(function(e) {
+        var fileName = e.target.files[0].name;
+        $(this).next('.custom-file-label').html(fileName);
+        
+        // Preview image if it's an image file
+        if (this.files && this.files[0]) {
+            var reader = new FileReader();
+            reader.onload = function(e) {
+                $('img.img-thumbnail').attr('src', e.target.result);
+            }
+            reader.readAsDataURL(this.files[0]);
+        }
+    });
+
+    // Make tables sortable - this is handled in the template-specific code
+    // but is initialized here for all tables with the 'sortable-table' class
+    if ($.fn.sortable) {
+        $(".sortable-table tbody").sortable({
+            helper: function(e, tr) {
+                var $originals = tr.children();
+                var $helper = tr.clone();
+                $helper.children().each(function(index) {
+                    $(this).width($originals.eq(index).width());
+                });
+                return $helper;
+            },
+            update: function(event, ui) {
+                // This would be where you'd send the new order to the server
+                console.log('Updated sort order');
+            }
+        });
+    }
+
+    // Add form validation styles to Django forms
+    function styleFormFields() {
+        // Add Bootstrap classes to form elements
+        $('input, select, textarea').not('[type=submit]').not('[type=button]').not('[type=checkbox]').not('[type=radio]').addClass('form-control');
+        $('input[type=checkbox], input[type=radio]').parent().addClass('form-check');
+        $('input[type=checkbox], input[type=radio]').addClass('form-check-input');
+        $('label').addClass('form-label');
+    }
+    
+    // Call on page load
+    styleFormFields();
+    
+    // Confirmation for delete actions
+    $('.delete-confirm').on('click', function(e) {
+        if (!confirm('Are you sure? This action cannot be undone.')) {
+            e.preventDefault();
+        }
+    });
+    
+    // Dynamic search filtering
+    $('#searchInput').on('keyup', function() {
+        var value = $(this).val().toLowerCase();
+        $('.searchable-item').filter(function() {
+            $(this).toggle($(this).text().toLowerCase().indexOf(value) > -1)
+        });
+    });
+});
+
+</script>

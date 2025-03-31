@@ -63,6 +63,8 @@ from django.db.models.functions import TruncTime
 from django.db.models.functions import ExtractHour, ExtractMinute, ExtractSecond
 from django.db.models import F
 from django.db.models.functions import Extract
+from django.apps import apps
+from django.core.exceptions import ImproperlyConfigured
 
 import traceback
 import base64

@@ -1,0 +1,157 @@
+{% extends 'app_user/user/base.html' %}
+
+{% block title %}Admin Dashboard | Scrumban{% endblock %}
+
+{% block content %}
+<!-- Tab Navigation -->
+{% include "app_user/user/partials/admin_tabs.html" with active_tab=active_tab %}
+
+<div class="row mb-4">
+    <div class="col-md-3">
+        <div class="dashboard-stat bg-info-soft">
+            <h5>Total Users</h5>
+            <h2>{{ total_users }}</h2>
+            <p>{{ active_users }} active</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="dashboard-stat bg-success-soft">
+            <h5>Administrators</h5>
+            <h2>{{ admin_users }}</h2>
+            <p>User type: Admin</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="dashboard-stat bg-warning-soft">
+            <h5>Scrum Masters</h5>
+            <h2>{{ scrum_masters }}</h2>
+            <p>User type: Scrum Master</p>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="dashboard-stat bg-danger-soft">
+            <h5>Product Owners</h5>
+            <h2>{{ product_owners }}</h2>
+            <p>User type: Product Owner</p>
+        </div>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">System Information</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>User Statistics</h6>
+                        <ul class="list-group mb-3">
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Total Users
+                                <span class="badge bg-primary rounded-pill">{{ total_users }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Active Users
+                                <span class="badge bg-success rounded-pill">{{ active_users }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Inactive Users (Soft-Deleted)
+                                <span class="badge bg-danger rounded-pill">{{ inactive_users }}</span>
+                            </li>
+                            <li class="list-group-item d-flex justify-content-between align-items-center">
+                                Team Members
+                                <span class="badge bg-info rounded-pill">{{ team_members }}</span>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>User Types</h6>
+                        <div class="mb-3" style="height: 150px;">
+                            <canvas id="userTypesChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-12">
+                        <h6>Quick Actions</h6>
+                        <div class="btn-group">
+                            <a href="{% url 'user_list' %}" class="btn btn-outline-primary">
+                                <i class="fas fa-users"></i> Manage Users
+                            </a>
+                            <a href="{% url 'admin:index' %}" class="btn btn-outline-secondary">
+                                <i class="fas fa-cog"></i> Django Admin
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-4">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Recent Users</h5>
+            </div>
+            <div class="card-body">
+                <ul class="list-group">
+                    {% for user_item in recent_users %}
+                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong>{{ user_item.username }}</strong>
+                            <small class="d-block text-muted">{{ user_item.email }}</small>
+                        </div>
+                        <span class="badge bg-{% if user_item.is_active %}success{% else %}danger{% endif %}">
+                            {% if user_item.is_active %}Active{% else %}Inactive{% endif %}
+                        </span>
+                    </li>
+                    {% empty %}
+                    <li class="list-group-item">No users found.</li>
+                    {% endfor %}
+                </ul>
+            </div>
+            <div class="card-footer text-center">
+                <a href="{% url 'user_list' %}" class="btn btn-sm btn-outline-primary">View All Users</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const userTypesCtx = document.getElementById('userTypesChart').getContext('2d');
+        new Chart(userTypesCtx, {
+            type: 'pie',
+            data: {
+                labels: ['Administrators', 'Scrum Masters', 'Product Owners', 'Team Members'],
+                datasets: [{
+                    data: [{{ admin_users }}, {{ scrum_masters }}, {{ product_owners }}, {{ team_members }}],
+                    backgroundColor: [
+                        'rgba(54, 162, 235, 0.7)',
+                        'rgba(255, 206, 86, 0.7)',
+                        'rgba(255, 99, 132, 0.7)',
+                        'rgba(75, 192, 192, 0.7)'
+                    ],
+                    borderColor: [
+                        'rgba(54, 162, 235, 1)',
+                        'rgba(255, 206, 86, 1)',
+                        'rgba(255, 99, 132, 1)',
+                        'rgba(75, 192, 192, 1)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false
+            }
+        });
+    });
+</script>
+{% endblock %}
+{% endblock %}

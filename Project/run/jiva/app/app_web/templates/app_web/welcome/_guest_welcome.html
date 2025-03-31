@@ -1,0 +1,47 @@
+{% load static %}
+{% load custom_tags %}
+<div class="container-fluid-width">
+    <div class="row no-gutters">
+        <div class="col col-md-12">
+            
+            <div class="container-fluid">
+                <div class="row">
+                    <div class="col col-md-4 text-end">
+                        <img src="{% static 'img/mgr/projektmgr1.png' %}"  width="80%" height="60%"  alt="">
+                    </div>
+                    <div class="col col-md-4">
+                        <div class="container-fluid-width">
+                            <div class="row">
+                                <div class="col col-md-12">
+                                    <h4>Welcome to ProjektMgr</h4>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col col-md-12">
+                                    <p>ProjektMgr is a platform to manage your personal, 
+                                        professional, commercial and non-commercial projects.</p>
+                                    <p>
+                                        Utilize modern approaches like Agile, Digital, Lean, AI in this
+                                        Project platform.
+                                    </p>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col col-md-12">
+                                    <a href="{% url 'login_page' %}" class="btn btn-xl bg-success text-white">
+                                        <b>Start Now!</b>
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col col-md-4">
+                        <img src="{% static 'img/mgr/projektmgr_wordcloud1.png' %}" width="80%" height="60%" alt="">
+                    </div>
+                </div>
+            </div>
+
+
+        </div>
+    </div>
+</div>

@@ -496,6 +496,22 @@
         word-wrap: break-word;
         overflow-wrap: break-word;
     }
+
+
+
+    .kanban-column-wrapper {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+    }
+
+    .kanban-column-header {
+        font-weight: bold;
+        font-size: 1rem;
+        margin-bottom: 5px;
+    }
+
+
 </style>
 
 
@@ -541,6 +557,8 @@
          
             <div id="kanban-board" data-board-id="{{ project_board.id }}" class="kanban-board mb-5">
                  <!-- Backlog Column -->
+                 <div class="kanban-column-wrapper">
+                    <div class="kanban-column-header" data-column-id="0">Backlog (<span class="card-count">0</span> cards)</div>
                  <div class="kanban-column" data-id="0" id="backlog">
                     <b class="">Backlog</b>
                     <div class="small-font-display">&nbsp;</div>
@@ -566,12 +584,14 @@
                         {% endfor %}
                     
                 </div>
-                             
+                </div>                             
                 <!-- Release Iteration -->
                
                 {% if project.project_release_mapped_flag == True %}
                 
                    {% if current_iteration != None %}
+                   <div class="kanban-column-wrapper">
+                    <div class="kanban-column-header" data-column-id="0">{{current_iteration}} (<span class="card-count">0</span> cards)</div>
                    <div class="kanban-column" data-id="{{ current_iteration.id }}" id="{{current_iteration.id}}">
                     <b class="display_title">{{current_iteration.org_release.name}}/{{current_iteration}}</b>                  
                     <div class="small-font-display">{{current_iteration.iteration_start_date}} to {{current_iteration.iteration_end_date}} </div>  
@@ -596,9 +616,12 @@
                         {% endif %}    
                         {% endfor %}                   
                     </div> 
+                    </div>
                    {% endif %}
 
                    {% if next_iteration != None %}
+                   <div class="kanban-column-wrapper">
+                    <div class="kanban-column-header" data-column-id="0">{{next_iteration}} (<span class="card-count">0</span> cards)</div>
                    <div class="kanban-column" data-id="{{ next_iteration.id }}" id="{{next_iteration.id}}">
                     <b class="display_title">{{next_iteration.org_release.name}}/{{next_iteration}}</b>                  
                     <div class="small-font-display">{{next_iteration.iteration_start_date}} to {{next_iteration.iteration_end_date}} </div>  
@@ -623,6 +646,7 @@
                         {% endif %}    
                         {% endfor %}                   
                     </div> 
+                    </div>
                    {% endif %}
                 {% else %}
                     {% if iteration_message %}
@@ -692,7 +716,7 @@ $(function() {
                 var id = $(this).data("id");
                 destPositions.push({ card_id: id, position: index + 1 });
             });
-            
+            updateCardCounts(); 
            // Call the backend to update the card state and positions
            updateBacklogIteration(cardId, fromStateId, toStateId, destPositions, destColumn, projectId,  fromColumn);
         }
@@ -759,6 +783,25 @@ $(function() {
             }
         })
     }
-</script>
 
+
+    
+</script>
+<script>
+    function updateCardCounts() {
+        document.querySelectorAll('.kanban-column-wrapper').forEach(wrapper => {
+            const column = wrapper.querySelector('.kanban-column');
+            const count = column.querySelectorAll('.kanban-card').length;
+    
+            const header = wrapper.querySelector('.kanban-column-header .card-count');
+            if (header) {
+                header.textContent = count;
+            }
+        });
+    }
+    
+    document.addEventListener('DOMContentLoaded', updateCardCounts);
+   
+    </script>
+    
 {% endblock content %}

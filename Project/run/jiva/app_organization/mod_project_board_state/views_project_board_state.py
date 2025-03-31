@@ -98,6 +98,9 @@ def list_project_board_states(request, project_board_id):
                     redirect('list_project_board_states', project_board_id=project_board_id)
             return redirect('list_project_board_states', project_board_id=project_board_id)
     
+    # send the sub column choices
+    sub_column_type_choices = ProjectBoardState.SUBCOLUMN_PAIRS
+
     # send outputs info, template,
     context = {
         'parent_page': '___PARENTPAGE___',
@@ -109,6 +112,7 @@ def list_project_board_states(request, project_board_id):
         'org': project_board.project.org,
         'org_id': project_board.project.org.id,
         'column_type_choices': ProjectBoardState.COLUMN_TYPE_CHOICES,
+        'sub_column_type_choices': sub_column_type_choices,
         'form': form,
         'module_path': module_path,
         'user': user,

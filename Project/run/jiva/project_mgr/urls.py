@@ -26,7 +26,7 @@ urlpatterns = [
     
     # system
     #path('system/', include('app_system.mod_app.urls_app')),
-    
+    path('user/', include('app_user.urls')),
     # administration
     path('admin/', admin.site.urls),    
 ]

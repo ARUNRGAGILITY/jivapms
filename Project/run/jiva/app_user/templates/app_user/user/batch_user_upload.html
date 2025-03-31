@@ -1,0 +1,182 @@
+{% extends "app_user/user/base.html" %}
+
+{% block title %}Batch User Upload | Scrumban{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Batch User Upload</h2>
+    <div>
+        <a href="{% url 'create_user' %}" class="btn btn-outline-primary me-2">
+            <i class="fas fa-user-plus"></i> Add Single User
+        </a>
+        <a href="{% url 'user_list' %}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Back to Users
+        </a>
+    </div>
+</div>
+
+<div class="row">
+    <div class="col-md-6">
+        <div class="card mb-4">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Upload Users</h5>
+            </div>
+            <div class="card-body">
+                <div class="alert alert-info">
+                    <h6>CSV Format</h6>
+                    <p>Your CSV file should have the following headers:</p>
+                    <code>username,email,password,first_name,last_name,user_type</code>
+                    <p class="mt-2 mb-0">Valid user types: admin, scrum_master, product_owner, team_member</p>
+                </div>
+                
+                <form method="post" enctype="multipart/form-data" novalidate>
+                    {% csrf_token %}
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.csv_file.id_for_label }}" class="form-label">{{ form.csv_file.label }}</label>
+                        {{ form.csv_file }}
+                        <div class="form-text">{{ form.csv_file.help_text }}</div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="{{ form.csv_text.id_for_label }}" class="form-label">{{ form.csv_text.label }}</label>
+                        {{ form.csv_text }}
+                        <div class="form-text">{{ form.csv_text.help_text }}</div>
+                    </div>
+                    
+                    <div class="d-flex justify-content-between">
+                        <a href="{% url 'user_list' %}" class="btn btn-secondary">Cancel</a>
+                        <button type="submit" class="btn btn-primary">Upload Users</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Sample CSV</h5>
+            </div>
+            <div class="card-body">
+                <pre class="bg-light p-3 border rounded">username,email,password,first_name,last_name,user_type
+john_doe,john@example.com,securepassword123,John,Doe,team_member
+jane_smith,jane@example.com,securepassword123,Jane,Smith,scrum_master
+mark_jones,mark@example.com,securepassword123,Mark,Jones,product_owner</pre>
+                <a href="#" class="btn btn-sm btn-outline-secondary mt-2" onclick="copyToClipboard(); return false;">
+                    <i class="fas fa-copy"></i> Copy Sample
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-6">
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="card-title mb-0">Upload Results</h5>
+            </div>
+            <div class="card-body">
+                {% if results.total > 0 %}
+                    <div class="alert alert-info">
+                        <p>Processed {{ results.total }} users:</p>
+                        <ul>
+                            <li>{{ results.created|length }} users created successfully</li>
+                            <li>{{ results.errors|length }} users failed</li>
+                        </ul>
+                    </div>
+                    
+                    {% if results.created %}
+                    <div class="mb-4">
+                        <h6>Successfully Created Users</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Username</th>
+                                        <th>Email</th>
+                                        <th>User Type</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for user in results.created %}
+                                    <tr>
+                                        <td>{{ user.username }}</td>
+                                        <td>{{ user.email }}</td>
+                                        <td>{{ user.user_type }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if results.errors %}
+                    <div>
+                        <h6>Failed Users</h6>
+                        <div class="accordion" id="errorsAccordion">
+                            {% for error in results.errors %}
+                            <div class="accordion-item">
+                                <h2 class="accordion-header" id="heading{{ forloop.counter }}">
+                                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapse{{ forloop.counter }}" aria-expanded="false" aria-controls="collapse{{ forloop.counter }}">
+                                        Row {{ error.row }}: {{ error.data.username|default:"Unknown" }} - {{ error.error|truncatechars:50 }}
+                                    </button>
+                                </h2>
+                                <div id="collapse{{ forloop.counter }}" class="accordion-collapse collapse" aria-labelledby="heading{{ forloop.counter }}" data-bs-parent="#errorsAccordion">
+                                    <div class="accordion-body">
+                                        <p><strong>Error:</strong> {{ error.error }}</p>
+                                        <p><strong>Data:</strong></p>
+                                        <pre class="bg-light p-2">{{ error.data }}</pre>
+                                    </div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                    {% endif %}
+                {% else %}
+                    <div class="alert alert-info">
+                        <p class="mb-0">No users have been processed yet. Upload a CSV file or paste CSV data to begin.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block extra_js %}
+<script>
+    function copyToClipboard() {
+        const sampleCSV = `username,email,password,first_name,last_name,user_type
+john_doe,john@example.com,securepassword123,John,Doe,team_member
+jane_smith,jane@example.com,securepassword123,Jane,Smith,scrum_master
+mark_jones,mark@example.com,securepassword123,Mark,Jones,product_owner`;
+        
+        navigator.clipboard.writeText(sampleCSV).then(() => {
+            // Show a toast notification
+            const toastEl = document.createElement('div');
+            toastEl.className = 'toast align-items-center text-white bg-success border-0 position-fixed bottom-0 end-0 m-3';
+            toastEl.setAttribute('role', 'alert');
+            toastEl.setAttribute('aria-live', 'assertive');
+            toastEl.setAttribute('aria-atomic', 'true');
+            
+            toastEl.innerHTML = `
+                <div class="d-flex">
+                    <div class="toast-body">
+                        Sample CSV copied to clipboard!
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            `;
+            
+            document.body.appendChild(toastEl);
+            const toast = new bootstrap.Toast(toastEl, { autohide: true, delay: 3000 });
+            toast.show();
+            
+            // Remove from DOM after hiding
+            toastEl.addEventListener('hidden.bs.toast', function() {
+                toastEl.remove();
+            });
+        });
+    }
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,30 @@
+{% extends 'app_common/common_files/base_template.html' %}
+{% load static %}
+
+{% block content %}
+{% include 'app_common/common_files/navbar.html' %}
+<!-- Begin: Content -->
+<!-- <h2>Welcome to Automate!</h2> -->
+<div class="container-fluid">
+    <div class="row pt-4">
+        <div class="col col-md-3"></div>
+        <div class="col col-md-6">
+            <h4>Welcome to {{SITE_TITLE}}</h4>
+            <p>{{SITE_DESC}}</p>
+           
+        </div>
+        <div class="col col-md-3"></div>
+    </div>
+</div>
+<script>
+    const hamBurger = document.querySelector(".toggle-btn");
+
+    hamBurger.addEventListener("click", function () {
+    document.querySelector("#sidebar").classList.toggle("expand");
+    });
+
+</script>
+<!-- End: Content -->
+{% endblock content %}
+
+

@@ -1,0 +1,1727 @@
+<style>
+    /* 
+ * Base styles for the Project Backlog application 
+ * This is a minimal version with only essential styles
+ */
+
+:root {
+    --green: #92D050;
+    --yellow: #FFEB9C;
+    --orange: #FFC000;
+    --purple: #B4A7D6;
+    --blue: #A9D2F3;
+    --red: #FF9999;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    margin: 0;
+    padding: 0;
+    background-color: #f5f5f5;
+    height: 100vh;
+    overflow: hidden;
+}
+
+.navbar {
+    background-color: #333;
+    color: white;
+    padding: 10px 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.navbar-title {
+    font-weight: bold;
+    font-size: 1.2em;
+}
+
+.navbar-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.navbar-actions button {
+    background-color: #555;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+}
+
+.top-controls {
+    display: flex;
+    background-color: white;
+    border-bottom: 1px solid #ddd;
+    padding: 10px 15px;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.postnote-creators {
+    display: flex;
+    gap: 10px;
+}
+
+.postnote-mini {
+    width: 30px;
+    height: 30px;
+    border-radius: 2px;
+    cursor: grab;
+    box-shadow: 1px 1px 3px rgba(0,0,0,0.2);
+    position: relative;
+    transition: transform 0.2s ease;
+}
+
+.postnote-mini::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    border-width: 0 8px 8px 0;
+    border-style: solid;
+    border-color: transparent rgba(0,0,0,0.1) transparent transparent;
+}
+
+.postnote-mini:hover {
+    transform: scale(1.05);
+}
+
+.postnote-mini.dragging {
+    transform: scale(1.2);
+    animation: shake 0.3s ease-in-out;
+}
+
+@keyframes shake {
+    0% { transform: scale(1.2) rotate(0deg); }
+    25% { transform: scale(1.2) rotate(-2deg); }
+    50% { transform: scale(1.2) rotate(0deg); }
+    75% { transform: scale(1.2) rotate(2deg); }
+    100% { transform: scale(1.2) rotate(0deg); }
+}
+
+.content-area {
+    height: calc(100vh - 100px);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    background-color: #f9f9f9;
+}
+
+.content-container {
+    flex: 1;
+    padding: 20px;
+    overflow: auto;
+}
+
+.canvas {
+    min-height: 100%;
+    position: relative;
+}
+
+.postnote {
+    width: 15%;
+    aspect-ratio: 1/1;
+    position: absolute;
+    cursor: move;
+    min-width: 120px;
+    min-height: 120px;
+}
+
+.postnote-inner {
+    width: 100%;
+    height: 100%;
+    padding: 10px;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    position: absolute;
+    box-shadow: 2px 2px 5px rgba(0,0,0,0.15);
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+}
+
+.postnote-inner::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    border-width: 0 15px 15px 0;
+    border-style: solid;
+    border-color: transparent rgba(0,0,0,0.1) transparent transparent;
+}
+
+.tape {
+    position: absolute;
+    top: -8px;
+    left: 30%;
+    width: 40%;
+    height: 15px;
+    background-color: rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    transform: rotate(-1deg);
+    box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.7em;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #555;
+    z-index: 2;
+}
+
+.tape::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 2px,
+        rgba(0, 0, 0, 0.04) 2px,
+        rgba(0, 0, 0, 0.04) 4px
+    );
+}
+
+.postnote-header {
+    font-weight: bold;
+    font-size: 0.9em;
+    border-bottom: 1px solid rgba(0,0,0,0.1);
+    padding-bottom: 5px;
+    margin-bottom: 5px;
+    margin-top: 5px;
+}
+
+.postnote-content {
+    flex: 1;
+    font-size: 0.85em;
+    overflow-wrap: break-word;
+    overflow: auto;
+    max-height: 60%;
+}
+
+.postnote-footer {
+    font-size: 0.75em;
+    color: #666;
+    border-top: 1px solid rgba(0,0,0,0.1);
+    padding-top: 5px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.status-info {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    font-size: 0.9em;
+}
+
+.footer-actions {
+    display: flex;
+    gap: 5px;
+}
+
+.postnote-action {
+    width: 18px;
+    height: 18px;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 2px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8em;
+    color: #555;
+    transition: background-color 0.2s;
+}
+
+.postnote-action:hover {
+    background-color: rgba(255, 255, 255, 0.8);
+}
+
+/* Color classes */
+.green { background-color: var(--green); }
+.yellow { background-color: var(--yellow); }
+.orange { background-color: var(--orange); }
+.purple { background-color: var(--purple); }
+.blue { background-color: var(--blue); }
+.red { background-color: var(--red); }
+
+/* Media queries for responsiveness */
+@media (max-width: 768px) {
+    .top-controls {
+        flex-direction: column;
+        gap: 10px;
+        align-items: flex-start;
+    }
+    
+    .postnote {
+        width: 30%;
+        aspect-ratio: 1/1;
+    }
+}
+
+@media (min-width: 1200px) {
+    .postnote {
+        width: 12%;
+        aspect-ratio: 1/1;
+    }
+}
+</style>
+
+<style>
+    /* EDIT MODAL
+ * Base styles for the Project Backlog application 
+ * This is a minimal version with only essential styles
+ */
+
+ /* Modal Styles */
+.modal-overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 1000;
+    justify-content: center;
+    align-items: center;
+}
+
+.modal-content {
+    background-color: white;
+    width: 90%;
+    max-width: 500px;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    position: relative;
+    animation: modal-appear 0.3s ease-out;
+}
+
+@keyframes modal-appear {
+    from {
+        opacity: 0;
+        transform: translateY(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.modal-close {
+    position: absolute;
+    top: 5px;
+    right: 10px;
+    cursor: pointer;
+    font-size: 20px;
+    width: 25px;
+    height: 25px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    transition: background-color 0.2s;
+}
+
+.modal-close:hover {
+    background-color: #f0f0f0;
+}
+
+.modal-title {
+    margin-top: 0;
+    margin-bottom: 20px;
+    font-size: 1.5em;
+    font-weight: bold;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.form-group input,
+.form-group textarea,
+.form-group select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-sizing: border-box;
+    font-family: inherit;
+    font-size: 0.95em;
+}
+
+.form-group textarea {
+    height: 100px;
+    resize: vertical;
+}
+
+.color-selector {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.color-option {
+    width: 30px;
+    height: 30px;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: transform 0.2s, box-shadow 0.2s;
+    position: relative;
+}
+
+.color-option:hover {
+    transform: scale(1.1);
+}
+
+.color-option.selected {
+    box-shadow: 0 0 0 2px white, 0 0 0 4px #333;
+}
+
+.color-option.selected::after {
+    content: '✓';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: rgba(0, 0, 0, 0.6);
+    font-size: 15px;
+    font-weight: bold;
+}
+
+.size-selector {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 10px;
+}
+
+.size-selector .radio-label {
+    display: flex;
+    align-items: center;
+    cursor: pointer;
+}
+
+.size-selector .radio-label input {
+    margin-right: 5px;
+}
+
+.modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+.btn {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.btn-cancel {
+    background-color: #f44336;
+    color: white;
+}
+
+.btn-cancel:hover {
+    background-color: #d32f2f;
+}
+
+.btn-save {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.btn-save:hover {
+    background-color: #388E3C;
+}
+
+/* Additional animation for success feedback */
+.save-success {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    animation: fade-in-out 3s ease-in-out forwards;
+    z-index: 2000;
+}
+
+@keyframes fade-in-out {
+    0% { opacity: 0; transform: translateY(20px); }
+    10% { opacity: 1; transform: translateY(0); }
+    90% { opacity: 1; transform: translateY(0); }
+    100% { opacity: 0; transform: translateY(20px); }
+}
+</style>
+
+<style>
+
+    /* Acceptance Criteria Modal Styles */
+.criteria-modal-content {
+    background-color: white;
+    width: 90%;
+    max-width: 600px;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    position: relative;
+    animation: modal-appear 0.3s ease-out;
+}
+
+.criteria-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.criteria-title {
+    font-weight: bold;
+    font-size: 1.2em;
+    text-align: center;
+    flex-grow: 1;
+}
+
+.criteria-id,
+.criteria-priority {
+    color: #666;
+    font-size: 0.9em;
+}
+
+.criteria-editor {
+    height: 300px;
+    margin-bottom: 20px;
+    background-color: #fff8e1;
+    background-image: linear-gradient(#f0e7cd 0px, transparent 1px);
+    background-size: 100% 24px;
+    background-position: 0 0;
+    line-height: 24px;
+    padding: 15px;
+    overflow-y: auto;
+    font-family: 'Courier New', monospace;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+}
+
+.criteria-content {
+    outline: none;
+    min-height: 100%;
+    white-space: pre-wrap;
+}
+
+.criteria-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 15px;
+}
+
+.criteria-meta {
+    font-size: 0.85em;
+    color: #666;
+}
+
+.criteria-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.criteria-btn {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.criteria-btn-cancel {
+    background-color: #f5f5f5;
+    color: #333;
+}
+
+.criteria-btn-cancel:hover {
+    background-color: #e0e0e0;
+}
+
+.criteria-btn-save {
+    background-color: #4CAF50;
+    color: white;
+}
+
+.criteria-btn-save:hover {
+    background-color: #388E3C;
+}
+
+/* Criteria indicator badge */
+.criteria-badge {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    background-color: #4CAF50;
+    color: white;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+}
+
+/* Placeholder text styling */
+.criteria-placeholder {
+    color: #999;
+    font-style: italic;
+}
+
+/* Formatting toolbar */
+.criteria-toolbar {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 10px;
+    flex-wrap: wrap;
+}
+
+.criteria-toolbar-btn {
+    background-color: #f5f5f5;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+    padding: 4px 8px;
+    cursor: pointer;
+    font-size: 0.85em;
+    transition: background-color 0.2s;
+}
+
+.criteria-toolbar-btn:hover {
+    background-color: #e0e0e0;
+}
+
+/* Add animation for the badge when criteria is added */
+@keyframes badge-pop {
+    0% { transform: scale(0); }
+    60% { transform: scale(1.2); }
+    100% { transform: scale(1); }
+}
+
+.criteria-badge-new {
+    animation: badge-pop 0.3s forwards;
+}
+</style>
+
+
+<style>
+    /*  FOR LINKS
+ * Base styles for the Project Backlog application 
+ * This is a minimal version with only essential styles
+ */
+
+ /* Link Modal Styles */
+.link-modal-content {
+    background-color: white;
+    width: 90%;
+    max-width: 600px;
+    padding: 20px;
+    border-radius: 5px;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.2);
+    position: relative;
+    animation: modal-appear 0.3s ease-out;
+}
+
+.link-modal-title {
+    font-size: 1.3em;
+    font-weight: bold;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+.link-source-info {
+    padding: 10px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+    margin-bottom: 15px;
+    border-left: 4px solid #4285f4;
+}
+
+.link-target-selector {
+    margin-bottom: 15px;
+}
+
+.link-table-container {
+    max-height: 250px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-bottom: 15px;
+}
+
+.link-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.link-table th {
+    background-color: #f5f5f5;
+    padding: 10px;
+    text-align: left;
+    position: sticky;
+    top: 0;
+    border-bottom: 1px solid #ddd;
+}
+
+.link-table td {
+    padding: 8px 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.link-table tr:hover {
+    background-color: #f5f5f5;
+    cursor: pointer;
+}
+
+.link-table tr.selected {
+    background-color: #e3f2fd;
+}
+
+.link-type-selector {
+    margin-bottom: 15px;
+}
+
+.link-type-selector label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: 500;
+}
+
+.link-type-selector select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+.link-selected-target {
+    padding: 10px;
+    background-color: #e3f2fd;
+    border-radius: 4px;
+    border-left: 4px solid #4285f4;
+    margin-bottom: 15px;
+    font-weight: 500;
+    display: none;
+}
+
+.link-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.link-btn {
+    padding: 8px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: background-color 0.2s;
+}
+
+.link-btn-cancel {
+    background-color: #f5f5f5;
+    color: #333;
+}
+
+.link-btn-cancel:hover {
+    background-color: #e0e0e0;
+}
+
+.link-btn-create {
+    background-color: #4285f4;
+    color: white;
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.link-btn-create.active {
+    opacity: 1;
+    cursor: pointer;
+}
+
+.link-btn-create.active:hover {
+    background-color: #3367d6;
+}
+
+/* Connection lines between linked cards */
+.connection-line {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: -1;
+    stroke: #555;
+    stroke-width: 2px;
+    stroke-dasharray: 5,3;
+}
+
+.connection-line-text {
+    font-size: 10px;
+    fill: #333;
+    text-anchor: middle;
+}
+
+.connection-line-text-bg {
+    fill: white;
+    opacity: 0.8;
+}
+
+/* Filter for stroke colors */
+.connection-depends-on { stroke: #F44336; }
+.connection-related-to { stroke: #2196F3; }
+.connection-parent-of { stroke: #4CAF50; }
+.connection-child-of { stroke: #9C27B0; }
+.connection-blocks { stroke: #FF9800; }
+.connection-is-blocked-by { stroke: #795548; }
+
+/* Link legend */
+.link-legend {
+    position: absolute;
+    bottom: 10px;
+    right: 10px;
+    background-color: rgba(255, 255, 255, 0.9);
+    border-radius: 4px;
+    padding: 5px 10px;
+    border: 1px solid #ddd;
+    font-size: 0.8em;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    display: none;
+}
+
+.link-legend-item {
+    display: flex;
+    align-items: center;
+    margin: 3px 0;
+}
+
+.link-legend-color {
+    width: 20px;
+    height: 3px;
+    margin-right: 8px;
+}
+
+/* Link hover effects */
+.connection-line:hover {
+    stroke-width: 3px;
+    stroke-dasharray: none;
+    cursor: pointer;
+}
+
+/* Link deletion icon */
+.link-delete-icon {
+    display: none;
+    position: absolute;
+    background-color: white;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    text-align: center;
+    line-height: 16px;
+    font-size: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    cursor: pointer;
+    z-index: 10;
+}
+
+.connection-line:hover + .link-delete-icon,
+.link-delete-icon:hover {
+    display: block;
+}
+</style>
+
+<style>
+    /*  FOR settings
+ * Base styles for the Project Backlog application 
+ * This is a minimal version with only essential styles
+ */
+/* Settings Panel Styles */
+.settings-panel {
+    position: absolute;
+    top: 50px;
+    right: 10px;
+    width: 300px;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+    z-index: 100;
+    animation: settings-appear 0.2s ease-out;
+}
+
+@keyframes settings-appear {
+    from { opacity: 0; transform: translateY(-10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background-color: #f5f5f5;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border-bottom: 1px solid #ddd;
+}
+
+.settings-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.settings-close {
+    cursor: pointer;
+    font-size: 20px;
+    line-height: 20px;
+    color: #666;
+}
+
+.settings-close:hover {
+    color: #333;
+}
+
+.settings-content {
+    padding: 15px;
+}
+
+.settings-item {
+    margin-bottom: 15px;
+}
+
+.settings-item:last-child {
+    margin-bottom: 0;
+}
+
+.settings-item label {
+    margin-bottom: 5px;
+    display: block;
+    font-weight: 500;
+}
+
+.settings-item select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}
+
+/* Toggle Switch */
+.switch-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 44px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .3s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .3s;
+}
+
+input:checked + .slider {
+    background-color: #4CAF50;
+}
+
+input:focus + .slider {
+    box-shadow: 0 0 1px #4CAF50;
+}
+
+input:checked + .slider:before {
+    transform: translateX(20px);
+}
+
+.slider.round {
+    border-radius: 24px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+/* Connection Points */
+.connection-point {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background-color: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.8);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 5;
+    transition: background-color 0.2s, transform 0.2s;
+}
+
+.connection-point:hover {
+    background-color: rgba(0, 0, 0, 0.6);
+    transform: scale(1.3);
+}
+
+/* Position the connection points on each side of the post-it */
+.connection-point-left {
+    top: 50%;
+    left: -4px;
+    transform: translateY(-50%);
+}
+
+.connection-point-right {
+    top: 50%;
+    right: -4px;
+    transform: translateY(-50%);
+}
+
+.connection-point-top {
+    top: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.connection-point-bottom {
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* Connection Point Pulse Animation when dragging */
+.connection-point-dragging {
+    animation: connection-pulse 1.5s infinite;
+}
+
+@keyframes connection-pulse {
+    0% { box-shadow: 0 0 0 0 rgba(66, 133, 244, 0.7); }
+    70% { box-shadow: 0 0 0 5px rgba(66, 133, 244, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(66, 133, 244, 0); }
+}
+
+/* Connection Thread */
+.connection-thread {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* Different connection styles */
+.connection-straight path {
+    stroke-dasharray: none;
+}
+
+.connection-curved path {
+    stroke-dasharray: 5,3;
+}
+
+.connection-stepped path {
+    stroke-dasharray: 10,3;
+}
+
+/* Settings Button */
+#settings-btn {
+    display: flex;
+    align-items: center;
+    padding: 5px 10px;
+    background-color: #555;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+#settings-btn:hover {
+    background-color: #444;
+}
+
+/* Thread hover state */
+.connection-thread:hover {
+    z-index: 10;
+}
+
+.connection-thread:hover path {
+    stroke-width: 3px;
+    stroke-dasharray: none;
+}
+
+/* Animate connection creation */
+.connection-thread-new path {
+    stroke-dasharray: 20;
+    animation: thread-dash 0.5s linear;
+}
+
+@keyframes thread-dash {
+    from { stroke-dashoffset: 20; }
+    to { stroke-dashoffset: 0; }
+}
+</style>
+
+<style>
+
+/* Fixed settings panel styles with text color */
+.settings-panel {
+    display: none !important;
+    position: absolute;
+    top: 50px;
+    right: 10px;
+    width: 300px;
+    background-color: white;
+    border-radius: 5px;
+    box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+    z-index: 100;
+    color: #333; /* Explicitly setting text color */
+}
+
+.settings-panel.show {
+    display: block !important;
+}
+
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 15px;
+    background-color: #f5f5f5;
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+    border-bottom: 1px solid #ddd;
+    color: #333; /* Explicitly setting text color */
+}
+
+.settings-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #333; /* Explicitly setting text color */
+}
+
+.settings-close {
+    cursor: pointer;
+    font-size: 20px;
+    line-height: 20px;
+    color: #666;
+}
+
+.settings-content {
+    padding: 15px;
+    color: #333; /* Explicitly setting text color */
+}
+
+.settings-item {
+    margin-bottom: 15px;
+    color: #333; /* Explicitly setting text color */
+}
+
+.switch-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    color: #333; /* Explicitly setting text color */
+}
+
+.switch-label span {
+    color: #333 !important; /* Forcing text color */
+}
+
+/* Improved refresh button */
+#refresh-connections-btn {
+    background-color: #2196F3;
+    color: white;
+    border: none;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    margin-left: 10px;
+}
+
+#refresh-connections-btn:hover {
+    background-color: #0b7dda;
+}
+
+/* Make sure the connection styles are properly defined */
+.connection-thread {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+    z-index: -1;
+}
+
+/* Different connection styles */
+.connection-straight path {
+    stroke-dasharray: none !important;
+}
+
+.connection-curved path {
+    stroke-dasharray: 5,3 !important;
+}
+
+.connection-stepped path {
+    stroke-dasharray: 10,3 !important;
+}
+
+    </style>
+
+<style>
+    /* Connection points styling fixes */
+.connection-point {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background-color: rgba(200, 200, 200, 0.5);
+    border-radius: 50%;
+    border: 1px solid rgba(100, 100, 100, 0.3);
+    z-index: 5; /* Lower z-index so they appear behind tape */
+    opacity: 0; /* Hide by default */
+    transition: opacity 0.2s, transform 0.2s;
+}
+
+/* Only show connection points when hovering over the post note */
+.postnote:hover .connection-point {
+    opacity: 0.7;
+}
+
+/* Give a slight grow effect when hovering directly over a connection point */
+.connection-point:hover {
+    transform: scale(1.5);
+    opacity: 1;
+    background-color: rgba(100, 200, 255, 0.8);
+    cursor: pointer;
+}
+
+/* Position the connection points properly */
+.connection-point-left {
+    left: -4px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.connection-point-right {
+    right: -4px;
+    top: 50%;
+    transform: translateY(-50%);
+}
+
+.connection-point-top {
+    top: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.connection-point-bottom {
+    bottom: -4px;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+/* Ensure the tape has higher z-index */
+.tape {
+    z-index: 10;
+    position: relative;
+}
+
+/* Connection line styling */
+.connection-line, 
+.connection-thread {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 4; /* Below post notes but above background */
+}
+
+/* Show the connection path */
+.connection-line path,
+.connection-thread path {
+    stroke-width: 2px;
+    fill: none;
+}
+
+/* Ensure link text is readable */
+.connection-line-text,
+.connection-thread text {
+    font-size: 10px;
+    text-anchor: middle;
+    pointer-events: none;
+    font-family: sans-serif;
+}
+
+.connection-line-text-bg,
+.connection-thread rect {
+    fill: white;
+    opacity: 0.8;
+    rx: 2px;
+    ry: 2px;
+}
+
+/* Styles for different connection types */
+.connection-straight path {
+    stroke-dasharray: none;
+}
+
+.connection-curved path {
+    stroke-dasharray: none;
+}
+
+.connection-stepped path {
+    stroke-dasharray: 5,3;
+}
+
+/* Delete icon for links */
+.link-delete-icon {
+    position: absolute;
+    width: 16px;
+    height: 16px;
+    background-color: white;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 16px;
+    font-size: 12px;
+    cursor: pointer;
+    z-index: 1000;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+    pointer-events: auto;
+}
+
+.link-delete-icon:hover {
+    background-color: #ff4444;
+    color: white;
+}
+
+/* Settings panel styling fix */
+.settings-panel {
+    display: none;
+    position: absolute;
+    top: 50px;
+    right: 10px;
+    width: 250px;
+    background-color: white;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    z-index: 1000;
+}
+
+.settings-panel.show {
+    display: block;
+}
+
+/* Ensure connection show/hide actually works */
+.connection-thread[style*="display: none"],
+.connection-line[style*="display: none"] {
+    display: none !important;
+}
+
+/* Connection point active state */
+.connection-point-dragging {
+    opacity: 1 !important;
+    background-color: rgba(50, 150, 255, 0.9) !important;
+    transform: scale(1.5);
+}
+</style>
+
+<style>
+    /* Link Type Menu Styling */
+.link-type-menu {
+    position: absolute;
+    background-color: white;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    border-radius: 4px;
+    padding: 8px 0;
+    z-index: 1000;
+    min-width: 180px;
+}
+
+.link-type-menu-item {
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    font-size: 14px;
+}
+
+.link-type-menu-item:hover {
+    background-color: #f5f5f5;
+}
+
+/* Link Legend Styling */
+.link-legend {
+    position: absolute;
+    bottom: 20px;
+    right: 20px;
+    background-color: white;
+    padding: 10px;
+    border-radius: 5px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    z-index: 100;
+    font-size: 12px;
+}
+
+.link-legend-item {
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+}
+
+.link-legend-color {
+    width: 12px;
+    height: 12px;
+    border-radius: 2px;
+    margin-right: 8px;
+}
+
+/* Link Modal Styling */
+.link-modal-content {
+    background-color: white;
+    border-radius: 8px;
+    width: 500px;
+    max-width: 90vw;
+    padding: 20px;
+    position: relative;
+}
+
+.link-modal-title {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.link-source-info {
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #f5f5f5;
+    border-radius: 4px;
+}
+
+.link-target-selector {
+    margin-bottom: 20px;
+}
+
+.link-table-container {
+    max-height: 200px;
+    overflow-y: auto;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-top: 8px;
+}
+
+.link-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.link-table th {
+    background-color: #f5f5f5;
+    padding: 8px;
+    text-align: left;
+    font-weight: bold;
+    border-bottom: 1px solid #ddd;
+}
+
+.link-table td {
+    padding: 8px;
+    border-bottom: 1px solid #eee;
+}
+
+.link-table tr:last-child td {
+    border-bottom: none;
+}
+
+.link-table tbody tr {
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.link-table tbody tr:hover {
+    background-color: #f0f8ff;
+}
+
+.link-table tbody tr.selected {
+    background-color: #e3f2fd;
+}
+
+.link-selected-target {
+    margin-bottom: 15px;
+    padding: 10px;
+    background-color: #e8f5e9;
+    border-radius: 4px;
+    display: none;
+}
+
+.link-type-selector {
+    margin-bottom: 20px;
+}
+
+.link-type-selector select {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-top: 5px;
+}
+
+.link-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+}
+
+.link-btn {
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    border: none;
+    transition: background-color 0.2s;
+}
+
+.link-btn-cancel {
+    background-color: #f5f5f5;
+    color: #333;
+}
+
+.link-btn-create {
+    background-color: #2196F3;
+    color: white;
+}
+
+.link-btn-create:disabled {
+    background-color: #ccc;
+    cursor: not-allowed;
+}
+
+.link-btn-create.active {
+    background-color: #4CAF50;
+}
+
+/* Success message animation */
+.save-success {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    background-color: #4CAF50;
+    color: white;
+    padding: 10px 20px;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+    z-index: 2000;
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.3s, transform 0.3s;
+}
+
+/* Fix for settings panel */
+.settings-panel {
+    display: none;
+    position: absolute;
+    top: 50px;
+    right: 10px;
+    background-color: white;
+    border-radius: 4px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    z-index: 1000;
+    width: 250px;
+    padding: 15px;
+}
+
+.settings-panel.show {
+    display: block;
+}
+
+.settings-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid #eee;
+}
+
+.settings-close {
+    cursor: pointer;
+    font-size: 20px;
+    color: #666;
+}
+
+.settings-item {
+    margin-bottom: 15px;
+}
+
+/* Styling for switch toggles */
+.switch-label {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.switch {
+    position: relative;
+    display: inline-block;
+    width: 48px;
+    height: 24px;
+}
+
+.switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+.slider {
+    position: absolute;
+    cursor: pointer;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #ccc;
+    transition: .4s;
+}
+
+.slider:before {
+    position: absolute;
+    content: "";
+    height: 18px;
+    width: 18px;
+    left: 3px;
+    bottom: 3px;
+    background-color: white;
+    transition: .4s;
+}
+
+input:checked + .slider {
+    background-color: #2196F3;
+}
+
+input:checked + .slider:before {
+    transform: translateX(24px);
+}
+
+.slider.round {
+    border-radius: 24px;
+}
+
+.slider.round:before {
+    border-radius: 50%;
+}
+
+/* Style for select dropdowns */
+#connection-style {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    margin-top: 5px;
+}
+</style>
+
+
+<!-- 1. Add this to the CSS styles section of your HTML head -->
+<style>
+    /* Blocked status indicator */
+    .postnote-blocked {
+      position: relative;
+    }
+    
+    .postnote-blocked:after {
+      content: "🚫";
+      position: absolute;
+      top: 5px;
+      right: 5px;
+      font-size: 14px;
+    }
+    
+    /* Aging dots */
+    .aging-dots {
+      display: flex;
+      gap: 4px;
+      margin-left: auto;
+      padding-left: 10px;
+    }
+    
+    .aging-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background-color: rgba(0, 0, 0, 0.2);
+      transition: background-color 0.3s;
+    }
+    
+    .aging-dot.level-1 {
+      background-color: #FFC107; /* Yellow - warning */
+    }
+    
+    .aging-dot.level-2 {
+      background-color: #FF9800; /* Orange - attention */
+    }
+    
+    .aging-dot.level-3 {
+      background-color: #F44336; /* Red - critical */
+    }
+</style>
+

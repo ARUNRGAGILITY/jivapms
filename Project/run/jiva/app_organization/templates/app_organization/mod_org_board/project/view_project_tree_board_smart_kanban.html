@@ -362,6 +362,10 @@ body {
 
 /* Horizontal Line Above Cards (Full Width) */
 .horizontal-line-view::after {
+ 
+}
+/* Horizontal Line Above Cards (Full Width) */
+.horizontal-bkup-line-view::after {
   content: '';
   position: absolute;
   width: 100%;
@@ -371,7 +375,6 @@ body {
   left: 0;
   z-index: 1;
 }
-
 
 /* Vertical Line Between Columns */
 .horizontal-line-view .column,
@@ -554,15 +557,15 @@ body {
         </div>
       </div>
       
-      <!-- Center Section: Color Palette -->
+      <!-- Center Section: New Cards -->
       <div class="color-palette-section">
         <div class="color-palette">
-          <div class="color-card yellow" draggable="true" data-color="yellow">Task</div>
-          <div class="color-card orange" draggable="true" data-color="orange">High</div>
-          <div class="color-card blue" draggable="true" data-color="blue">Medium</div>
-          <div class="color-card green" draggable="true" data-color="green">Normal</div>
-          <div class="color-card red" draggable="true" data-color="red">Critical</div>
-          <div class="color-card teal" draggable="true" data-color="teal">Low</div>
+          <div class="color-card yellow" draggable="true" data-color="yellow" data-column-name="backlog" data-state-id="0">Task</div>
+          <div class="color-card orange" draggable="true" data-color="orange" data-column-name="backlog" data-state-id="0">High</div>
+          <div class="color-card blue" draggable="true" data-color="blue" data-column-name="backlog" data-state-id="0">Medium</div>
+          <div class="color-card green" draggable="true" data-color="green" data-column-name="backlog" data-state-id="0">Normal</div>
+          <div class="color-card red" draggable="true" data-color="red" data-column-name="backlog" data-state-id="0">Critical</div>
+          <div class="color-card teal" draggable="true" data-color="teal" data-column-name="backlog" data-state-id="0">Low</div>
         </div>
       </div>
       
@@ -787,67 +790,92 @@ $(".column, .sub-column").on("drop", function(event) {
   try {
     const data = JSON.parse(event.originalEvent.dataTransfer.getData("text/plain"));
     
-    // Only process if this is a new color card
     if (data.type === "new-color-card") {
-      const color = data.color;
-      const text = data.text;
-      
-      // Generate a unique temporary ID for the new card
-      const tempId = "temp-" + Date.now();
-      
-      // Create new card with the selected color
-      const newCard = $(`<div class="card ${color}" id="${tempId}" draggable="true">${text}</div>`);
-      
-      // Add state ID if column has one
-      const stateId = $(this).data("state-id");
-      if (stateId) {
-        newCard.attr("data-state-id", stateId);
-      }
-      
-      // Add substate if in a sub-column
-      const substate = $(this).data("substate");
-      if (substate) {
-        newCard.attr("data-substate", substate);
-      }
-      
-      // Find the exact drop position based on mouse coordinates
-      const dropY = event.originalEvent.clientY;
-      const cards = $(this).find('.card');
-      let insertPosition = null;
-      
-      // Find the appropriate insert position based on Y position
-      for (let i = 0; i < cards.length; i++) {
-        const cardRect = cards[i].getBoundingClientRect();
-        const cardMidpoint = cardRect.top + (cardRect.height / 2);
-        
-        if (dropY < cardMidpoint) {
-          insertPosition = cards[i];
-          break;
-        }
-      }
-      
-      // Insert the card at the determined position
-      if (insertPosition) {
-        $(insertPosition).before(newCard);
-      } else {
-        // If no insert position determined, append to the end
-        $(this).append(newCard);
-      }
-      
-      // Make the card draggable
-      newCard.on("dragstart", function(event) {
-        event.originalEvent.dataTransfer.setData("text/plain", "dragging");
-      });
-      
-      // Update the WIP counts
-      updateWIPCounts();
-      
-      // Show notification
-      showNotification(`New ${color} card added: ${text}`);
-      
-      // Refresh sortable to include the new card
-      $(this).sortable("refresh");
+  const color = data.color;
+  const text = data.text;
+
+  // Generate a unique temporary ID for the new card
+  const tempId = "temp-" + Date.now();
+
+  // Create the new card
+  const newCard = $(`<div class="card ${color}" id="${tempId}" draggable="true">${text}</div>`);
+
+  // Apply state ID and substate if present
+  const stateId = $(this).data("state-id");
+  if (stateId) {
+    newCard.attr("data-state-id", stateId);
+  } else {
+    newCard.attr("data-state-id", "0"); // fallback for backlog
+  }
+
+  const substate = $(this).data("substate");
+  if (substate) {
+    newCard.attr("data-substate", substate);
+  }
+
+  // Drag handler
+  function makeCardDraggable(card) {
+    card.attr("draggable", "true");
+    card.on("dragstart", function (event) {
+      event.originalEvent.dataTransfer.setData("text/plain", "dragging");
+    });
+  }
+
+  makeCardDraggable(newCard);
+
+  // Drop position logic
+  const dropY = event.originalEvent.clientY;
+  const cards = $(this).find('.card');
+  let insertPosition = null;
+
+  for (let i = 0; i < cards.length; i++) {
+    const cardRect = cards[i].getBoundingClientRect();
+    const cardMidpoint = cardRect.top + (cardRect.height / 2);
+
+    if (dropY < cardMidpoint) {
+      insertPosition = cards[i];
+      break;
     }
+  }
+
+  if (insertPosition) {
+    $(insertPosition).before(newCard);
+  } else {
+    $(this).append(newCard);
+  }
+
+  $(this).sortable("refresh");
+  updateWIPCounts();
+  showNotification(`New ${color} card added: ${text}`);
+
+  // Send the new card to backend using existing updateCardState()
+// We'll simulate a card drop from "None" to the target column
+const cardTextShort = text.split(" ").slice(0, 4).join(" ");
+const fakeFromStateId = null;  // or 0 if needed
+const toStateId = stateId;
+const cardId = tempId;
+const subState = substate || "";
+const targetColumn = $(this);
+const destColumnName = targetColumn.find("h2").text().trim();
+
+const destPositions = [];
+targetColumn.find(".card").each(function(index) {
+  destPositions.push({ card_id: $(this).attr("id"), position: index + 1 });
+});
+const extra = {
+  title: "New Card",
+  priority: "Normal",
+  substate: "Doing"
+};
+// Make sure the new card is in the DOM before sending
+updateCardState(cardId, fakeFromStateId, toStateId, destPositions, destColumnName, {{ project.id }}, {{ project_board.id }}, "new", extra);
+
+
+
+
+
+}
+
   } catch (error) {
     console.error("Error processing dropped data:", error);
   }
@@ -952,43 +980,53 @@ $(".column, .sub-column").on("drop", function(event) {
         });
     }
 
-    // Function to update the card state
-    function updateCardState(cardId, fromStateId, toStateId, destPositions, destColumn, projectId, boardId, fromColumn) {
-        // Skip for temporary cards
-        if (cardId && cardId.startsWith("temp-")) {
-            return;
+    function updateCardState(cardId, fromStateId, toStateId, destPositions, destColumn, projectId, boardId, fromColumn, extra = {}) {
+    const isNewCard = cardId && cardId.startsWith("temp-");
+      console.log("EXTRA ", extra);
+    fetch("{% url 'ajax_update_project_board_card_state' %}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify({
+            card_id: isNewCard ? null : cardId,
+            temp_id: isNewCard ? cardId : null,
+            board_id: {{ project_board.id }},
+            from_state_id: fromStateId,
+            to_state_id: toStateId,
+            positions: destPositions,
+            dest_column: destColumn,
+            project_id: projectId,
+            board_id: boardId,
+            from_column: fromColumn,
+            is_new_card: isNewCard,
+            title: extra.title || "Added Card",
+            priority: extra.priority || "Normal",
+            substate: extra.substate || ""
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            console.error("Error:", data.error);
+        } else {
+            console.log("Card update success:", data);
+
+            // If this was a new card, update the DOM element with real ID
+            if (isNewCard && data.card_id) {
+                const newCardElement = document.getElementById(cardId);
+                if (newCardElement) {
+                    newCardElement.id = data.card_id;
+                }
+            }
         }
-        
-        fetch("{% url 'ajax_update_project_board_card_state' %}", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json",
-                "X-CSRFToken": "{{ csrf_token }}"
-            },
-            body: JSON.stringify({
-                card_id: cardId,
-                board_id: {{ project_board.id }},
-                from_state_id: fromStateId,
-                to_state_id: toStateId,
-                positions: destPositions,
-                dest_column: destColumn,
-                project_id: projectId,
-                board_id: boardId,
-                from_column: fromColumn
-            })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.error) {
-                console.error("Error:", data.error);
-            } else {
-                console.log("Success:", data);
-         }
-        })
-        .catch(error => {
-            console.error("Error:", error);
-        });
-    }
+    })
+    .catch(error => {
+        console.error("Update card state error:", error);
+    });
+}
+
     
 </script>
 <script>

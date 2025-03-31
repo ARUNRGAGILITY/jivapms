@@ -1,0 +1,85 @@
+<!-- <div class="container-fluid-width">
+    <div class="row no-gutters">
+        <div class="col col-md-12">
+            
+        </div>
+    </div>
+</div> -->
+
+<!-- Navbar Display -->
+<nav class="navbar navbar-expand-lg navbar-light bg-white py-0">
+    <div class="container-fluid no-gutters px-0 py-0">        
+        <a class="navbar-nav navbar-brand" href="/">{{SITE_NAME}}</a>
+         <!-- Bootstrap Toggler Button -->
+         <button class="navbar-toggler" type="button"
+         data-bs-toggle="collapse" data-bs-target="#navbarNav" data-target="#navbarNav"
+         aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        <div class="collapse navbar-collapse justify-content-start" id="navbarNav">
+            <ul class="navbar-nav">
+                <li class="nav-item ">                   
+                    <a class="nav-link {% if page == 'welcome' %}active test{% endif %}" 
+                    href="{% url 'welcome' %}">Home</a>
+                </li>
+                
+                 
+            </ul>
+        </div>
+        <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                
+                {% if user.is_authenticated %}
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link {% if page == 'user_home' %}active{% endif %}" 
+                        href="{% url 'user_home' %}">User-Home</a>
+                    </li>
+                </ul>
+                
+                <ul class="navbar-nav ">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle " href="#" id="navbarDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    {% if page == 'profile' %}
+                    <b>{{ user.username }}</b>
+                    {% else %}
+                    {{ user.username }}
+                    {% endif %}
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
+                    <li><a class="dropdown-item" href="{% url 'profile' %}">Profile</a></li>
+                    <li><a class="dropdown-item" href="{% url 'password_change' %}">Change Password</a></li>
+                    </ul>
+                </li>
+                </ul>             
+                {% endif %}    
+                {% if user.is_authenticated %}
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link {% if page == 'user_settings' %}active{% endif %}" 
+                        href="{% url 'user_settings' %}">Settings</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="{% url 'logout_page' %}">Logout</a>
+                    </li>
+                </ul>
+                {% else %}
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link {% if page == 'login' %}active{% endif %}" 
+                        href="{% url 'login_page' %}">Login</a>
+                    </li>
+                </ul>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link {% if page == 'register' %}active{% endif %}" 
+                        href="{% url 'register_page' %}">Register</a>
+                    </li>          
+                </ul>
+                {% endif %}
+            
+        </div>
+    </div>
+  </nav>
+  <!-- Navbar display -->

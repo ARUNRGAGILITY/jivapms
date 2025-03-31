@@ -1,0 +1,4513 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="project-id" content="{{ project.id }}">
+    <title>{{ project.name }} - Project Board</title>
+    {% include 'app_postnote/mod_postnote/styles.html' %}
+</head>
+<body>
+    <div class="navbar">
+        <div class="navbar-title">{{ project.name }} - Project Board</div>
+        <div class="navbar-actions">            
+            <button id="settings-btn">⚙️ Settings</button>
+           
+        </div>
+
+        
+       <!-- Add this right after the navbar div, ensure there are no display:none inline styles -->
+        <div id="settings-panel" class="settings-panel">
+            <div class="settings-header">
+                <h3>Board Settings</h3>
+                <span class="settings-close">×</span>
+            </div>
+            <div class="settings-content">
+                <div class="settings-item">
+                    <label class="switch-label">
+                        <span>Show Connection Lines</span>
+                        <label class="switch">
+                            <input type="checkbox" id="show-connections-toggle" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </label>
+                </div>
+                <div class="settings-item">
+                    <label class="switch-label">
+                        <span>Show Link Types</span>
+                        <label class="switch">
+                            <input type="checkbox" id="show-link-types-toggle" checked>
+                            <span class="slider round"></span>
+                        </label>
+                    </label>
+                </div>
+                <div class="settings-item">
+                    <label for="connection-style">Connection Style:</label>
+                    <select id="connection-style">
+                        <option value="straight">Straight Lines</option>
+                        <option value="curved" selected>Curved Lines</option>
+                        <option value="stepped">Stepped Lines</option>
+                    </select>
+                </div>
+            </div>
+</div>
+
+
+    </div>
+    
+    <div class="top-controls">
+        <div class="postnote-creators">
+            <div class="postnote-mini green" draggable="true" data-color="green" title="Create Green Note"></div>
+            <div class="postnote-mini yellow" draggable="true" data-color="yellow" title="Create Yellow Note"></div>
+            <div class="postnote-mini orange" draggable="true" data-color="orange" title="Create Orange Note"></div>
+            <div class="postnote-mini purple" draggable="true" data-color="purple" title="Create Purple Note"></div>
+            <div class="postnote-mini blue" draggable="true" data-color="blue" title="Create Blue Note"></div>
+            <div class="postnote-mini red" draggable="true" data-color="red" title="Create Red Note"></div>
+        </div>
+    </div>
+    
+    <div class="content-area">
+        <div class="content-container">
+            <div class="canvas" id="canvas-view">
+                {% for postnote in postnotes %}
+                <div class="postnote" style="top: {{ postnote.pos_y }}%; left: {{ postnote.pos_x }}%;" draggable="true" 
+                data-id="{{ postnote.id }}" data-creation-date="{{ postnote.creation_date|date:'c' }}"
+                data-blocked="{{ postnote.blocked|lower }}">
+                    <div class="postnote-inner {{ postnote.color }}">
+                        <div class="tape" data-field="type_name">{{ postnote.type_name }}</div>
+                        <div class="postnote-header" data-field="title">{{ postnote.title }}</div>
+                        <div class="postnote-content" data-field="description">{{ postnote.description }}</div>
+                        <div class="postnote-footer">
+                            <div class="status-info">
+                                <div>Priority: {{ postnote.priority }} {{postnote.blocked}} </div>
+                                <div>Size: {{ postnote.size }}</div>
+                            </div>
+                            <div class="aging-dots">
+                                <div class="aging-dot" title="Aging level"></div>
+                                <div class="aging-dot" title="Aging level"></div>
+                                <div class="aging-dot" title="Aging level"></div>
+                              </div>
+                            <div class="footer-actions">
+                                <div class="postnote-action" title="Edit">✏️</div>
+                                <div class="postnote-action" title="Add Acceptance Criteria">📝</div>
+                                <div class="postnote-action" title="Link">🔗</div>
+                                <div class="postnote-action" title="Delete">🗑️</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% if postnote.blocked %}
+                    <div class="blocked-icon" title="This item is blocked">🚫</div>
+                    {% endif %}
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    {% csrf_token %}
+    
+    <script>
+        // Store CSRF token for AJAX requests
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        
+        // Variables for drag and drop
+        let draggedItem = null;
+        let draggedColor = null;
+        let startX = 0;
+        let startY = 0;
+        let offsetX = 0;
+        let offsetY = 0;
+        let previewNote = null;
+        
+        // Initialize existing post notes
+        document.querySelectorAll('.postnote').forEach(postnote => {
+            postnote.addEventListener('mousedown', function(e) {
+                // Ignore if clicking on action buttons
+                if (e.target.classList.contains('postnote-action') || e.target.closest('.postnote-action')) {
+                    return;
+                }
+                
+                // Store the initial position
+                draggedItem = this;
+                startX = e.clientX;
+                startY = e.clientY;
+                offsetX = parseFloat(this.style.left) || 0;
+                offsetY = parseFloat(this.style.top) || 0;
+                
+                // Prevent default ghost drag image
+                e.preventDefault();
+            });
+            
+            // Add inline editing events to existing post notes
+            addInlineEditingEvents(postnote);
+        });
+        
+        // Initialize post note creators (colored squares)
+        document.querySelectorAll('.postnote-mini').forEach(mini => {
+            mini.addEventListener('mousedown', function(e) {
+                draggedColor = this.getAttribute('data-color');
+                this.classList.add('dragging');
+                
+                // Create a visual "peel off" effect
+                previewNote = document.createElement('div');
+                previewNote.className = 'postnote-inner ' + draggedColor;
+                previewNote.style.position = 'absolute';
+                previewNote.style.width = '40px';
+                previewNote.style.height = '40px';
+                previewNote.style.left = (e.clientX - 20) + 'px';
+                previewNote.style.top = (e.clientY - 20) + 'px';
+                previewNote.style.zIndex = '1000';
+                previewNote.style.opacity = '0.9';
+                previewNote.style.pointerEvents = 'none';
+                previewNote.style.transition = 'width 0.2s, height 0.2s';
+                document.body.appendChild(previewNote);
+                
+                // Grow the preview slightly after a tiny delay
+                setTimeout(() => {
+                    previewNote.style.width = '60px';
+                    previewNote.style.height = '60px';
+                }, 50);
+                
+                e.preventDefault();
+            });
+        });
+        
+        // Handle mouse movement for dragging
+        document.addEventListener('mousemove', function(e) {
+            if (draggedItem) {
+                const deltaX = e.clientX - startX;
+                const deltaY = e.clientY - startY;
+                
+                // Use percentage-based positioning for better responsiveness
+                const canvas = document.getElementById('canvas-view');
+                const canvasWidth = canvas.offsetWidth;
+                const canvasHeight = canvas.offsetHeight;
+                
+                // Calculate new position in percentage
+                let newPosX = offsetX + (deltaX / canvasWidth * 100);
+                let newPosY = offsetY + (deltaY / canvasHeight * 100);
+                
+                // Ensure the note stays within the canvas bounds
+                newPosX = Math.max(0, Math.min(95, newPosX));
+                newPosY = Math.max(0, Math.min(95, newPosY));
+                
+                draggedItem.style.left = newPosX + '%';
+                draggedItem.style.top = newPosY + '%';
+                
+                e.preventDefault();
+            } else if (draggedColor && previewNote) {
+                // Move the preview note with the cursor
+                previewNote.style.left = (e.clientX - 30) + 'px';
+                previewNote.style.top = (e.clientY - 30) + 'px';
+                
+                // Add a subtle rotation based on mouse movement for natural feel
+                const rotationX = (e.movementX * 0.5);
+                const rotationY = (e.movementY * 0.5);
+                previewNote.style.transform = `rotate(${rotationX + rotationY}deg)`;
+            }
+        });
+        
+        // Canvas for dropping
+        const canvas = document.getElementById('canvas-view');
+        
+        // Handle mouse up for dropping
+        document.addEventListener('mouseup', function(e) {
+            if (draggedItem) {
+                // Update position in database via AJAX
+                const postnoteId = draggedItem.getAttribute('data-id');
+                const posX = parseFloat(draggedItem.style.left);
+                const posY = parseFloat(draggedItem.style.top);
+                
+                updatePostNotePosition(postnoteId, posX, posY);
+                
+                draggedItem = null;
+            } else if (draggedColor && canvas.contains(e.target)) {
+                // Remove the dragging class from the source
+                document.querySelectorAll('.postnote-mini').forEach(mini => {
+                    if (mini.getAttribute('data-color') === draggedColor) {
+                        mini.classList.remove('dragging');
+                    }
+                });
+                
+                // Get final position for the new note in percentage
+                const canvasRect = canvas.getBoundingClientRect();
+                const posX = ((e.clientX - canvasRect.left) / canvasRect.width) * 100;
+                const posY = ((e.clientY - canvasRect.top) / canvasRect.height) * 100;
+                
+                // Create new post note in the database via AJAX
+                createNewPostNote(draggedColor, posX, posY);
+                
+                draggedColor = null;
+            } else {
+                // Clean up if we dragged outside the canvas
+                if (draggedColor) {
+                    document.querySelectorAll('.postnote-mini').forEach(mini => {
+                        if (mini.getAttribute('data-color') === draggedColor) {
+                            mini.classList.remove('dragging');
+                        }
+                    });
+                }
+                
+                draggedColor = null;
+            }
+            
+            // Clean up preview note
+            if (previewNote && previewNote.parentNode) {
+                previewNote.style.opacity = '0';
+                previewNote.style.transform = 'scale(0.5)';
+                
+                setTimeout(() => {
+                    if (previewNote && previewNote.parentNode) {
+                        previewNote.parentNode.removeChild(previewNote);
+                    }
+                    previewNote = null;
+                }, 300);
+            }
+        });
+        
+        // Prevent default drag behavior
+        document.addEventListener('dragstart', function(e) {
+            e.preventDefault();
+        });
+        
+        // Function to create a new post note via AJAX
+        function createNewPostNote(color, posX, posY) {
+            // Create form data for AJAX request
+            const formData = new FormData();
+            formData.append('color', color);
+            formData.append('pos_x', posX);
+            formData.append('pos_y', posY);
+            formData.append('blocked', false); // Default to not blocked
+            formData.append('creation_date', new Date().toISOString());
+            // Make AJAX request
+            fetch('{% url "create_postnote" project.id %}', {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Create new post note element
+                    const newPostNote = document.createElement('div');
+                    newPostNote.className = 'postnote';
+                    newPostNote.style.top = `${posY}%`;
+                    newPostNote.style.left = `${posX}%`;
+                    newPostNote.setAttribute('draggable', 'true');
+                    newPostNote.setAttribute('data-id', data.postnote_id);
+                    newPostNote.setAttribute('data-creation-date', data.creation_date || new Date().toISOString());
+                    // Create inner content
+                    newPostNote.innerHTML = `
+                        <div class="postnote-inner ${color}">
+                            <div class="tape" data-field="type_name">${data.type_name}</div>
+                            <div class="postnote-header" data-field="title">${data.title}</div>
+                            <div class="postnote-content" data-field="description">Click to edit description</div>
+                            <div class="postnote-footer">
+                                <div class="status-info">
+                                    <div>Priority: ${data.priority}</div>
+                                    <div>Size: ${data.size}</div>
+                                </div>
+                                <div class="aging-dots">
+                                    <div class="aging-dot" title="Aging level"></div>
+                                    <div class="aging-dot" title="Aging level"></div>
+                                    <div class="aging-dot" title="Aging level"></div>
+                                </div>
+                                <div class="footer-actions">
+                                    <div class="postnote-action" title="Edit">✏️</div>
+                                    <div class="postnote-action" title="Add Acceptance Criteria">📝</div>
+                                    <div class="postnote-action" title="Link">🔗</div>
+                                    <div class="postnote-action" title="Delete">🗑️</div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    // Add blocked icon if needed (likely not needed for new notes, but included for completeness)
+                    if (data.blocked) {
+                        newPostNote.classList.add('postnote-blocked');
+                        
+                        const blockedIcon = document.createElement('div');
+                        blockedIcon.className = 'blocked-icon';
+                        blockedIcon.innerHTML = '🚫';
+                        blockedIcon.title = 'This item is blocked';
+                        
+                        newPostNote.appendChild(blockedIcon);
+                    }
+                    // Add mousedown event to new post note
+                    newPostNote.addEventListener('mousedown', function(e) {
+                        // Ignore if clicking on action buttons
+                        if (e.target.classList.contains('postnote-action') || e.target.closest('.postnote-action')) {
+                            return;
+                        }
+                        
+                        draggedItem = this;
+                        startX = e.clientX;
+                        startY = e.clientY;
+                        offsetX = parseFloat(this.style.left) || 0;
+                        offsetY = parseFloat(this.style.top) || 0;
+                        e.preventDefault();
+                    });
+                    
+                    // Add to canvas
+                    canvas.appendChild(newPostNote);
+                    
+                    // Add double-click event listeners for inline editing
+                    addInlineEditingEvents(newPostNote);
+                    
+                    // Animate appearance
+                    newPostNote.style.opacity = '0';
+                    newPostNote.style.transform = 'scale(0.8) rotate(5deg)';
+                    newPostNote.style.transition = 'opacity 0.3s, transform 0.3s';
+                    
+                    setTimeout(() => {
+                        newPostNote.style.opacity = '1';
+                        newPostNote.style.transform = 'scale(1) rotate(0deg)';
+                    }, 10);
+                } else {
+                    console.error('Error creating post note:', data.message);
+                    alert('Error creating post note: ' + data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error creating post note: ' + error);
+            });
+        }
+        
+        // Function to update post note position via AJAX
+        function updatePostNotePosition(postnoteId, posX, posY) {
+            // Create form data for AJAX request
+            const formData = new FormData();
+            formData.append('pos_x', posX);
+            formData.append('pos_y', posY);
+            const url = `/app_postnote/postnote/api/postnote/${postnoteId}/position/`;
+            console.log("Requesting:", url);
+
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status !== 'success') {
+                    console.error('Error updating position:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+        
+        // Function to update post note content via AJAX
+        function updatePostNoteContent(postnoteId, field, content) {
+            // Create form data for AJAX request
+            const formData = new FormData();
+            formData.append('field', field);
+            formData.append('content', content);
+            
+            // Make AJAX request
+            const url = `/app_postnote/postnote/api/postnote/${postnoteId}/content/`;
+            console.log("Requesting:", url);
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status !== 'success') {
+                    console.error('Error updating content:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+        
+        // Function to delete post note via AJAX
+        function deletePostNote(postnoteId) {
+            // Create form data for AJAX request
+            const formData = new FormData();
+            
+            // Make AJAX request
+            const url = `/app_postnote/postnote/api/postnote/${postnoteId}/delete/`;
+            console.log("Requesting:", url);
+            fetch(url, {
+                method: 'POST',
+                headers: {
+                    'X-CSRFToken': csrfToken
+                },
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status !== 'success') {
+                    console.error('Error deleting post note:', data.message);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        }
+        
+        // Add event listeners for inline editing
+        function addInlineEditingEvents(postnote) {
+            // Add double-click event listeners for the editable elements
+            const elements = postnote.querySelectorAll('.postnote-header, .postnote-content, .tape');
+            
+            elements.forEach(element => {
+                element.addEventListener('dblclick', function(e) {
+                    makeEditable(this);
+                    e.stopPropagation();
+                });
+            });
+        }
+        
+        // Function to make an element editable
+        function makeEditable(element) {
+            // Store the original text
+            const originalText = element.textContent;
+            const field = element.getAttribute('data-field');
+            const postnoteId = element.closest('.postnote').getAttribute('data-id');
+            
+            // Make it editable
+            element.setAttribute('contenteditable', 'true');
+            element.focus();
+            
+            // Select all text if it's a new note
+            if (originalText.includes('Click to edit') || originalText === 'New Item') {
+                const range = document.createRange();
+                range.selectNodeContents(element);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+            
+            // Add styling to show it's editable
+            element.style.backgroundColor = 'rgba(255, 255, 255, 0.7)';
+            element.style.boxShadow = 'inset 0 0 2px rgba(0, 0, 0, 0.3)';
+            
+            // Function to save changes
+            function saveChanges() {
+                element.removeAttribute('contenteditable');
+                element.style.backgroundColor = '';
+                element.style.boxShadow = '';
+                
+                // Only save if content changed and not empty
+                const newText = element.textContent.trim();
+                if (newText === '') {
+                    element.textContent = originalText;
+                    return;
+                }
+                
+                if (newText !== originalText) {
+                    // Update in the database
+                    updatePostNoteContent(postnoteId, field, newText);
+                }
+            }
+            
+            // Save on blur
+            element.addEventListener('blur', saveChanges, { once: true });
+            
+            // Save on enter key
+            element.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    saveChanges();
+                    element.blur();
+                } else if (e.key === 'Escape') {
+                    element.textContent = originalText;
+                    element.blur();
+                }
+            });
+        }
+        
+        // Add event listeners for post note actions
+        document.addEventListener('click', function(e) {
+            // Handle delete action
+            if (e.target.classList.contains('postnote-action') && e.target.getAttribute('title') === 'Delete') {
+                const postnote = e.target.closest('.postnote');
+                const postnoteId = postnote.getAttribute('data-id');
+                
+                if (postnote && confirm('Are you sure you want to delete this item?')) {
+                    // Delete from database
+                    deletePostNote(postnoteId);
+                    
+                    // Remove from DOM
+                    postnote.remove();
+                }
+            }
+            
+            // Handle edit action to open the modal (not makeEditable)
+            if (e.target.classList.contains('postnote-action') && e.target.getAttribute('title') === 'Edit') {
+                const postnote = e.target.closest('.postnote');
+                if (postnote) {
+                    const postnoteId = postnote.getAttribute('data-id');
+                    showEditModal(postnoteId);
+                }
+            }
+        });
+    </script>
+
+<script>
+        // Create the modal container if it doesn't exist
+function ensureModalExists() {
+    if (!document.querySelector('.modal-overlay')) {
+        const modalOverlay = document.createElement('div');
+        modalOverlay.className = 'modal-overlay';
+        document.body.appendChild(modalOverlay);
+        
+        // Close modal when clicking outside of modal content
+        modalOverlay.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+            }
+        });
+    }
+    return document.querySelector('.modal-overlay');
+}
+
+// Show edit modal for a post note
+function showEditModal(postnoteId) {
+    const modal = ensureModalExists();
+    const postnote = document.querySelector(`[data-id="${postnoteId}"]`);
+    
+    if (!postnote) {
+        console.error('Postnote not found:', postnoteId);
+        return;
+    }
+    
+    const postitInner = postnote.querySelector('.postnote-inner');
+    const type = postnote.querySelector('.tape').textContent;
+    const title = postnote.querySelector('.postnote-header').textContent;
+    const description = postnote.querySelector('.postnote-content').textContent;
+    const color = postitInner.classList[1]; // Get the color class
+    
+    // Get the priority and size
+    let priority = 'Medium';
+    let size = 'M';
+    
+    const statusInfo = postnote.querySelector('.status-info');
+    if (statusInfo) {
+        const priorityDiv = statusInfo.querySelector('div:first-child');
+        if (priorityDiv) {
+            priority = priorityDiv.textContent.replace('Priority: ', '');
+        }
+        
+        const sizeDiv = statusInfo.querySelector('div:nth-child(2)');
+        if (sizeDiv) {
+            size = sizeDiv.textContent.replace('Size: ', '');
+        }
+    }
+    // Check the blocked status
+    let isBlocked = postnote.getAttribute('data-blocked') === 'true';
+    
+    // Create a variable to track the current state that will be updated when toggled
+    let currentBlockedState = isBlocked;
+    
+    
+    console.log('Initial blocked state:', isBlocked);
+    // Populate the modal with form fields
+    modal.innerHTML = `
+        <div class="modal-content">
+            <div class="modal-close" title="Close">×</div>
+            <h2 class="modal-title">Edit Post Note</h2>
+            
+            <form id="edit-form" data-id="${postnoteId}">
+                <div class="form-group">
+                    <label for="edit-type">Type:</label>
+                    <select id="edit-type" name="type_name">
+                        <option value="Epic" ${type === 'Epic' ? 'selected' : ''}>Epic</option>
+                        <option value="Feature" ${type === 'Feature' ? 'selected' : ''}>Feature</option>
+                        <option value="Component" ${type === 'Component' ? 'selected' : ''}>Component</option>
+                        <option value="Capability" ${type === 'Capability' ? 'selected' : ''}>Capability</option>
+                        <option value="User Story" ${type === 'User Story' ? 'selected' : ''}>User Story</option>
+                        <option value="Task" ${type === 'Task' ? 'selected' : ''}>Task</option>
+                        <option value="Enabler" ${type === 'Enabler' ? 'selected' : ''}>Enabler</option>
+                        <option value="Business" ${type === 'Business' ? 'selected' : ''}>Business</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Color:</label>
+                    <div class="color-selector">
+                        <div class="color-option green ${color === 'green' ? 'selected' : ''}" data-color="green"></div>
+                        <div class="color-option yellow ${color === 'yellow' ? 'selected' : ''}" data-color="yellow"></div>
+                        <div class="color-option orange ${color === 'orange' ? 'selected' : ''}" data-color="orange"></div>
+                        <div class="color-option purple ${color === 'purple' ? 'selected' : ''}" data-color="purple"></div>
+                        <div class="color-option blue ${color === 'blue' ? 'selected' : ''}" data-color="blue"></div>
+                        <div class="color-option red ${color === 'red' ? 'selected' : ''}" data-color="red"></div>
+                    </div>
+                    <input type="hidden" id="edit-color" name="color" value="${color}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-title">Title:</label>
+                    <input type="text" id="edit-title" name="title" value="${title}">
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-description">Description:</label>
+                    <textarea id="edit-description" name="description">${description}</textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="edit-priority">Priority:</label>
+                    <select id="edit-priority" name="priority">
+                        <option value="Critical" ${priority === 'Critical' ? 'selected' : ''}>Critical</option>
+                        <option value="High" ${priority === 'High' ? 'selected' : ''}>High</option>
+                        <option value="Medium" ${priority === 'Medium' ? 'selected' : ''}>Medium</option>
+                        <option value="Low" ${priority === 'Low' ? 'selected' : ''}>Low</option>
+                    </select>
+                </div>
+                
+              <div style="margin-bottom: 15px;">
+                        <label style="display: block; margin-bottom: 5px;">Size:</label>
+                        <div style="display: flex; width: 100%; gap: 10px;">
+                            <div style="flex: 1;">
+                                <label>
+                                    <input type="radio" name="size-type" value="fibonacci" 
+                                        ${!isNaN(size) || ['0', '1/2', '1', '2', '3', '5', '8', '13', '20', '40', '80', '100'].includes(size) ? 'checked' : ''} 
+                                        onclick="document.getElementById('edit-fibonacci-size').style.display='block'; document.getElementById('edit-tshirt-size').style.display='none';">
+                                    Fibonacci
+                                </label>
+                                <div id="fibonacci-sizes" style="${!isNaN(size) || ['0', '1/2', '1', '2', '3', '5', '8', '13', '20', '40', '80', '100'].includes(size) ? '' : 'display: none;'}">
+                                <select id="edit-fibonacci-size" name="fibonacci-size" style="width: 100%; padding: 8px; border: 1px solid #ddd; ${!isNaN(size) || ['0', '1/2', '1', '2', '3', '5', '8', '13', '20', '40', '80', '100'].includes(size) ? '' : 'display: none;'}"
+                                    onchange="document.getElementById('edit-size').value = this.value;">
+                                    <option value="0" ${size === '0' ? 'selected' : ''}>0</option>
+                                    <option value="1/2" ${size === '1/2' ? 'selected' : ''}>1/2</option>
+                                    <option value="1" ${size === '1' ? 'selected' : ''}>1</option>
+                                    <option value="2" ${size === '2' ? 'selected' : ''}>2</option>
+                                    <option value="3" ${size === '3' ? 'selected' : ''}>3</option>
+                                    <option value="5" ${size === '5' ? 'selected' : ''}>5</option>
+                                    <option value="8" ${size === '8' ? 'selected' : ''}>8</option>
+                                    <option value="13" ${size === '13' ? 'selected' : ''}>13</option>
+                                    <option value="20" ${size === '20' ? 'selected' : ''}>20</option>
+                                    <option value="40" ${size === '40' ? 'selected' : ''}>40</option>
+                                    <option value="80" ${size === '80' ? 'selected' : ''}>80</option>
+                                    <option value="100" ${size === '100' ? 'selected' : ''}>100</option>
+                                </select>
+                                </div>
+                            </div>
+                            <div style="flex: 1;">
+                                <label>
+                                    <input type="radio" name="size-type" value="tshirt" 
+                                        ${['S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'].includes(size) ? 'checked' : ''} 
+                                        onclick="document.getElementById('edit-fibonacci-size').style.display='none'; document.getElementById('edit-tshirt-size').style.display='block';">
+                                    T-shirt
+                                </label>
+                                <div id="tshirt-sizes" style="${['S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'].includes(size) ? '' : 'display: none;'}">
+                                <select id="edit-tshirt-size" name="tshirt-size" style="width: 100%; padding: 8px; border: 1px solid #ddd; ${['S', 'M', 'L', 'XL', 'XXL', 'XXXL', 'XXXXL'].includes(size) ? '' : 'display: none;'}"
+                                    onchange="document.getElementById('edit-size').value = this.value;">
+                                    <option value="S" ${size === 'S' ? 'selected' : ''}>S</option>
+                                    <option value="M" ${size === 'M' ? 'selected' : ''}>M</option>
+                                    <option value="L" ${size === 'L' ? 'selected' : ''}>L</option>
+                                    <option value="XL" ${size === 'XL' ? 'selected' : ''}>XL</option>
+                                    <option value="XXL" ${size === 'XXL' ? 'selected' : ''}>XXL</option>
+                                    <option value="XXXL" ${size === 'XXXL' ? 'selected' : ''}>XXXL</option>
+                                    <option value="XXXXL" ${size === 'XXXXL' ? 'selected' : ''}>XXXXL</option>
+                                </select>
+                                </div>
+                            </div>
+                        </div>
+                        <input type="hidden" id="edit-size" name="size" value="${size}">
+                    </div>
+
+                   <!-- Blocked status with our enhanced checkbox -->
+                    <div class="form-group">
+                    <label class="switch-label">
+                        <span>Blocked:</span>
+                        <label class="switch">
+                        <input type="checkbox" id="edit-blocked" name="blocked" ${currentBlockedState ? 'checked' : ''}>
+                        <span class="slider round"></span>
+                        </label>
+                    </label>
+                    </div>
+                
+                <div class="modal-actions">
+                    <button type="button" class="btn btn-cancel" id="cancel-edit">Cancel</button>
+                    <button type="submit" class="btn btn-save">Save Changes</button>
+                </div>
+            </form>
+        </div>
+    `;
+    
+    // Show the modal
+    modal.style.display = 'flex';
+    
+    // Add event listeners
+    
+    // Color selector
+    document.querySelectorAll('.color-option').forEach(colorOption => {
+        colorOption.addEventListener('click', function() {
+            // Remove selected class from all options
+            document.querySelectorAll('.color-option').forEach(option => {
+                option.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked option
+            this.classList.add('selected');
+            
+            // Update hidden input
+            document.getElementById('edit-color').value = this.getAttribute('data-color');
+        });
+    });
+    
+    // Size type toggle
+    document.querySelectorAll('input[name="size-type"]').forEach(radio => {
+        radio.addEventListener('change', function() {
+            if (this.value === 'fibonacci') {
+                document.getElementById('fibonacci-sizes').style.display = 'block';
+                document.getElementById('tshirt-sizes').style.display = 'none';
+                document.getElementById('edit-size').value = document.getElementById('edit-fibonacci-size').value;
+            } else {
+                document.getElementById('fibonacci-sizes').style.display = 'none';
+                document.getElementById('tshirt-sizes').style.display = 'block';
+                document.getElementById('edit-size').value = document.getElementById('edit-tshirt-size').value;
+            }
+        });
+    });
+    
+    // Update hidden size input when size selects change
+    document.getElementById('edit-fibonacci-size').addEventListener('change', function() {
+        document.getElementById('edit-size').value = this.value;
+    });
+    
+    document.getElementById('edit-tshirt-size').addEventListener('change', function() {
+        document.getElementById('edit-size').value = this.value;
+    });
+    
+    // Close button
+    document.querySelector('.modal-close').addEventListener('click', function() {
+        modal.style.display = 'none';
+    });
+    
+    // Cancel button
+    document.getElementById('cancel-edit').addEventListener('click', function() {
+        modal.style.display = 'none';
+    });
+    
+    // Form submission
+    document.getElementById('edit-form').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const postnoteId = this.getAttribute('data-id');
+        savePostNoteChanges(postnoteId);
+    });
+}
+
+// Save changes to post note
+function savePostNoteChanges(postnoteId) {
+    const form = document.getElementById('edit-form');
+    const postnote = document.querySelector(`[data-id="${postnoteId}"]`);
+    
+    if (!postnote || !form) {
+        console.error('Post note or form not found');
+        return;
+    }
+    
+    // Get form values
+    const type = document.getElementById('edit-type').value;
+    const color = document.getElementById('edit-color').value;
+    const title = document.getElementById('edit-title').value;
+    const description = document.getElementById('edit-description').value;
+    const priority = document.getElementById('edit-priority').value;
+    const size = document.getElementById('edit-size').value;
+    const blocked = document.getElementById('edit-blocked').checked;
+    console.log('Checkbox checked state at save time:', blocked);
+    // Create form data for AJAX request
+    const formData = new FormData();
+    formData.append('type_name', type);
+    formData.append('color', color);
+    formData.append('title', title);
+    formData.append('description', description);
+    formData.append('priority', priority);
+    formData.append('size', size);
+    formData.append('blocked', blocked);
+    
+    // Get CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    // Make AJAX request
+    fetch(`/app_postnote/postnote/api/postnote/${postnoteId}/attributes/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Update the post note in the DOM
+            updatePostNoteInDOM(postnoteId, data);
+            
+            // Close the modal
+            document.querySelector('.modal-overlay').style.display = 'none';
+            console.log('Our blocked value sent:', blocked);
+            console.log('Server returned blocked value:', data.blocked);
+            
+            // Show success message
+            showSuccessMessage('Post note updated successfully!');
+        } else {
+            console.error('Error updating post note:', data.message);
+            alert('Error updating post note: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error updating post note: ' + error);
+    });
+}
+
+// Update post note in the DOM with new data
+function updatePostNoteInDOM(postnoteId, data) {
+    const postnote = document.querySelector(`[data-id="${postnoteId}"]`);
+    
+    if (!postnote) {
+        console.error('Post note not found:', postnoteId);
+        return;
+    }
+    
+    // Update the post note elements
+    const postitInner = postnote.querySelector('.postnote-inner');
+    const type = postnote.querySelector('.tape');
+    const title = postnote.querySelector('.postnote-header');
+    const description = postnote.querySelector('.postnote-content');
+    console.log(">>> === **** super important BLOCKED AS IS ", data.blocked, " === <<<");
+    // Update type
+    if (type && data.type_name) {
+        type.textContent = data.type_name;
+    }
+    
+    // Update title
+    if (title && data.title) {
+        title.textContent = data.title;
+    }
+    
+    // Update description
+    if (description && data.description) {
+        description.textContent = data.description;
+    }
+    
+    // Update color
+    if (postitInner && data.color) {
+        // Remove existing color classes
+        ['green', 'yellow', 'orange', 'purple', 'blue', 'red'].forEach(colorClass => {
+            postitInner.classList.remove(colorClass);
+        });
+        
+        // Add new color class
+        postitInner.classList.add(data.color);
+    }
+
+    // Always update the data-blocked attribute
+    console.log("Updating blocked status:", data.blocked);
+    postnote.setAttribute('data-blocked', data.blocked ? 'true' : 'false');
+    
+    // Remove any existing blocked-related classes or icons
+    postnote.classList.remove('postnote-blocked');
+    const existingIcons = postnote.querySelectorAll('.blocked-icon');
+    existingIcons.forEach(icon => icon.remove());
+    
+    // Apply blocked status if needed
+    if (data.blocked === true) {
+        // Add a subtle visual indicator without preventing movement
+        postnote.style.opacity = '0.7';
+        postnote.style.filter = 'grayscale(50%)';
+        
+        // Create blocked icon
+        const blockedIcon = document.createElement('div');
+        blockedIcon.className = 'blocked-icon';
+        blockedIcon.innerHTML = '🚫';
+        blockedIcon.title = 'This item is blocked';
+        
+        // Add to postnote
+        postnote.appendChild(blockedIcon);
+    } else {
+        // Reset visual styles when unblocked
+        postnote.style.opacity = '1';
+        postnote.style.filter = 'none';
+    }
+    
+    // Update priority and size
+    const statusInfo = postnote.querySelector('.status-info');
+    
+    if (statusInfo) {
+        // Update priority
+        const priorityDiv = statusInfo.querySelector('div:first-child');
+        if (priorityDiv && data.priority) {
+            priorityDiv.textContent = `Priority: ${data.priority}`;
+        }
+        
+        // Update size
+        const sizeDiv = statusInfo.querySelector('div:nth-child(2)');
+        if (sizeDiv && data.size) {
+            sizeDiv.textContent = `Size: ${data.size}`;
+        }
+    } else {
+        // Create status info if it doesn't exist
+        const footer = postnote.querySelector('.postnote-footer');
+        
+        if (footer) {
+            const newStatusInfo = document.createElement('div');
+            newStatusInfo.className = 'status-info';
+            
+            const priorityDiv = document.createElement('div');
+            priorityDiv.textContent = `Priority: ${data.priority || 'Medium'}`;
+            
+            const sizeDiv = document.createElement('div');
+            sizeDiv.textContent = `Size: ${data.size || 'M'}`;
+            
+            newStatusInfo.appendChild(priorityDiv);
+            newStatusInfo.appendChild(sizeDiv);
+            
+            // Add to the beginning of the footer
+            footer.insertBefore(newStatusInfo, footer.firstChild);
+        }
+    }
+    
+    // Apply a subtle highlight animation to show the update
+    postnote.style.transition = 'box-shadow 0.3s';
+    postnote.style.boxShadow = '0 0 10px rgba(76, 175, 80, 0.7)';
+    
+    setTimeout(() => {
+        postnote.style.boxShadow = '';
+    }, 1000);
+}
+
+// Show success message
+function showSuccessMessage(message) {
+    const successMsg = document.createElement('div');
+    successMsg.className = 'save-success';
+    successMsg.textContent = message;
+    
+    document.body.appendChild(successMsg);
+    
+    // Remove after animation completes
+    setTimeout(() => {
+        if (successMsg.parentNode) {
+            successMsg.parentNode.removeChild(successMsg);
+        }
+    }, 3000);
+}
+
+// Initialize event listeners for edit buttons
+function initializeEditButtons() {
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('postnote-action') && e.target.getAttribute('title') === 'Edit') {
+            const postnote = e.target.closest('.postnote');
+            if (postnote) {
+                const postnoteId = postnote.getAttribute('data-id');
+                showEditModal(postnoteId);
+            }
+        }
+    });
+}
+
+// Call this when the document is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    initializeEditButtons();
+});
+</script>
+
+<script>
+    // Function to ensure the modal container exists
+function ensureCriteriaModalExists() {
+    if (!document.querySelector('.modal-overlay')) {
+        const modalOverlay = document.createElement('div');
+        modalOverlay.className = 'modal-overlay';
+        document.body.appendChild(modalOverlay);
+        
+        // Close modal when clicking outside of modal content
+        modalOverlay.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+            }
+        });
+    }
+    return document.querySelector('.modal-overlay');
+}
+
+// Function to show the acceptance criteria modal
+function showAcceptanceCriteriaModal(postnoteId) {
+    const modal = ensureCriteriaModalExists();
+    const postnote = document.querySelector(`[data-id="${postnoteId}"]`);
+    
+    if (!postnote) {
+        console.error('Postnote not found:', postnoteId);
+        return;
+    }
+    
+    // Get post note details
+    const title = postnote.querySelector('.postnote-header').textContent;
+    const typeElem = postnote.querySelector('.tape');
+    const type = typeElem ? typeElem.textContent : 'Task';
+    
+    // Get priority if available
+    let priority = 'Medium';
+    const statusInfo = postnote.querySelector('.status-info');
+    if (statusInfo) {
+        const priorityDiv = statusInfo.querySelector('div:first-child');
+        if (priorityDiv) {
+            priority = priorityDiv.textContent.replace('Priority: ', '');
+        }
+    }
+    
+    // Show loading state in modal
+    modal.innerHTML = `
+        <div class="criteria-modal-content">
+            <div class="modal-close" title="Close">×</div>
+            <div class="criteria-header">
+                <div class="criteria-id">ID: ${postnoteId}</div>
+                <div class="criteria-title">Acceptance Criteria: ${title}</div>
+                <div class="criteria-priority">Priority: ${priority}</div>
+            </div>
+            <div style="text-align: center; padding: 40px;">
+                <div>Loading acceptance criteria...</div>
+            </div>
+        </div>
+    `;
+    
+    // Show the modal
+    modal.style.display = 'flex';
+    
+    // Add close button event
+    document.querySelector('.modal-close').addEventListener('click', function() {
+        modal.style.display = 'none';
+    });
+    
+    // Get the criteria data from server
+    fetchAcceptanceCriteria(postnoteId, modal, title, type, priority);
+}
+
+// Function to fetch existing acceptance criteria from server
+function fetchAcceptanceCriteria(postnoteId, modal, title, type, priority) {
+    // Create form data for AJAX request
+    const formData = new FormData();
+    
+    // Get CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    // Make AJAX request
+    fetch(`/app_postnote/postnote/api/postnote/${postnoteId}/criteria/get/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Update the modal with the criteria editor
+            updateCriteriaModalContent(modal, postnoteId, title, type, priority, data.acceptance_criteria);
+        } else {
+            console.error('Error fetching acceptance criteria:', data.message);
+            modal.innerHTML = `
+                <div class="criteria-modal-content">
+                    <div class="modal-close" title="Close">×</div>
+                    <div class="criteria-header">
+                        <div class="criteria-title">Error</div>
+                    </div>
+                    <div style="text-align: center; padding: 20px;">
+                        <div>Error loading acceptance criteria: ${data.message}</div>
+                    </div>
+                    <div class="criteria-footer">
+                        <button class="criteria-btn criteria-btn-cancel">Close</button>
+                    </div>
+                </div>
+            `;
+            
+            // Add close button event
+            document.querySelector('.modal-close').addEventListener('click', function() {
+                modal.style.display = 'none';
+            });
+            
+            document.querySelector('.criteria-btn-cancel').addEventListener('click', function() {
+                modal.style.display = 'none';
+            });
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        modal.innerHTML = `
+            <div class="criteria-modal-content">
+                <div class="modal-close" title="Close">×</div>
+                <div class="criteria-header">
+                    <div class="criteria-title">Error</div>
+                </div>
+                <div style="text-align: center; padding: 20px;">
+                    <div>Error loading acceptance criteria. Please try again.</div>
+                </div>
+                <div class="criteria-footer">
+                    <button class="criteria-btn criteria-btn-cancel">Close</button>
+                </div>
+            </div>
+        `;
+        
+        // Add close button event
+        document.querySelector('.modal-close').addEventListener('click', function() {
+            modal.style.display = 'none';
+        });
+        
+        document.querySelector('.criteria-btn-cancel').addEventListener('click', function() {
+            modal.style.display = 'none';
+        });
+    });
+}
+
+// Function to update the modal content with the criteria editor
+function updateCriteriaModalContent(modal, postnoteId, title, type, priority, criteria) {
+    // Default criteria template if none exists
+    const defaultCriteria = criteria || getDefaultCriteriaTemplate(type);
+    
+    const today = new Date().toLocaleDateString('en-US', { 
+        year: 'numeric', 
+        month: 'short', 
+        day: 'numeric' 
+    });
+    
+    modal.querySelector('.criteria-modal-content').innerHTML = `
+        <div class="modal-close" title="Close">×</div>
+        <div class="criteria-header">
+            <div class="criteria-id">ID: ${postnoteId}</div>
+            <div class="criteria-title">Acceptance Criteria: ${title}</div>
+            <div class="criteria-priority">Priority: ${priority}</div>
+        </div>
+        
+        <div class="criteria-toolbar">
+            <button class="criteria-toolbar-btn" data-template="bullet">Add Bullet</button>
+            <button class="criteria-toolbar-btn" data-template="checkbox">Add Checkbox</button>
+            <button class="criteria-toolbar-btn" data-template="user-story">User Story Template</button>
+            <button class="criteria-toolbar-btn" data-template="scenario">Scenario Template</button>
+        </div>
+        
+        <div class="criteria-editor">
+            <div id="criteria-content" class="criteria-content" contenteditable="true" spellcheck="true">${defaultCriteria}</div>
+        </div>
+        
+        <div class="criteria-footer">
+            <div class="criteria-meta">
+                <div>Last updated: ${today}</div>
+            </div>
+            <div class="criteria-actions">
+                <button class="criteria-btn criteria-btn-cancel">Cancel</button>
+                <button class="criteria-btn criteria-btn-save">Save Criteria</button>
+            </div>
+        </div>
+    `;
+    
+    // Add event listeners
+    
+    // Close button
+    modal.querySelector('.modal-close').addEventListener('click', function() {
+        modal.style.display = 'none';
+    });
+    
+    // Cancel button
+    modal.querySelector('.criteria-btn-cancel').addEventListener('click', function() {
+        modal.style.display = 'none';
+    });
+    
+    // Save button
+    modal.querySelector('.criteria-btn-save').addEventListener('click', function() {
+        const criteriaContent = document.getElementById('criteria-content').innerHTML;
+        saveAcceptanceCriteria(postnoteId, criteriaContent, modal);
+    });
+    
+    // Toolbar buttons
+    modal.querySelectorAll('.criteria-toolbar-btn').forEach(button => {
+        button.addEventListener('click', function() {
+            const templateType = this.getAttribute('data-template');
+            insertTemplate(templateType);
+        });
+    });
+    
+    // Focus on the criteria content
+    setTimeout(() => {
+        document.getElementById('criteria-content').focus();
+    }, 100);
+}
+
+// Function to insert template into the criteria editor
+function insertTemplate(templateType) {
+    const editor = document.getElementById('criteria-content');
+    if (!editor) return;
+    
+    let template = '';
+    
+    switch(templateType) {
+        case 'bullet':
+            template = '• ';
+            break;
+        case 'checkbox':
+            template = '☐ ';
+            break;
+        case 'user-story':
+            template = `<strong>User Story Format:</strong><br>
+As a [type of user],<br>
+I want [an action],<br>
+So that [benefit/value]<br><br>
+
+<strong>Acceptance Criteria:</strong><br>
+• Given [context], when [action], then [expected result]<br>
+• Given [context], when [action], then [expected result]<br>
+• Given [context], when [action], then [expected result]<br>`;
+            break;
+        case 'scenario':
+            template = `<strong>Scenario 1: [Scenario Title]</strong><br>
+Given [precondition]<br>
+When [action]<br>
+Then [expected result]<br><br>
+
+<strong>Scenario 2: [Scenario Title]</strong><br>
+Given [precondition]<br>
+When [action]<br>
+Then [expected result]<br>`;
+            break;
+        default:
+            return;
+    }
+    
+    // Insert at cursor position or at the end
+    const selection = window.getSelection();
+    const range = selection.getRangeAt(0);
+    
+    if (templateType === 'bullet' || templateType === 'checkbox') {
+        const currentLine = getCurrentLine();
+        if (currentLine && currentLine.trim() !== '') {
+            // If we're not at the beginning of a line, add a new line first
+            template = '\n' + template;
+        }
+    } else {
+        // For larger templates, always start on a new line
+        if (editor.innerHTML !== '') {
+            template = '\n' + template;
+        }
+    }
+    
+    const tempDiv = document.createElement('div');
+    tempDiv.innerHTML = template;
+    
+    // Insert the template content as HTML
+    range.deleteContents();
+    const fragment = document.createDocumentFragment();
+    let child;
+    while (child = tempDiv.firstChild) {
+        fragment.appendChild(child);
+    }
+    range.insertNode(fragment);
+    
+    // Set cursor position after the inserted template
+    range.collapse(false);
+    selection.removeAllRanges();
+    selection.addRange(range);
+    
+    // Ensure the editor is focused
+    editor.focus();
+}
+
+// Helper function to get the current line in the editor
+function getCurrentLine() {
+    const selection = window.getSelection();
+    if (!selection.rangeCount) return '';
+    
+    const range = selection.getRangeAt(0).cloneRange();
+    range.collapse(true);
+    
+    // Create a range from the beginning of the current line to the cursor
+    const startRange = document.createRange();
+    startRange.selectNodeContents(document.getElementById('criteria-content'));
+    startRange.setEnd(range.startContainer, range.startOffset);
+    
+    // Get text content
+    let content = startRange.toString();
+    
+    // Find the last newline character
+    const lastNewline = content.lastIndexOf('\n');
+    
+    // Return the current line
+    return lastNewline !== -1 ? content.substring(lastNewline + 1) : content;
+}
+
+// Function to save acceptance criteria
+function saveAcceptanceCriteria(postnoteId, criteriaContent, modal) {
+    // Create form data for AJAX request
+    const formData = new FormData();
+    formData.append('acceptance_criteria', criteriaContent);
+    
+    // Get CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    // Make AJAX request
+    fetch(`/app_postnote/postnote/api/postnote/${postnoteId}/criteria/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Close the modal
+            modal.style.display = 'none';
+            
+            // Update the post note to show it has acceptance criteria
+            updatePostNoteWithCriteriaBadge(postnoteId);
+            
+            // Show success message
+            showSuccessMessage('Acceptance criteria saved successfully!');
+        } else {
+            console.error('Error saving acceptance criteria:', data.message);
+            alert('Error saving acceptance criteria: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error saving acceptance criteria: ' + error);
+    });
+}
+
+// Function to update post note with criteria badge
+function updatePostNoteWithCriteriaBadge(postnoteId) {
+    const postnote = document.querySelector(`[data-id="${postnoteId}"]`);
+    if (!postnote) return;
+    
+    const postitInner = postnote.querySelector('.postnote-inner');
+    
+    // Check if badge already exists
+    let badge = postitInner.querySelector('.criteria-badge');
+    
+    if (!badge) {
+        // Create new badge
+        badge = document.createElement('div');
+        badge.className = 'criteria-badge criteria-badge-new';
+        badge.title = 'Has Acceptance Criteria';
+        badge.innerHTML = '✓';
+        postitInner.appendChild(badge);
+    }
+}
+
+// Function to get default criteria template based on item type
+function getDefaultCriteriaTemplate(type) {
+    switch(type) {
+        case 'Epic':
+            return `<strong>Epic Acceptance Criteria:</strong><br>
+• Epic is considered complete when all contained features are complete<br>
+• All dependent systems are integrated and tested<br>
+• Performance metrics meet or exceed targets<br>
+• Documentation is complete and up-to-date<br><br>
+<em>Add additional criteria specific to this epic...</em>`;
+
+        case 'Feature':
+            return `<strong>Feature Acceptance Criteria:</strong><br>
+• Feature works correctly across all supported browsers/devices<br>
+• UI/UX elements follow design specifications<br>
+• All error states are handled gracefully<br>
+• Functionality is accessible to users with disabilities<br><br>
+<em>Add feature-specific requirements here...</em>`;
+
+        case 'User Story':
+            return `<strong>User Story:</strong><br>
+As a [type of user],<br>
+I want [an action],<br>
+So that [benefit/value]<br><br>
+
+<strong>Acceptance Criteria:</strong><br>
+• Given [context], when [action], then [expected result]<br>
+• Given [context], when [action], then [expected result]<br>
+• Given [context], when [action], then [expected result]<br><br>
+
+<strong>Notes/Edge Cases:</strong><br>
+• <em>Add any special considerations here...</em>`;
+
+        case 'Task':
+            return `<strong>Task Completion Criteria:</strong><br>
+☐ Implementation meets requirements<br>
+☐ Code passes all tests<br>
+☐ Documentation is updated<br>
+☐ Changes are peer reviewed<br><br>
+<em>Add specific task requirements here...</em>`;
+
+        default:
+            return `<strong>Acceptance Criteria:</strong><br>
+• <br>
+• <br>
+• <br><br>
+<em>Add criteria specific to this item...</em>`;
+    }
+}
+
+// Function to show success message
+function showSuccessMessage(message) {
+    const successMsg = document.createElement('div');
+    successMsg.className = 'save-success';
+    successMsg.textContent = message;
+    
+    document.body.appendChild(successMsg);
+    
+    // Remove after animation completes
+    setTimeout(() => {
+        if (successMsg.parentNode) {
+            successMsg.parentNode.removeChild(successMsg);
+        }
+    }, 3000);
+}
+
+// Initialize event listeners for acceptance criteria buttons
+function initializeAcceptanceCriteriaButtons() {
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('postnote-action') && e.target.getAttribute('title') === 'Add Acceptance Criteria') {
+            const postnote = e.target.closest('.postnote');
+            if (postnote) {
+                const postnoteId = postnote.getAttribute('data-id');
+                showAcceptanceCriteriaModal(postnoteId);
+            }
+        }
+    });
+}
+
+// Call this when the document is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    initializeAcceptanceCriteriaButtons();
+});
+</script>
+
+<script>
+    // LINK
+
+    // Global storage for link data
+let postNoteLinks = [];
+
+// Function to ensure the modal container exists
+function ensureLinkModalExists() {
+    if (!document.querySelector('.modal-overlay')) {
+        const modalOverlay = document.createElement('div');
+        modalOverlay.className = 'modal-overlay';
+        document.body.appendChild(modalOverlay);
+        
+        // Close modal when clicking outside of modal content
+        modalOverlay.addEventListener('click', function(e) {
+            if (e.target === this) {
+                this.style.display = 'none';
+            }
+        });
+    }
+    return document.querySelector('.modal-overlay');
+}
+
+// Function to show the link creation modal
+function showLinkModal(postnoteId) {
+    const modal = ensureLinkModalExists();
+    const postnote = document.querySelector(`[data-id="${postnoteId}"]`);
+    
+    if (!postnote) {
+        console.error('Postnote not found:', postnoteId);
+        return;
+    }
+    
+    // Get post note details
+    const title = postnote.querySelector('.postnote-header').textContent;
+    const type = postnote.querySelector('.tape').textContent;
+    
+    // Show loading state in modal
+    modal.innerHTML = `
+        <div class="link-modal-content">
+            <div class="modal-close" title="Close">×</div>
+            <div class="link-modal-title">Create Link</div>
+            <div style="text-align: center; padding: 40px;">
+                <div>Loading available post notes...</div>
+            </div>
+        </div>
+    `;
+    
+    // Show the modal
+    modal.style.display = 'flex';
+    
+    // Add close button event
+    document.querySelector('.modal-close').addEventListener('click', function() {
+        modal.style.display = 'none';
+    });
+    
+    // Load all post notes for selection
+    loadPostNotesForLinking(modal, postnoteId, title, type);
+}
+
+// Function to load all post notes for linking
+function loadPostNotesForLinking(modal, sourceId, sourceTitle, sourceType) {
+    // Get all post notes in the DOM
+    const postNotes = document.querySelectorAll('.postnote');
+    
+    // Filter out the source post note
+    const availablePostNotes = Array.from(postNotes).filter(note => {
+        return note.getAttribute('data-id') !== sourceId;
+    });
+    
+    // Generate HTML for post note table
+    let tableRows = '';
+    availablePostNotes.forEach(note => {
+        const id = note.getAttribute('data-id');
+        const noteType = note.querySelector('.tape').textContent;
+        const title = note.querySelector('.postnote-header').textContent;
+        
+        tableRows += `
+            <tr data-id="${id}">
+                <td>${id}</td>
+                <td>${noteType}</td>
+                <td>${title}</td>
+            </tr>
+        `;
+    });
+    
+    // Update modal content
+    modal.querySelector('.link-modal-content').innerHTML = `
+        <div class="modal-close" title="Close">×</div>
+        <div class="link-modal-title">Create Link</div>
+        <div class="link-source-info">
+            <strong>Source:</strong> ${sourceTitle} (${sourceId}) - ${sourceType}
+        </div>
+        
+        <div class="link-target-selector">
+            <label><strong>Select a target post note:</strong></label>
+            <div class="link-table-container">
+                <table class="link-table">
+                    <thead>
+                        <tr>
+                            <th width="15%">ID</th>
+                            <th width="25%">Type</th>
+                            <th width="60%">Title</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${tableRows}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        
+        <div class="link-selected-target" id="selected-target">
+            <strong>Selected Target:</strong> <span id="selected-target-text"></span>
+        </div>
+        
+        <div class="link-type-selector">
+            <label for="link-type"><strong>Link Type:</strong></label>
+            <select id="link-type">
+                <option value="depends_on">Depends On</option>
+                <option value="related_to">Related To</option>
+                <option value="parent_of">Parent Of</option>
+                <option value="child_of">Child Of</option>
+                <option value="blocks">Blocks</option>
+                <option value="is_blocked_by">Is Blocked By</option>
+            </select>
+        </div>
+        
+        <div class="link-actions">
+            <button class="link-btn link-btn-cancel">Cancel</button>
+            <button class="link-btn link-btn-create" id="create-link-btn" disabled>Create Link</button>
+        </div>
+    `;
+    
+    // Add event listeners
+    
+    // Close button
+    modal.querySelector('.modal-close').addEventListener('click', function() {
+        modal.style.display = 'none';
+    });
+    
+    // Cancel button
+    modal.querySelector('.link-btn-cancel').addEventListener('click', function() {
+        modal.style.display = 'none';
+    });
+    
+    // Table row click for target selection
+    modal.querySelectorAll('.link-table tbody tr').forEach(row => {
+        row.addEventListener('click', function() {
+            // Remove selected class from all rows
+            modal.querySelectorAll('.link-table tbody tr').forEach(r => {
+                r.classList.remove('selected');
+            });
+            
+            // Add selected class to clicked row
+            this.classList.add('selected');
+            
+            // Get target details
+            const targetId = this.getAttribute('data-id');
+            const targetTitle = this.cells[2].textContent;
+            const targetType = this.cells[1].textContent;
+            
+            // Update selected target display
+            const selectedTarget = document.getElementById('selected-target');
+            const selectedTargetText = document.getElementById('selected-target-text');
+            
+            selectedTarget.style.display = 'block';
+            selectedTargetText.textContent = `${targetTitle} (${targetId}) - ${targetType}`;
+            
+            // Store selected target ID
+            selectedTarget.setAttribute('data-target-id', targetId);
+            
+            // Enable create button
+            const createBtn = document.getElementById('create-link-btn');
+            createBtn.disabled = false;
+            createBtn.classList.add('active');
+        });
+    });
+    
+    // Create link button
+    modal.querySelector('#create-link-btn').addEventListener('click', function() {
+        const targetId = document.getElementById('selected-target').getAttribute('data-target-id');
+        const linkType = document.getElementById('link-type').value;
+        
+        if (targetId && sourceId && linkType) {
+            createPostNoteLink(sourceId, targetId, linkType, modal);
+        }
+    });
+}
+
+// Function to create a post note link
+function createPostNoteLink(sourceId, targetId, linkType, modal) {
+    // Create form data for AJAX request
+    const formData = new FormData();
+    formData.append('source_id', sourceId);
+    formData.append('target_id', targetId);
+    formData.append('link_type', linkType);
+    
+    // Get CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    // Make AJAX request
+    fetch('/app_postnote/postnote/api/postnote/link/create/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Close the modal
+            modal.style.display = 'none';
+            
+            // Add the link to our global storage
+            postNoteLinks.push({
+                id: data.link_id,
+                source_id: data.source_id,
+                target_id: data.target_id,
+                link_type: data.link_type
+            });
+            
+            // Draw the connection on the canvas
+            drawConnection(data.source_id, data.target_id, data.link_type, data.link_id);
+            
+            // Show success message
+            showSuccessMessage('Link created successfully!');
+        } else {
+            console.error('Error creating link:', data.message);
+            
+            // Show error message to user
+            if (data.message === 'Link already exists') {
+                alert('A link of this type already exists between these post notes.');
+            } else {
+                alert('Error creating link: ' + data.message);
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error creating link. Please try again.');
+    });
+}
+
+// Function to draw a connection between two post notes
+function drawConnection(sourceId, targetId, linkType, linkId) {
+    const canvas = document.getElementById('canvas-view');
+    const sourcePostit = document.querySelector(`[data-id="${sourceId}"]`);
+    const targetPostit = document.querySelector(`[data-id="${targetId}"]`);
+    
+    if (!sourcePostit || !targetPostit || !canvas) {
+        console.error('Source or target post-it not found or canvas not found');
+        return;
+    }
+    
+    // Create SVG element for the connection
+    const connection = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    connection.setAttribute('class', 'connection-line');
+    connection.setAttribute('data-source', sourceId);
+    connection.setAttribute('data-target', targetId);
+    connection.setAttribute('data-type', linkType);
+    connection.setAttribute('data-id', linkId);
+    
+    // Set initial size of SVG (will be updated in updateConnections)
+    connection.setAttribute('width', canvas.offsetWidth);
+    connection.setAttribute('height', canvas.offsetHeight);
+    
+    // Create path element
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('class', `connection-${linkType}`);
+    
+    // Create defs for arrow marker
+    const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+    const marker = document.createElementNS('http://www.w3.org/2000/svg', 'marker');
+    marker.setAttribute('id', `arrow-${sourceId}-${targetId}`);
+    marker.setAttribute('viewBox', '0 0 10 10');
+    marker.setAttribute('refX', '5');
+    marker.setAttribute('refY', '5');
+    marker.setAttribute('markerWidth', '6');
+    marker.setAttribute('markerHeight', '6');
+    marker.setAttribute('orient', 'auto');
+    
+    const arrowPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    arrowPath.setAttribute('d', 'M 0 0 L 10 5 L 0 10 z');
+    arrowPath.setAttribute('class', `connection-${linkType}`);
+    arrowPath.setAttribute('fill', getLinkColor(linkType));
+    
+    marker.appendChild(arrowPath);
+    defs.appendChild(marker);
+    connection.appendChild(defs);
+    
+    // Add marker end to path
+    path.setAttribute('marker-end', `url(#arrow-${sourceId}-${targetId})`);
+    connection.appendChild(path);
+    
+    // Create text element for link type
+    const textBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    textBg.setAttribute('class', 'connection-line-text-bg');
+    connection.appendChild(textBg);
+    
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('class', 'connection-line-text');
+    text.textContent = formatLinkType(linkType);
+    connection.appendChild(text);
+    
+    // Add connection to canvas
+    canvas.appendChild(connection);
+    
+    // Create delete icon
+    const deleteIcon = document.createElement('div');
+    deleteIcon.className = 'link-delete-icon';
+    deleteIcon.innerHTML = '×';
+    deleteIcon.setAttribute('data-link-id', linkId);
+    deleteIcon.title = 'Delete link';
+    canvas.appendChild(deleteIcon);
+    
+    // Add click event to delete icon
+    deleteIcon.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const linkId = this.getAttribute('data-link-id');
+        
+        if (confirm('Are you sure you want to delete this link?')) {
+            deletePostNoteLink(linkId);
+        }
+    });
+    
+    // Update the connection positions
+    updateConnections();
+    
+    // Add window resize listener if not already added
+    if (!window.linksResizeListenerAdded) {
+        window.addEventListener('resize', updateConnections);
+        window.linksResizeListenerAdded = true;
+    }
+}
+
+// Function to delete a post note link
+function deletePostNoteLink(linkId) {
+    // Create form data for AJAX request
+    const formData = new FormData();
+    
+    // Get CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    // Make AJAX request
+    fetch(`/app_postnote/postnote/api/postnote/link/${linkId}/delete/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Remove the connection from DOM
+            const connection = document.querySelector(`.connection-line[data-id="${linkId}"]`);
+            if (connection) {
+                connection.remove();
+            }
+            
+            // Remove the delete icon
+            const deleteIcon = document.querySelector(`.link-delete-icon[data-link-id="${linkId}"]`);
+            if (deleteIcon) {
+                deleteIcon.remove();
+            }
+            
+            // Remove from our global storage
+            postNoteLinks = postNoteLinks.filter(link => link.id !== parseInt(linkId));
+            
+            // Show success message
+            showSuccessMessage('Link deleted successfully!');
+        } else {
+            console.error('Error deleting link:', data.message);
+            alert('Error deleting link: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error deleting link. Please try again.');
+    });
+}
+
+// Function to load all links for a project
+function loadProjectLinks(projectId) {
+    // Create form data for AJAX request
+    const formData = new FormData();
+    
+    // Get CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    // Make AJAX request
+    const url = `/app_postnote/postnote/api/project/${projectId}/links/`;
+    console.log('Loading project links:', url);
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Store links in global variable
+            postNoteLinks = data.links;
+            
+            // Draw all connections
+            postNoteLinks.forEach(link => {
+                drawConnection(link.source_id, link.target_id, link.link_type, link.id);
+            });
+            
+            // Show link legend
+            showLinkLegend();
+        } else {
+            console.error('Error loading project links:', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+
+// Function to update all connections
+function updateConnections() {
+    const canvas = document.getElementById('canvas-view');
+    if (!canvas) return;
+    
+    const canvasRect = canvas.getBoundingClientRect();
+    
+    // Update each connection
+    document.querySelectorAll('.connection-line').forEach(connection => {
+        const sourceId = connection.getAttribute('data-source');
+        const targetId = connection.getAttribute('data-target');
+        const linkType = connection.getAttribute('data-type');
+        const linkId = connection.getAttribute('data-id');
+        
+        const sourcePostit = document.querySelector(`[data-id="${sourceId}"]`);
+        const targetPostit = document.querySelector(`[data-id="${targetId}"]`);
+        
+        if (!sourcePostit || !targetPostit) {
+            // If source or target no longer exists, remove the connection
+            connection.remove();
+            
+            // Remove the delete icon
+            const deleteIcon = document.querySelector(`.link-delete-icon[data-link-id="${linkId}"]`);
+            if (deleteIcon) {
+                deleteIcon.remove();
+            }
+            
+            return;
+        }
+        
+        // Update SVG size
+        connection.setAttribute('width', canvasRect.width);
+        connection.setAttribute('height', canvasRect.height);
+        
+        // Calculate center points of post-its
+        const sourceRect = sourcePostit.getBoundingClientRect();
+        const targetRect = targetPostit.getBoundingClientRect();
+        
+        const sourceX = sourceRect.left + sourceRect.width/2 - canvasRect.left;
+        const sourceY = sourceRect.top + sourceRect.height/2 - canvasRect.top;
+        const targetX = targetRect.left + targetRect.width/2 - canvasRect.left;
+        const targetY = targetRect.top + targetRect.height/2 - canvasRect.top;
+        
+        // Update path
+        const path = connection.querySelector('path');
+        path.setAttribute('d', `M${sourceX},${sourceY} C${(sourceX+targetX)/2},${sourceY} ${(sourceX+targetX)/2},${targetY} ${targetX},${targetY}`);
+        
+        // Update text position
+        const midX = (sourceX + targetX) / 2;
+        const midY = (sourceY + targetY) / 2 - 10;
+        
+        const text = connection.querySelector('text');
+        text.setAttribute('x', midX);
+        text.setAttribute('y', midY);
+        
+        // Update text background
+        const textBg = connection.querySelector('rect');
+        const textWidth = text.getComputedTextLength() || text.textContent.length * 6;
+        textBg.setAttribute('x', midX - textWidth/2 - 3);
+        textBg.setAttribute('y', midY - 12);
+        textBg.setAttribute('width', textWidth + 6);
+        textBg.setAttribute('height', 16);
+        
+        // Update delete icon position
+        const deleteIcon = document.querySelector(`.link-delete-icon[data-link-id="${linkId}"]`);
+        if (deleteIcon) {
+            deleteIcon.style.left = (midX + canvasRect.left) + 'px';
+            deleteIcon.style.top = (midY + canvasRect.top - 20) + 'px';
+        }
+    });
+}
+
+// Function to format link type for display
+function formatLinkType(linkType) {
+    return linkType.replace(/_/g, ' ');
+}
+
+// Function to get color for link type
+function getLinkColor(linkType) {
+    switch(linkType) {
+        case 'depends_on':
+            return '#F44336';
+        case 'related_to':
+            return '#2196F3';
+        case 'parent_of':
+            return '#4CAF50';
+        case 'child_of':
+            return '#9C27B0';
+        case 'blocks':
+            return '#FF9800';
+        case 'is_blocked_by':
+            return '#795548';
+        default:
+            return '#555555';
+    }
+}
+
+// Function to show link legend
+function showLinkLegend() {
+    // Check if legend already exists
+    if (document.querySelector('.link-legend')) {
+        return;
+    }
+    
+    // Create legend element
+    const legend = document.createElement('div');
+    legend.className = 'link-legend';
+    
+    // Add legend items
+    legend.innerHTML = `
+        <div class="link-legend-item">
+            <div class="link-legend-color" style="background-color: #F44336;"></div>
+            <div>Depends On</div>
+        </div>
+        <div class="link-legend-item">
+            <div class="link-legend-color" style="background-color: #2196F3;"></div>
+            <div>Related To</div>
+        </div>
+        <div class="link-legend-item">
+            <div class="link-legend-color" style="background-color: #4CAF50;"></div>
+            <div>Parent Of</div>
+        </div>
+        <div class="link-legend-item">
+            <div class="link-legend-color" style="background-color: #9C27B0;"></div>
+            <div>Child Of</div>
+        </div>
+        <div class="link-legend-item">
+            <div class="link-legend-color" style="background-color: #FF9800;"></div>
+            <div>Blocks</div>
+        </div>
+        <div class="link-legend-item">
+            <div class="link-legend-color" style="background-color: #795548;"></div>
+            <div>Is Blocked By</div>
+        </div>
+    `;
+    
+    // Add to canvas
+    const canvas = document.getElementById('canvas-view');
+    canvas.appendChild(legend);
+    
+    // Show legend
+    legend.style.display = 'block';
+}
+
+// Initialize event listeners for link buttons
+function initializeLinkButtons() {
+    document.addEventListener('click', function(e) {
+        if (e.target.classList.contains('postnote-action') && e.target.getAttribute('title') === 'Link') {
+            const postnote = e.target.closest('.postnote');
+            if (postnote) {
+                const postnoteId = postnote.getAttribute('data-id');
+                showLinkModal(postnoteId);
+            }
+        }
+    });
+}
+
+// Initialize links when document is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    initializeLinkButtons();
+    
+    // Load links for the project
+    const projectId = document.querySelector('meta[name="project-id"]')?.getAttribute('content');
+    if (projectId) {
+        loadProjectLinks(projectId);
+    }
+    
+    // Update connections when dragging post-its
+    document.addEventListener('mousemove', function(e) {
+        if (draggedItem) {
+            updateConnections();
+        }
+    });
+    
+    document.addEventListener('mouseup', function(e) {
+        if (draggedItem) {
+            updateConnections();
+        }
+    });
+});
+
+// Function to create a threaded connection between post notes
+function createThreadConnection(sourceId, targetId, sourcePosition, targetPosition, linkType) {
+    // Create form data for AJAX request
+    const formData = new FormData();
+    formData.append('source_id', sourceId);
+    formData.append('target_id', targetId);
+    formData.append('link_type', linkType);
+    formData.append('source_position', sourcePosition || 'right'); // Default fallback
+    formData.append('target_position', targetPosition || 'left');  // Default fallback
+    
+    // Get CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    // Make AJAX request
+    fetch('/app_postnote/postnote/api/postnote/link/create/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Add the link to our global storage with additional position info
+            postNoteLinks.push({
+                id: data.link_id,
+                source_id: data.source_id,
+                target_id: data.target_id,
+                link_type: data.link_type,
+                source_position: sourcePosition || 'right',
+                target_position: targetPosition || 'left'
+            });
+            
+            // Draw the connection with thread points
+            drawThreadConnection(
+                data.source_id, 
+                data.target_id, 
+                data.link_type, 
+                data.link_id,
+                sourcePosition || 'right',
+                targetPosition || 'left'
+            );
+            
+            // Show success message
+            showSuccessMessage('Link created successfully!');
+        } else {
+            console.error('Error creating link:', data.message);
+            
+            // Show error message to user
+            if (data.message === 'Link already exists') {
+                alert('A link of this type already exists between these post notes.');
+            } else {
+                alert('Error creating link: ' + data.message);
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error creating link. Please try again.');
+    });
+}
+
+// Function to start creating a connection
+function startConnection(e) {
+    e.stopPropagation(); // Prevent dragging the post-it
+    
+    const point = this;
+    const postnote = point.closest('.postnote');
+    const position = point.getAttribute('data-position');
+    const postnoteId = postnote.getAttribute('data-id');
+    
+    connectionStart = {
+        id: postnoteId,
+        position: position,
+        element: point
+    };
+    
+    // Add pulsing effect to indicate active connection
+    point.classList.add('connection-point-dragging');
+    
+    // Create temporary connection line
+    const canvas = document.getElementById('canvas-view');
+    const canvasRect = canvas.getBoundingClientRect();
+    
+    // Get starting point coordinates
+    const pointRect = point.getBoundingClientRect();
+    const startX = pointRect.left + pointRect.width/2 - canvasRect.left;
+    const startY = pointRect.top + pointRect.height/2 - canvasRect.top;
+    
+    // Create SVG for temporary connection
+    tempConnectionLine = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    tempConnectionLine.setAttribute('class', 'connection-thread connection-thread-temp');
+    tempConnectionLine.setAttribute('width', canvasRect.width);
+    tempConnectionLine.setAttribute('height', canvasRect.height);
+    
+    // Create path element
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('stroke', '#666');
+    path.setAttribute('stroke-width', '2');
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke-dasharray', '5,3');
+    
+    tempConnectionLine.appendChild(path);
+    canvas.appendChild(tempConnectionLine);
+    
+    // Update temporary connection line on mouse move
+    function moveConnection(e) {
+        if (!tempConnectionLine) return;
+        
+        const mouseX = e.clientX - canvasRect.left;
+        const mouseY = e.clientY - canvasRect.top;
+        
+        // Get path based on connection style
+        const pathD = getConnectionPath(startX, startY, mouseX, mouseY, position, null);
+        
+        path.setAttribute('d', pathD);
+    }
+    
+    // Complete connection when mouse is released
+    function completeConnection(e) {
+        document.removeEventListener('mousemove', moveConnection);
+        document.removeEventListener('mouseup', completeConnection);
+        
+        // Remove dragging class
+        point.classList.remove('connection-point-dragging');
+        
+        // Check if mouse is over a connection point
+        const targetElement = document.elementFromPoint(e.clientX, e.clientY);
+        const targetPoint = targetElement?.closest('.connection-point');
+        
+        if (targetPoint && targetPoint !== point) {
+            const targetPostnote = targetPoint.closest('.postnote');
+            const targetPosition = targetPoint.getAttribute('data-position');
+            const targetId = targetPostnote.getAttribute('data-id');
+            
+            // Show link type selection
+            showLinkTypeSelection(
+                connectionStart.id, 
+                targetId, 
+                connectionStart.position, 
+                targetPosition,
+                e.clientX,
+                e.clientY
+            );
+        } else {
+            // No valid target, remove temporary connection
+            if (tempConnectionLine) {
+                tempConnectionLine.remove();
+                tempConnectionLine = null;
+            }
+        }
+        
+        connectionStart = null;
+    }
+    
+    document.addEventListener('mousemove', moveConnection);
+    document.addEventListener('mouseup', completeConnection);
+}
+
+// Function to show link type selection
+function showLinkTypeSelection(sourceId, targetId, sourcePosition, targetPosition, x, y) {
+    // Create popup menu for selecting link type
+    const menu = document.createElement('div');
+    menu.className = 'link-type-menu';
+    menu.style.position = 'absolute';
+    menu.style.left = `${x}px`;
+    menu.style.top = `${y}px`;
+    menu.style.backgroundColor = 'white';
+    menu.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+    menu.style.borderRadius = '4px';
+    menu.style.padding = '8px 0';
+    menu.style.zIndex = '1000';
+    
+    // Link types
+    const linkTypes = [
+        { value: 'depends_on', label: 'Depends On' },
+        { value: 'related_to', label: 'Related To' },
+        { value: 'parent_of', label: 'Parent Of' },
+        { value: 'child_of', label: 'Child Of' },
+        { value: 'blocks', label: 'Blocks' },
+        { value: 'is_blocked_by', label: 'Is Blocked By' }
+    ];
+    
+    // Create menu items
+    linkTypes.forEach(type => {
+        const item = document.createElement('div');
+        item.className = 'link-type-menu-item';
+        item.textContent = type.label;
+        item.style.padding = '8px 16px';
+        item.style.cursor = 'pointer';
+        item.style.transition = 'background-color 0.2s';
+        
+        item.addEventListener('mouseover', function() {
+            this.style.backgroundColor = '#f5f5f5';
+        });
+        
+        item.addEventListener('mouseout', function() {
+            this.style.backgroundColor = 'transparent';
+        });
+        
+        item.addEventListener('click', function() {
+            createThreadConnection(sourceId, targetId, sourcePosition, targetPosition, type.value);
+            menu.remove();
+            
+            // Remove temporary connection line
+            if (tempConnectionLine) {
+                tempConnectionLine.remove();
+                tempConnectionLine = null;
+            }
+        });
+        
+        menu.appendChild(item);
+    });
+    
+    // Add cancel option
+    const cancelItem = document.createElement('div');
+    cancelItem.className = 'link-type-menu-item';
+    cancelItem.textContent = 'Cancel';
+    cancelItem.style.padding = '8px 16px';
+    cancelItem.style.borderTop = '1px solid #eee';
+    cancelItem.style.color = '#666';
+    cancelItem.style.cursor = 'pointer';
+    
+    cancelItem.addEventListener('mouseover', function() {
+        this.style.backgroundColor = '#f5f5f5';
+    });
+    
+    cancelItem.addEventListener('mouseout', function() {
+        this.style.backgroundColor = 'transparent';
+    });
+    
+    cancelItem.addEventListener('click', function() {
+        menu.remove();
+        
+        // Remove temporary connection line
+        if (tempConnectionLine) {
+            tempConnectionLine.remove();
+            tempConnectionLine = null;
+        }
+    });
+    
+    menu.appendChild(cancelItem);
+    
+    // Add to document
+    document.body.appendChild(menu);
+    
+    // Close menu when clicking outside
+    function closeMenuOnClickOutside(e) {
+        if (!menu.contains(e.target)) {
+            menu.remove();
+            document.removeEventListener('click', closeMenuOnClickOutside);
+            
+            // Remove temporary connection line
+            if (tempConnectionLine) {
+                tempConnectionLine.remove();
+                tempConnectionLine = null;
+            }
+        }
+    }
+    
+    // Delay adding click listener to prevent immediate closing
+    setTimeout(() => {
+        document.addEventListener('click', closeMenuOnClickOutside);
+    }, 100);
+}
+
+// Function to format link type for display
+function formatLinkType(linkType) {
+    return linkType.replace(/_/g, ' ');
+}
+
+// Function to get color for link type
+function getLinkColor(linkType) {
+    switch(linkType) {
+        case 'depends_on':
+            return '#F44336';
+        case 'related_to':
+            return '#2196F3';
+        case 'parent_of':
+            return '#4CAF50';
+        case 'child_of':
+            return '#9C27B0';
+        case 'blocks':
+            return '#FF9800';
+        case 'is_blocked_by':
+            return '#795548';
+        default:
+            return '#555555';
+    }
+}
+</script>
+
+
+<script>
+    // SETTINGS
+    // Fixed function to initialize the settings panel
+function initializeSettingsPanel() {
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsPanel = document.getElementById('settings-panel');
+    const settingsClose = document.querySelector('.settings-close');
+    
+    if (!settingsBtn || !settingsPanel) {
+        console.error('Settings button or panel not found');
+        return;
+    }
+    
+    // Toggle settings panel
+    settingsBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Settings button clicked');
+        
+        if (settingsPanel.style.display === 'block') {
+            settingsPanel.style.display = 'none';
+        } else {
+            settingsPanel.style.display = 'block';
+        }
+    });
+    
+    // Close settings panel
+    if (settingsClose) {
+        settingsClose.addEventListener('click', function() {
+            settingsPanel.style.display = 'none';
+        });
+    }
+    
+    // Click outside to close settings panel
+    document.addEventListener('click', function(e) {
+        if (settingsPanel.style.display === 'block' && 
+            !settingsPanel.contains(e.target) && 
+            e.target !== settingsBtn &&
+            !e.target.closest('#settings-btn')) {
+            settingsPanel.style.display = 'none';
+        }
+    });
+    
+    console.log('Settings panel initialized');
+    
+    // Initialize settings controls
+    initializeSettingsControls();
+}
+
+// Make sure this is called on page load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing settings');
+    initializeSettingsPanel();
+});
+</script>
+
+
+
+<script>
+
+    // Alternative method to toggle settings panel using classes
+function toggleSettingsPanel() {
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsPanel = document.getElementById('settings-panel');
+    
+    if (!settingsBtn || !settingsPanel) {
+        console.error('Settings button or panel not found');
+        return;
+    }
+    
+    // Initialize - make sure panel starts hidden
+    settingsPanel.classList.remove('show');
+    
+    // Toggle settings panel with class instead of inline style
+    settingsBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        console.log('Settings button clicked');
+        settingsPanel.classList.toggle('show');
+    });
+    
+    // Close settings panel
+    const settingsClose = settingsPanel.querySelector('.settings-close');
+    if (settingsClose) {
+        settingsClose.addEventListener('click', function() {
+            settingsPanel.classList.remove('show');
+        });
+    }
+    
+    // Click outside to close settings panel
+    document.addEventListener('click', function(e) {
+        if (settingsPanel.classList.contains('show') && 
+            !settingsPanel.contains(e.target) && 
+            e.target !== settingsBtn &&
+            !e.target.closest('#settings-btn')) {
+            settingsPanel.classList.remove('show');
+        }
+    });
+    
+    console.log('Settings panel toggle initialized with class method');
+}
+
+// Initialize the settings controls
+function initializeSettingsControls() {
+    const showConnectionsToggle = document.getElementById('show-connections-toggle');
+    const showLinkTypesToggle = document.getElementById('show-link-types-toggle');
+    const connectionStyleSelect = document.getElementById('connection-style');
+    
+    if (!showConnectionsToggle || !showLinkTypesToggle || !connectionStyleSelect) {
+        console.error('Settings controls not found');
+        return;
+    }
+    
+    // Set initial state from connectionSettings
+    showConnectionsToggle.checked = connectionSettings.showConnections;
+    showLinkTypesToggle.checked = connectionSettings.showLinkTypes;
+    connectionStyleSelect.value = connectionSettings.connectionStyle;
+    
+    // Toggle connection visibility
+    showConnectionsToggle.addEventListener('change', function() {
+        connectionSettings.showConnections = this.checked;
+        updateConnectionsVisibility();
+    });
+    
+    // Toggle link type labels visibility
+    showLinkTypesToggle.addEventListener('change', function() {
+        connectionSettings.showLinkTypes = this.checked;
+        updateLinkTypeVisibility();
+    });
+    
+    // Change connection style
+    connectionStyleSelect.addEventListener('change', function() {
+        connectionSettings.connectionStyle = this.value;
+        updateConnectionStyle();
+    });
+    
+    console.log('Settings controls initialized');
+}
+
+// Call both on page load
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('DOM loaded, initializing settings');
+    toggleSettingsPanel();
+    initializeSettingsControls();
+});
+</script>
+
+<script>
+    // Add this function to debug connection visibility
+function debugConnectionsVisibility() {
+    const connections = document.querySelectorAll('.connection-thread');
+    console.log(`Total connections: ${connections.length}`);
+    console.log(`Connection visibility setting: ${connectionSettings.showConnections}`);
+    
+    connections.forEach((conn, index) => {
+        const sourceId = conn.getAttribute('data-source');
+        const targetId = conn.getAttribute('data-target');
+        const linkType = conn.getAttribute('data-type');
+        const display = window.getComputedStyle(conn).display;
+        
+        console.log(`Connection ${index + 1}: ${sourceId} to ${targetId} (${linkType}), display: ${display}`);
+    });
+}
+
+// Add this to test the settings panel initialization
+function testSettingsPanel() {
+    console.log('Testing settings panel...');
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsPanel = document.getElementById('settings-panel');
+    
+    if (!settingsBtn) {
+        console.error('Settings button not found');
+    } else {
+        console.log('Settings button found:', settingsBtn);
+    }
+    
+    if (!settingsPanel) {
+        console.error('Settings panel not found');
+    } else {
+        console.log('Settings panel found:', settingsPanel);
+        console.log('Current display:', window.getComputedStyle(settingsPanel).display);
+    }
+    
+    // Test a manual toggle
+    if (settingsPanel) {
+        console.log('Manually toggling panel...');
+        if (settingsPanel.classList.contains('show')) {
+            settingsPanel.classList.remove('show');
+            console.log('Removed show class');
+        } else {
+            settingsPanel.classList.add('show');
+            console.log('Added show class');
+        }
+        console.log('After toggle:', settingsPanel.classList.contains('show'));
+    }
+}
+
+// Function to manually update connection visibility
+function updateConnectionsVisibility() {
+    console.log(`Updating connections visibility to: ${connectionSettings.showConnections}`);
+    const connections = document.querySelectorAll('.connection-thread');
+    console.log(`Found ${connections.length} connections to update`);
+    
+    connections.forEach(connection => {
+        if (connectionSettings.showConnections) {
+            connection.style.display = 'block';
+        } else {
+            connection.style.display = 'none';
+        }
+    });
+}
+
+// Add a global refresh button for connections
+function addRefreshButton() {
+    const navbar = document.querySelector('.navbar-actions');
+    if (!navbar) return;
+    
+    const refreshBtn = document.createElement('button');
+    refreshBtn.id = 'refresh-connections-btn';
+    refreshBtn.textContent = '🔄 Refresh Links';
+    refreshBtn.style.marginLeft = '10px';
+    refreshBtn.style.backgroundColor = '#2196F3';
+    
+    refreshBtn.addEventListener('click', function() {
+        console.log('Refreshing connections...');
+        loadAllLinks();
+    });
+    
+    navbar.appendChild(refreshBtn);
+}
+
+// Call this at the end of your DOMContentLoaded event
+document.addEventListener('DOMContentLoaded', function() {
+    // Other initialization code...
+    
+    // Add debugging
+    setTimeout(testSettingsPanel, 1000);
+    setTimeout(debugConnectionsVisibility, 2000);
+    
+    // Add refresh button
+    addRefreshButton();
+});
+
+// Minimal but functional implementation of drawThreadConnection
+function drawThreadConnection(sourceId, targetId, linkType, linkId, sourcePosition, targetPosition) {
+    console.log(`Drawing connection: ${sourceId} to ${targetId}, type: ${linkType}, id: ${linkId}`);
+    
+    // Default positions if not provided
+    sourcePosition = sourcePosition || 'right';
+    targetPosition = targetPosition || 'left';
+    
+    const canvas = document.getElementById('canvas-view');
+    const sourcePostit = document.querySelector(`[data-id="${sourceId}"]`);
+    const targetPostit = document.querySelector(`[data-id="${targetId}"]`);
+    
+    if (!sourcePostit || !targetPostit || !canvas) {
+        console.error('Source or target post-it not found or canvas not found');
+        return;
+    }
+    
+    // Get positions from postits
+    const canvasRect = canvas.getBoundingClientRect();
+    const sourceRect = sourcePostit.getBoundingClientRect();
+    const targetRect = targetPostit.getBoundingClientRect();
+    
+    let sourceX, sourceY, targetX, targetY;
+    
+    // Get position based on side (left, right, top, bottom)
+    if (sourcePosition === 'left') {
+        sourceX = sourceRect.left - canvasRect.left;
+        sourceY = sourceRect.top + sourceRect.height/2 - canvasRect.top;
+    } else if (sourcePosition === 'right') {
+        sourceX = sourceRect.right - canvasRect.left;
+        sourceY = sourceRect.top + sourceRect.height/2 - canvasRect.top;
+    } else if (sourcePosition === 'top') {
+        sourceX = sourceRect.left + sourceRect.width/2 - canvasRect.left;
+        sourceY = sourceRect.top - canvasRect.top;
+    } else { // bottom
+        sourceX = sourceRect.left + sourceRect.width/2 - canvasRect.left;
+        sourceY = sourceRect.bottom - canvasRect.top;
+    }
+    
+    if (targetPosition === 'left') {
+        targetX = targetRect.left - canvasRect.left;
+        targetY = targetRect.top + targetRect.height/2 - canvasRect.top;
+    } else if (targetPosition === 'right') {
+        targetX = targetRect.right - canvasRect.left;
+        targetY = targetRect.top + targetRect.height/2 - canvasRect.top;
+    } else if (targetPosition === 'top') {
+        targetX = targetRect.left + targetRect.width/2 - canvasRect.left;
+        targetY = targetRect.top - canvasRect.top;
+    } else { // bottom
+        targetX = targetRect.left + targetRect.width/2 - canvasRect.left;
+        targetY = targetRect.bottom - canvasRect.top;
+    }
+    
+    // Create SVG element for the connection
+    const connection = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    connection.setAttribute('class', `connection-thread connection-${connectionSettings.connectionStyle}`);
+    connection.setAttribute('data-source', sourceId);
+    connection.setAttribute('data-target', targetId);
+    connection.setAttribute('data-type', linkType);
+    connection.setAttribute('data-id', linkId);
+    connection.setAttribute('data-source-position', sourcePosition);
+    connection.setAttribute('data-target-position', targetPosition);
+    
+    // Set initial size of SVG
+    connection.setAttribute('width', canvasRect.width);
+    connection.setAttribute('height', canvasRect.height);
+    
+    // Create path element
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('stroke', getLinkColor(linkType));
+    path.setAttribute('stroke-width', '2');
+    path.setAttribute('fill', 'none');
+    
+    const pathD = getConnectionPath(sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition);
+    path.setAttribute('d', pathD);
+    connection.appendChild(path);
+    
+    // Create text element for link type
+    const textBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    textBg.setAttribute('fill', 'white');
+    textBg.setAttribute('opacity', '0.8');
+    connection.appendChild(textBg);
+    
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.setAttribute('font-size', '10');
+    text.setAttribute('text-anchor', 'middle');
+    text.textContent = formatLinkType(linkType);
+    connection.appendChild(text);
+    
+    // Update text position
+    const midX = (sourceX + targetX) / 2;
+    const midY = (sourceY + targetY) / 2 - 10;
+    
+    text.setAttribute('x', midX);
+    text.setAttribute('y', midY);
+    
+    // Update text background
+    const textWidth = text.textContent.length * 6;
+    textBg.setAttribute('x', midX - textWidth/2 - 3);
+    textBg.setAttribute('y', midY - 12);
+    textBg.setAttribute('width', textWidth + 6);
+    textBg.setAttribute('height', 16);
+    
+    // Add connection to canvas
+    canvas.appendChild(connection);
+    
+    // Create delete icon
+    const deleteIcon = document.createElement('div');
+    deleteIcon.className = 'link-delete-icon';
+    deleteIcon.innerHTML = '×';
+    deleteIcon.setAttribute('data-link-id', linkId);
+    deleteIcon.title = 'Delete link';
+    deleteIcon.style.position = 'absolute';
+    deleteIcon.style.left = (midX + canvasRect.left) + 'px';
+    deleteIcon.style.top = (midY + canvasRect.top - 20) + 'px';
+    deleteIcon.style.backgroundColor = 'white';
+    deleteIcon.style.borderRadius = '50%';
+    deleteIcon.style.width = '16px';
+    deleteIcon.style.height = '16px';
+    deleteIcon.style.textAlign = 'center';
+    deleteIcon.style.lineHeight = '16px';
+    deleteIcon.style.fontSize = '12px';
+    deleteIcon.style.cursor = 'pointer';
+    deleteIcon.style.zIndex = '1000';
+    deleteIcon.style.boxShadow = '0 1px 3px rgba(0, 0, 0, 0.2)';
+    
+    // Add click event to delete icon
+    deleteIcon.addEventListener('click', function(e) {
+        e.stopPropagation();
+        const linkId = this.getAttribute('data-link-id');
+        
+        if (confirm('Are you sure you want to delete this link?')) {
+            deletePostNoteLink(linkId);
+        }
+    });
+    
+    canvas.appendChild(deleteIcon);
+    
+    console.log('Connection drawn successfully');
+    return connection;
+}
+</script>
+
+<script>
+    // Make sure connectionSettings is properly defined
+if (typeof connectionSettings === 'undefined') {
+    console.warn('connectionSettings is not defined, creating default settings');
+    
+    // Create global connectionSettings object with defaults
+    window.connectionSettings = {
+        showConnections: true,
+        showLinkTypes: true,
+        connectionStyle: 'curved', // 'straight', 'curved', 'stepped'
+    };
+    
+    console.log('Default connectionSettings created:', window.connectionSettings);
+}
+
+// Quick function to test if all core functions are defined
+function testRequiredFunctions() {
+    const requiredFunctions = [
+        'drawThreadConnection',
+        'updateThreadConnection',
+        'getConnectionPath',
+        'formatLinkType',
+        'getLinkColor',
+        'updateConnectionsVisibility',
+        'updateLinkTypeVisibility',
+        'updateConnectionStyle'
+    ];
+    
+    let allDefined = true;
+    
+    requiredFunctions.forEach(funcName => {
+        if (typeof window[funcName] !== 'function') {
+            console.error(`Required function '${funcName}' is not defined!`);
+            allDefined = false;
+        }
+    });
+    
+    if (allDefined) {
+        console.log('All required functions are defined');
+    } else {
+        console.error('Some required functions are missing - check your JavaScript includes');
+    }
+    
+    return allDefined;
+}
+
+// Add a function to fix missing functions if needed
+function fixMissingFunctions() {
+    // Check if updateLinkTypeVisibility is defined
+    if (typeof updateLinkTypeVisibility !== 'function') {
+        console.warn('Defining missing function: updateLinkTypeVisibility');
+        window.updateLinkTypeVisibility = function() {
+            console.log('Updating link type visibility:', connectionSettings.showLinkTypes);
+            document.querySelectorAll('.connection-thread text, .connection-thread rect').forEach(element => {
+                if (connectionSettings.showLinkTypes) {
+                    element.style.display = 'block';
+                } else {
+                    element.style.display = 'none';
+                }
+            });
+        };
+    }
+    
+    // Check if updateConnectionStyle is defined
+    if (typeof updateConnectionStyle !== 'function') {
+        console.warn('Defining missing function: updateConnectionStyle');
+        window.updateConnectionStyle = function() {
+            console.log('Updating connection style:', connectionSettings.connectionStyle);
+            document.querySelectorAll('.connection-thread').forEach(connection => {
+                // Remove all style classes first
+                connection.classList.remove('connection-straight', 'connection-curved', 'connection-stepped');
+                // Add the selected style class
+                connection.classList.add(`connection-${connectionSettings.connectionStyle}`);
+            });
+            
+            // Update all paths if needed
+            if (typeof updateAllConnectionPaths === 'function') {
+                updateAllConnectionPaths();
+            }
+        };
+    }
+    
+    // If updateAllConnectionPaths is missing
+    if (typeof updateAllConnectionPaths !== 'function') {
+        console.warn('Defining missing function: updateAllConnectionPaths');
+        window.updateAllConnectionPaths = function() {
+            if (typeof updateThreadConnection === 'function') {
+                document.querySelectorAll('.connection-thread').forEach(updateThreadConnection);
+            }
+        };
+    }
+}
+
+// Run the check when the page loads
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(() => {
+        console.log('Checking required functions...');
+        const allFunctionsOk = testRequiredFunctions();
+        
+        if (!allFunctionsOk) {
+            console.log('Attempting to fix missing functions...');
+            fixMissingFunctions();
+        }
+    }, 100);
+});
+</script>
+
+
+
+<script>
+    // Function to add connection points to post notes
+function addConnectionPointsToPostNotes() {
+    console.log('Adding connection points to post notes...');
+    
+    document.querySelectorAll('.postnote').forEach(postnote => {
+        // Skip if connection points already exist
+        if (postnote.querySelector('.connection-point')) {
+            return;
+        }
+        
+        const postitInner = postnote.querySelector('.postnote-inner');
+        if (!postitInner) {
+            console.error('Could not find .postnote-inner in post note:', postnote);
+            return;
+        }
+        
+        // Create connection points on all four sides
+        const points = ['left', 'right', 'top', 'bottom'];
+        points.forEach(position => {
+            const point = document.createElement('div');
+            point.className = `connection-point connection-point-${position}`;
+            point.setAttribute('data-position', position);
+            
+            // Add event listeners for connection creation
+            point.addEventListener('mousedown', startConnection);
+            
+            postitInner.appendChild(point);
+        });
+        
+        console.log('Added connection points to post note:', postnote.getAttribute('data-id'));
+    });
+}
+
+
+// Function to get connection path based on style and positions
+function getConnectionPath(x1, y1, x2, y2, sourcePosition, targetPosition) {
+    const style = connectionSettings.connectionStyle || 'curved';
+    
+    switch(style) {
+        case 'straight':
+            return `M${x1},${y1} L${x2},${y2}`;
+            
+        case 'curved':
+            // Basic curved path if positions aren't specified
+            let cx1 = (x1 + x2) / 2;
+            let cy1 = y1;
+            let cx2 = (x1 + x2) / 2;
+            let cy2 = y2;
+            
+            return `M${x1},${y1} C${cx1},${cy1} ${cx2},${cy2} ${x2},${y2}`;
+            
+        case 'stepped':
+            // Basic stepped path
+            const midX = (x1 + x2) / 2;
+            return `M${x1},${y1} L${midX},${y1} L${midX},${y2} L${x2},${y2}`;
+            
+        default:
+            return `M${x1},${y1} L${x2},${y2}`;
+    }
+}
+
+// Function to update a connection's position
+function updateThreadConnection(connection) {
+    if (!connection) return;
+    
+    const canvas = document.getElementById('canvas-view');
+    if (!canvas) {
+        console.error('Canvas not found');
+        return;
+    }
+    
+    const canvasRect = canvas.getBoundingClientRect();
+    
+    const sourceId = connection.getAttribute('data-source');
+    const targetId = connection.getAttribute('data-target');
+    const sourcePosition = connection.getAttribute('data-source-position') || 'right';
+    const targetPosition = connection.getAttribute('data-target-position') || 'left';
+    const linkId = connection.getAttribute('data-id');
+    
+    const sourcePostit = document.querySelector(`[data-id="${sourceId}"]`);
+    const targetPostit = document.querySelector(`[data-id="${targetId}"]`);
+    
+    if (!sourcePostit || !targetPostit) {
+        console.warn(`Source or target not found. sourceId=${sourceId}, targetId=${targetId}`);
+        return;
+    }
+    
+    // Get positions directly from postits if connection points don't exist
+    const sourceRect = sourcePostit.getBoundingClientRect();
+    const targetRect = targetPostit.getBoundingClientRect();
+    
+    let sourceX, sourceY, targetX, targetY;
+    
+    // Get position based on side (left, right, top, bottom)
+    if (sourcePosition === 'left') {
+        sourceX = sourceRect.left - canvasRect.left;
+        sourceY = sourceRect.top + sourceRect.height/2 - canvasRect.top;
+    } else if (sourcePosition === 'right') {
+        sourceX = sourceRect.right - canvasRect.left;
+        sourceY = sourceRect.top + sourceRect.height/2 - canvasRect.top;
+    } else if (sourcePosition === 'top') {
+        sourceX = sourceRect.left + sourceRect.width/2 - canvasRect.left;
+        sourceY = sourceRect.top - canvasRect.top;
+    } else { // bottom
+        sourceX = sourceRect.left + sourceRect.width/2 - canvasRect.left;
+        sourceY = sourceRect.bottom - canvasRect.top;
+    }
+    
+    if (targetPosition === 'left') {
+        targetX = targetRect.left - canvasRect.left;
+        targetY = targetRect.top + targetRect.height/2 - canvasRect.top;
+    } else if (targetPosition === 'right') {
+        targetX = targetRect.right - canvasRect.left;
+        targetY = targetRect.top + targetRect.height/2 - canvasRect.top;
+    } else if (targetPosition === 'top') {
+        targetX = targetRect.left + targetRect.width/2 - canvasRect.left;
+        targetY = targetRect.top - canvasRect.top;
+    } else { // bottom
+        targetX = targetRect.left + targetRect.width/2 - canvasRect.left;
+        targetY = targetRect.bottom - canvasRect.top;
+    }
+    
+    // Update SVG size
+    connection.setAttribute('width', canvasRect.width);
+    connection.setAttribute('height', canvasRect.height);
+    
+    // Update path
+    const path = connection.querySelector('path');
+    if (path) {
+        const pathD = getConnectionPath(sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition);
+        path.setAttribute('d', pathD);
+    }
+    
+    // Update text position if it exists
+    const midX = (sourceX + targetX) / 2;
+    const midY = (sourceY + targetY) / 2 - 10;
+    
+    const text = connection.querySelector('text');
+    if (text) {
+        text.setAttribute('x', midX);
+        text.setAttribute('y', midY);
+    }
+    
+    // Update text background if it exists
+    const textBg = connection.querySelector('rect');
+    if (textBg && text) {
+        const textWidth = text.getComputedTextLength ? text.getComputedTextLength() : text.textContent.length * 6;
+        textBg.setAttribute('x', midX - textWidth/2 - 3);
+        textBg.setAttribute('y', midY - 12);
+        textBg.setAttribute('width', textWidth + 6);
+        textBg.setAttribute('height', 16);
+    }
+}
+
+// Function to update all connections
+function updateAllConnections() {
+    document.querySelectorAll('.connection-thread').forEach(updateThreadConnection);
+}
+
+// Function to update connection visibility
+function updateConnectionsVisibility() {
+    console.log(`Updating connections visibility to: ${connectionSettings.showConnections}`);
+    const connections = document.querySelectorAll('.connection-thread');
+    console.log(`Found ${connections.length} connections to update`);
+    
+    connections.forEach(connection => {
+        if (connectionSettings.showConnections) {
+            connection.style.display = 'block';
+        } else {
+            connection.style.display = 'none';
+        }
+    });
+}
+
+// Function to update link type visibility
+function updateLinkTypeVisibility() {
+    console.log(`Updating link type visibility to: ${connectionSettings.showLinkTypes}`);
+    const linkTextElements = document.querySelectorAll('.connection-thread text, .connection-thread rect');
+    
+    linkTextElements.forEach(element => {
+        if (connectionSettings.showLinkTypes) {
+            element.style.display = 'block';
+        } else {
+            element.style.display = 'none';
+        }
+    });
+}
+
+// Function to update connection style
+function updateConnectionStyle() {
+    console.log(`Updating connection style to: ${connectionSettings.connectionStyle}`);
+    const connections = document.querySelectorAll('.connection-thread');
+    
+    connections.forEach(connection => {
+        // Remove all style classes first
+        connection.classList.remove('connection-straight', 'connection-curved', 'connection-stepped');
+        // Add the selected style class
+        connection.classList.add(`connection-${connectionSettings.connectionStyle}`);
+    });
+    
+    // Update all connections
+    updateAllConnections();
+}
+
+// Function to delete a post note link
+function deletePostNoteLink(linkId) {
+    console.log(`Deleting link: ${linkId}`);
+    
+    // Get CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    // Make AJAX request
+    fetch(`/app_postnote/postnote/api/postnote/link/${linkId}/delete/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken
+        },
+        body: new FormData()
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Remove the connection from DOM
+            const connection = document.querySelector(`.connection-thread[data-id="${linkId}"]`);
+            if (connection) {
+                connection.remove();
+            }
+            
+            // Remove the delete icon if it exists
+            const deleteIcon = document.querySelector(`.link-delete-icon[data-link-id="${linkId}"]`);
+            if (deleteIcon) {
+                deleteIcon.remove();
+            }
+            
+            // Remove from our global storage
+            window.postNoteLinks = window.postNoteLinks.filter(link => link.id != linkId);
+            
+            console.log('Link deleted successfully');
+        } else {
+            console.error('Error deleting link:', data.message);
+            alert('Error deleting link: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error deleting link. Please try again.');
+    });
+}
+
+// Function to show a success message
+function showSuccessMessage(message) {
+    const successMsg = document.createElement('div');
+    successMsg.className = 'save-success';
+    successMsg.textContent = message;
+    successMsg.style.position = 'fixed';
+    successMsg.style.bottom = '20px';
+    successMsg.style.right = '20px';
+    successMsg.style.backgroundColor = '#4CAF50';
+    successMsg.style.color = 'white';
+    successMsg.style.padding = '10px 20px';
+    successMsg.style.borderRadius = '4px';
+    successMsg.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.2)';
+    successMsg.style.zIndex = '2000';
+    
+    document.body.appendChild(successMsg);
+    
+    // Remove after 3 seconds
+    setTimeout(() => {
+        if (successMsg.parentNode) {
+            successMsg.parentNode.removeChild(successMsg);
+        }
+    }, 3000);
+}
+
+// Register window resize event to update connections
+window.addEventListener('resize', updateAllConnections);
+</script>
+
+<script>
+    // Fixed function to load all links
+function loadAllLinks() {
+    console.log('Loading all links...');
+    
+    // Make sure all necessary functions are defined
+    if (typeof addConnectionPointsToPostNotes !== 'function') {
+        console.error('addConnectionPointsToPostNotes function is not defined!');
+        return;
+    }
+    
+    if (typeof drawThreadConnection !== 'function') {
+        console.error('drawThreadConnection function is not defined!');
+        return;
+    }
+    
+    // Check for project ID
+    const projectIdMeta = document.querySelector('meta[name="project-id"]');
+    if (!projectIdMeta) {
+        console.error('Project ID meta tag not found!');
+        return;
+    }
+    
+    const projectId = projectIdMeta.getAttribute('content');
+    if (!projectId) {
+        console.error('Project ID is empty!');
+        return;
+    }
+    
+    console.log(`Loading links for project ID: ${projectId}`);
+    
+    // Get CSRF token
+    const csrfTokenInput = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (!csrfTokenInput) {
+        console.error('CSRF token input not found!');
+        return;
+    }
+    
+    const csrfToken = csrfTokenInput.value;
+    
+    // First ensure connection points exist
+    addConnectionPointsToPostNotes();
+    
+    // Make AJAX request
+    fetch(`/app_postnote/postnote/api/project/${projectId}/links/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken
+        },
+        body: new FormData()
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.status === 'success') {
+            console.log(`Links loaded: ${data.links ? data.links.length : 0}`);
+            
+            if (!data.links || data.links.length === 0) {
+                console.log('No links found for this project');
+                return;
+            }
+            
+            // Store links in global variable
+            window.postNoteLinks = data.links;
+            
+            // Clear existing connections
+            document.querySelectorAll('.connection-thread').forEach(conn => conn.remove());
+            document.querySelectorAll('.link-delete-icon').forEach(icon => icon.remove());
+            
+            // Draw all connections
+            data.links.forEach(link => {
+                try {
+                    // Default to right/left positions if not specified
+                    const sourcePosition = link.source_position || 'right';
+                    const targetPosition = link.target_position || 'left';
+                    
+                    console.log(`Drawing link: ${link.id} from ${link.source_id} to ${link.target_id}`);
+                    
+                    drawThreadConnection(
+                        link.source_id, 
+                        link.target_id, 
+                        link.link_type, 
+                        link.id,
+                        sourcePosition,
+                        targetPosition
+                    );
+                } catch (error) {
+                    console.error(`Error drawing link ${link.id}:`, error);
+                }
+            });
+            
+            // Update visibility settings
+            if (typeof connectionSettings !== 'undefined') {
+                if (typeof updateConnectionsVisibility === 'function' && typeof connectionSettings.showConnections !== 'undefined') {
+                    updateConnectionsVisibility();
+                }
+                
+                if (typeof updateLinkTypeVisibility === 'function' && typeof connectionSettings.showLinkTypes !== 'undefined') {
+                    updateLinkTypeVisibility();
+                }
+            }
+            
+            console.log('All links loaded and drawn successfully');
+        } else {
+            console.error('Error in server response:', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading links:', error);
+    });
+}
+
+// Add a version that doesn't require addConnectionPointsToPostNotes
+function loadAllLinksSimple() {
+    console.log('Loading all links with simple implementation...');
+    
+    // Check for project ID
+    const projectIdMeta = document.querySelector('meta[name="project-id"]');
+    if (!projectIdMeta) {
+        console.error('Project ID meta tag not found!');
+        return;
+    }
+    
+    const projectId = projectIdMeta.getAttribute('content');
+    if (!projectId) {
+        console.error('Project ID is empty!');
+        return;
+    }
+    
+    console.log(`Loading links for project ID: ${projectId}`);
+    
+    // Get CSRF token
+    const csrfTokenInput = document.querySelector('[name=csrfmiddlewaretoken]');
+    if (!csrfTokenInput) {
+        console.error('CSRF token input not found!');
+        return;
+    }
+    
+    const csrfToken = csrfTokenInput.value;
+    
+    // Make AJAX request
+    fetch(`/app_postnote/postnote/api/project/${projectId}/links/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken
+        },
+        body: new FormData()
+    })
+    .then(response => {
+        if (!response.ok) {
+            throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        if (data.status === 'success') {
+            console.log(`Links loaded: ${data.links ? data.links.length : 0}`);
+            
+            if (!data.links || data.links.length === 0) {
+                console.log('No links found for this project');
+                return;
+            }
+            
+            alert(`Found ${data.links.length} links for this project!`);
+        } else {
+            console.error('Error in server response:', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error loading links:', error);
+    });
+}
+
+// Create a button to trigger link loading
+function addLoadLinksButton() {
+    const navbar = document.querySelector('.navbar-actions');
+    if (!navbar) return;
+    
+    const loadBtn = document.createElement('button');
+    loadBtn.id = 'load-links-btn';
+    loadBtn.textContent = '📥 Load Links';
+    loadBtn.style.marginLeft = '10px';
+    loadBtn.style.backgroundColor = '#2196F3';
+    loadBtn.style.color = 'white';
+    loadBtn.style.border = 'none';
+    loadBtn.style.padding = '5px 10px';
+    loadBtn.style.borderRadius = '3px';
+    loadBtn.style.cursor = 'pointer';
+    
+    loadBtn.addEventListener('click', function() {
+        // Try the simplified version first
+        loadAllLinksSimple();
+    });
+    
+    navbar.appendChild(loadBtn);
+}
+
+// Call this on page load
+document.addEventListener('DOMContentLoaded', function() {
+    setTimeout(addLoadLinksButton, 500);
+});
+</script>
+
+<script>
+    // Ensure connectionSettings is properly defined globally
+window.connectionSettings = {
+    showConnections: true,
+    showLinkTypes: true,
+    connectionStyle: 'curved' // 'straight', 'curved', or 'stepped'
+};
+
+// Variables for connection creation
+let connectionStart = null;
+let tempConnectionLine = null;
+
+// Initialize the settings panel correctly
+function initializeSettingsPanel() {
+    console.log('Initializing settings panel');
+    const settingsBtn = document.getElementById('settings-btn');
+    const settingsPanel = document.getElementById('settings-panel');
+    
+    if (!settingsBtn || !settingsPanel) {
+        console.error('Settings button or panel not found');
+        return;
+    }
+    
+    // Toggle settings panel with class
+    settingsBtn.addEventListener('click', function(e) {
+        e.preventDefault();
+        e.stopPropagation();
+        settingsPanel.classList.toggle('show');
+    });
+    
+    // Close button
+    const settingsClose = settingsPanel.querySelector('.settings-close');
+    if (settingsClose) {
+        settingsClose.addEventListener('click', function() {
+            settingsPanel.classList.remove('show');
+        });
+    }
+    
+    // Click outside to close
+    document.addEventListener('click', function(e) {
+        if (settingsPanel.classList.contains('show') && 
+            !settingsPanel.contains(e.target) && 
+            e.target !== settingsBtn &&
+            !settingsBtn.contains(e.target)) {
+            settingsPanel.classList.remove('show');
+        }
+    });
+    
+    // Initialize settings controls
+    initializeSettingsControls();
+}
+
+// Initialize settings controls
+function initializeSettingsControls() {
+    const showConnectionsToggle = document.getElementById('show-connections-toggle');
+    const showLinkTypesToggle = document.getElementById('show-link-types-toggle');
+    const connectionStyleSelect = document.getElementById('connection-style');
+    
+    if (!showConnectionsToggle || !showLinkTypesToggle || !connectionStyleSelect) {
+        console.error('Settings controls not found');
+        return;
+    }
+    
+    // Set initial state
+    showConnectionsToggle.checked = connectionSettings.showConnections;
+    showLinkTypesToggle.checked = connectionSettings.showLinkTypes;
+    connectionStyleSelect.value = connectionSettings.connectionStyle;
+    
+    // Toggle connection visibility
+    showConnectionsToggle.addEventListener('change', function() {
+        connectionSettings.showConnections = this.checked;
+        updateConnectionsVisibility();
+    });
+    
+    // Toggle link type labels visibility
+    showLinkTypesToggle.addEventListener('change', function() {
+        connectionSettings.showLinkTypes = this.checked;
+        updateLinkTypeVisibility();
+    });
+    
+    // Change connection style
+    connectionStyleSelect.addEventListener('change', function() {
+        connectionSettings.connectionStyle = this.value;
+        updateConnectionStyle();
+    });
+}
+
+// Update connection visibility
+function updateConnectionsVisibility() {
+    console.log(`Updating connections visibility to: ${connectionSettings.showConnections}`);
+    document.querySelectorAll('.connection-thread, .connection-line').forEach(connection => {
+        connection.style.display = connectionSettings.showConnections ? 'block' : 'none';
+    });
+    
+    // Also update delete icons
+    document.querySelectorAll('.link-delete-icon').forEach(icon => {
+        icon.style.display = connectionSettings.showConnections ? 'block' : 'none';
+    });
+}
+
+// Update link type visibility
+function updateLinkTypeVisibility() {
+    console.log(`Updating link type visibility to: ${connectionSettings.showLinkTypes}`);
+    document.querySelectorAll('.connection-thread text, .connection-thread rect, .connection-line text, .connection-line rect').forEach(element => {
+        element.style.display = connectionSettings.showLinkTypes ? 'block' : 'none';
+    });
+}
+
+// Update connection style
+function updateConnectionStyle() {
+    console.log(`Updating connection style to: ${connectionSettings.connectionStyle}`);
+    
+    // Remove all style classes first
+    document.querySelectorAll('.connection-thread, .connection-line').forEach(connection => {
+        connection.classList.remove('connection-straight', 'connection-curved', 'connection-stepped');
+        connection.classList.add(`connection-${connectionSettings.connectionStyle}`);
+    });
+    
+    // Redraw all connections with the new style
+    updateAllConnections();
+}
+
+// Get connection path based on style
+function getConnectionPath(x1, y1, x2, y2, sourcePosition, targetPosition) {
+    const style = connectionSettings.connectionStyle || 'curved';
+    
+    switch(style) {
+        case 'straight':
+            return `M${x1},${y1} L${x2},${y2}`;
+            
+        case 'curved':
+            // Adjust control points based on positions
+            let cx1, cy1, cx2, cy2;
+            
+            // Default control points
+            const offsetX = Math.abs(x2 - x1) * 0.4;
+            const offsetY = Math.abs(y2 - y1) * 0.4;
+            
+            // Adjust based on connection points
+            if (sourcePosition === 'right' && targetPosition === 'left') {
+                cx1 = x1 + offsetX;
+                cy1 = y1;
+                cx2 = x2 - offsetX;
+                cy2 = y2;
+            } else if (sourcePosition === 'left' && targetPosition === 'right') {
+                cx1 = x1 - offsetX;
+                cy1 = y1;
+                cx2 = x2 + offsetX;
+                cy2 = y2;
+            } else if (sourcePosition === 'bottom' && targetPosition === 'top') {
+                cx1 = x1;
+                cy1 = y1 + offsetY;
+                cx2 = x2;
+                cy2 = y2 - offsetY;
+            } else if (sourcePosition === 'top' && targetPosition === 'bottom') {
+                cx1 = x1;
+                cy1 = y1 - offsetY;
+                cx2 = x2;
+                cy2 = y2 + offsetY;
+            } else {
+                // Mixed directions, use midpoint
+                cx1 = (x1 + x2) / 2;
+                cy1 = y1;
+                cx2 = (x1 + x2) / 2;
+                cy2 = y2;
+            }
+            
+            return `M${x1},${y1} C${cx1},${cy1} ${cx2},${cy2} ${x2},${y2}`;
+            
+        case 'stepped':
+            // Adjust step position based on connection points
+            let midX, midY;
+            
+            if (sourcePosition === 'right' || sourcePosition === 'left') {
+                // Horizontal first, then vertical
+                midX = (x1 + x2) / 2;
+                return `M${x1},${y1} L${midX},${y1} L${midX},${y2} L${x2},${y2}`;
+            } else {
+                // Vertical first, then horizontal
+                midY = (y1 + y2) / 2;
+                return `M${x1},${y1} L${x1},${midY} L${x2},${midY} L${x2},${y2}`;
+            }
+            
+        default:
+            return `M${x1},${y1} L${x2},${y2}`;
+    }
+}
+
+// Add connection points to all post notes
+function addConnectionPointsToPostNotes() {
+    document.querySelectorAll('.postnote').forEach(postnote => {
+        // Skip if already has connection points
+        if (postnote.querySelector('.connection-point')) {
+            return;
+        }
+        
+        const postitInner = postnote.querySelector('.postnote-inner');
+        if (!postitInner) return;
+        
+        // Create connection points
+        ['left', 'right', 'top', 'bottom'].forEach(position => {
+            const point = document.createElement('div');
+            point.className = `connection-point connection-point-${position}`;
+            point.setAttribute('data-position', position);
+            point.title = `Create connection from ${position}`;
+            
+            // Add event for connection creation
+            point.addEventListener('mousedown', function(e) {
+                e.stopPropagation(); // Prevent dragging post-it
+                startConnection(e, this);
+            });
+            
+            postitInner.appendChild(point);
+        });
+    });
+}
+
+// Start creating a connection
+function startConnection(e, point) {
+    const postnote = point.closest('.postnote');
+    const position = point.getAttribute('data-position');
+    const postnoteId = postnote.getAttribute('data-id');
+    
+    connectionStart = {
+        id: postnoteId,
+        position: position,
+        element: point
+    };
+    
+    // Add active effect
+    point.classList.add('connection-point-dragging');
+    
+    // Create temporary connection line
+    const canvas = document.getElementById('canvas-view');
+    const canvasRect = canvas.getBoundingClientRect();
+    
+    // Get starting coordinates
+    const pointRect = point.getBoundingClientRect();
+    const startX = pointRect.left + pointRect.width/2 - canvasRect.left;
+    const startY = pointRect.top + pointRect.height/2 - canvasRect.top;
+    
+    // Create temporary SVG
+    tempConnectionLine = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    tempConnectionLine.setAttribute('class', 'connection-thread');
+    tempConnectionLine.setAttribute('width', canvasRect.width);
+    tempConnectionLine.setAttribute('height', canvasRect.height);
+    
+    // Create path
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('stroke', '#666');
+    path.setAttribute('stroke-width', '2');
+    path.setAttribute('fill', 'none');
+    path.setAttribute('stroke-dasharray', '5,3');
+    
+    tempConnectionLine.appendChild(path);
+    canvas.appendChild(tempConnectionLine);
+    
+    // Move handler
+    function moveConnection(e) {
+        if (!tempConnectionLine) return;
+        
+        const mouseX = e.clientX - canvasRect.left;
+        const mouseY = e.clientY - canvasRect.top;
+        
+        // Update path
+        path.setAttribute('d', getConnectionPath(startX, startY, mouseX, mouseY, position, null));
+    }
+    
+    // Complete handler
+    function completeConnection(e) {
+        document.removeEventListener('mousemove', moveConnection);
+        document.removeEventListener('mouseup', completeConnection);
+        
+        // Remove active class
+        point.classList.remove('connection-point-dragging');
+        
+        // Check if over another connection point
+        const targetElement = document.elementFromPoint(e.clientX, e.clientY);
+        const targetPoint = targetElement?.closest('.connection-point');
+        
+        if (targetPoint && targetPoint !== point) {
+            const targetPostnote = targetPoint.closest('.postnote');
+            const targetPosition = targetPoint.getAttribute('data-position');
+            const targetId = targetPostnote.getAttribute('data-id');
+            
+            // Show link type selection
+            showLinkTypeSelection(
+                connectionStart.id, 
+                targetId, 
+                connectionStart.position, 
+                targetPosition,
+                e.clientX,
+                e.clientY
+            );
+        } else {
+            // No valid target
+            if (tempConnectionLine) {
+                tempConnectionLine.remove();
+                tempConnectionLine = null;
+            }
+        }
+        
+        connectionStart = null;
+    }
+    
+    document.addEventListener('mousemove', moveConnection);
+    document.addEventListener('mouseup', completeConnection);
+}
+
+// Simplified version of thread connection creation
+function drawThreadConnection(sourceId, targetId, linkType, linkId, sourcePosition, targetPosition) {
+    const canvas = document.getElementById('canvas-view');
+    const sourcePostit = document.querySelector(`[data-id="${sourceId}"]`);
+    const targetPostit = document.querySelector(`[data-id="${targetId}"]`);
+    
+    if (!sourcePostit || !targetPostit || !canvas) {
+        console.error('Source or target post-it not found or canvas not found');
+        return;
+    }
+    
+    // Set default positions if not provided
+    sourcePosition = sourcePosition || 'right';
+    targetPosition = targetPosition || 'left';
+    
+    // Get positions
+    const canvasRect = canvas.getBoundingClientRect();
+    const sourceRect = sourcePostit.getBoundingClientRect();
+    const targetRect = targetPostit.getBoundingClientRect();
+    
+    // Calculate connection point coordinates
+    let sourceX, sourceY, targetX, targetY;
+    
+    // Source position
+    if (sourcePosition === 'left') {
+        sourceX = sourceRect.left - canvasRect.left;
+        sourceY = sourceRect.top + sourceRect.height/2 - canvasRect.top;
+    } else if (sourcePosition === 'right') {
+        sourceX = sourceRect.right - canvasRect.left;
+        sourceY = sourceRect.top + sourceRect.height/2 - canvasRect.top;
+    } else if (sourcePosition === 'top') {
+        sourceX = sourceRect.left + sourceRect.width/2 - canvasRect.left;
+        sourceY = sourceRect.top - canvasRect.top;
+    } else { // bottom
+        sourceX = sourceRect.left + sourceRect.width/2 - canvasRect.left;
+        sourceY = sourceRect.bottom - canvasRect.top;
+    }
+    
+    // Target position
+    if (targetPosition === 'left') {
+        targetX = targetRect.left - canvasRect.left;
+        targetY = targetRect.top + targetRect.height/2 - canvasRect.top;
+    } else if (targetPosition === 'right') {
+        targetX = targetRect.right - canvasRect.left;
+        targetY = targetRect.top + targetRect.height/2 - canvasRect.top;
+    } else if (targetPosition === 'top') {
+        targetX = targetRect.left + targetRect.width/2 - canvasRect.left;
+        targetY = targetRect.top - canvasRect.top;
+    } else { // bottom
+        targetX = targetRect.left + targetRect.width/2 - canvasRect.left;
+        targetY = targetRect.bottom - canvasRect.top;
+    }
+    
+    // Create SVG element
+    const connection = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+    connection.setAttribute('class', `connection-thread connection-${connectionSettings.connectionStyle}`);
+    connection.setAttribute('data-source', sourceId);
+    connection.setAttribute('data-target', targetId);
+    connection.setAttribute('data-type', linkType);
+    connection.setAttribute('data-id', linkId);
+    connection.setAttribute('data-source-position', sourcePosition);
+    connection.setAttribute('data-target-position', targetPosition);
+    
+    // Set size
+    connection.setAttribute('width', canvasRect.width);
+    connection.setAttribute('height', canvasRect.height);
+    
+    // Color based on link type
+    const linkColor = getLinkColor(linkType);
+    
+    // Create path element
+    const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+    path.setAttribute('stroke', linkColor);
+    path.setAttribute('stroke-width', '2');
+    path.setAttribute('fill', 'none');
+    
+    // Create path
+    const pathD = getConnectionPath(sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition);
+    path.setAttribute('d', pathD);
+    connection.appendChild(path);
+    
+    // Create text label
+    const textBg = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    textBg.setAttribute('fill', 'white');
+    textBg.setAttribute('opacity', '0.8');
+    textBg.setAttribute('rx', '2');
+    textBg.setAttribute('ry', '2');
+    connection.appendChild(textBg);
+    
+    const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+    text.textContent = formatLinkType(linkType);
+    connection.appendChild(text);
+    
+    // Position text
+    const midX = (sourceX + targetX) / 2;
+    const midY = (sourceY + targetY) / 2 - 10;
+    text.setAttribute('x', midX);
+    text.setAttribute('y', midY);
+    
+    // Size background
+    const textWidth = text.textContent.length * 6;
+    textBg.setAttribute('x', midX - textWidth/2 - 3);
+    textBg.setAttribute('y', midY - 12);
+    textBg.setAttribute('width', textWidth + 6);
+    textBg.setAttribute('height', 16);
+    
+    // Show/hide based on settings
+    if (!connectionSettings.showLinkTypes) {
+        text.style.display = 'none';
+        textBg.style.display = 'none';
+    }
+    
+    // Add to canvas
+    canvas.appendChild(connection);
+    
+    // Create delete icon
+    const deleteIcon = document.createElement('div');
+    deleteIcon.className = 'link-delete-icon';
+    deleteIcon.innerHTML = '×';
+    deleteIcon.setAttribute('data-link-id', linkId);
+    deleteIcon.title = 'Delete link';
+    deleteIcon.style.left = (midX + canvasRect.left) + 'px';
+    deleteIcon.style.top = (midY + canvasRect.top - 20) + 'px';
+    
+    // Delete event
+    deleteIcon.addEventListener('click', function(e) {
+        e.stopPropagation();
+        if (confirm('Are you sure you want to delete this link?')) {
+            deletePostNoteLink(this.getAttribute('data-link-id'));
+        }
+    });
+    
+    canvas.appendChild(deleteIcon);
+    
+    return connection;
+}
+
+// Get link color based on type
+function getLinkColor(linkType) {
+    switch(linkType) {
+        case 'depends_on': return '#F44336';
+        case 'related_to': return '#2196F3';
+        case 'parent_of': return '#4CAF50';
+        case 'child_of': return '#9C27B0';
+        case 'blocks': return '#FF9800';
+        case 'is_blocked_by': return '#795548';
+        default: return '#555555';
+    }
+}
+
+// Format link type for display
+function formatLinkType(linkType) {
+    return linkType.replace(/_/g, ' ');
+}
+
+// Show link type selection menu
+function showLinkTypeSelection(sourceId, targetId, sourcePosition, targetPosition, x, y) {
+    // Create popup menu
+    const menu = document.createElement('div');
+    menu.className = 'link-type-menu';
+    menu.style.position = 'absolute';
+    menu.style.left = `${x}px`;
+    menu.style.top = `${y}px`;
+    menu.style.backgroundColor = 'white';
+    menu.style.boxShadow = '0 2px 10px rgba(0,0,0,0.2)';
+    menu.style.borderRadius = '4px';
+    menu.style.padding = '8px 0';
+    menu.style.zIndex = '1000';
+    
+    // Link types
+    const linkTypes = [
+        { value: 'depends_on', label: 'Depends On' },
+        { value: 'related_to', label: 'Related To' },
+        { value: 'parent_of', label: 'Parent Of' },
+        { value: 'child_of', label: 'Child Of' },
+        { value: 'blocks', label: 'Blocks' },
+        { value: 'is_blocked_by', label: 'Is Blocked By' }
+    ];
+    
+    // Create menu items
+    linkTypes.forEach(type => {
+        const item = document.createElement('div');
+        item.className = 'link-type-menu-item';
+        item.textContent = type.label;
+        item.style.padding = '8px 16px';
+        item.style.cursor = 'pointer';
+        item.style.transition = 'background-color 0.2s';
+        
+        item.addEventListener('mouseover', function() {
+            this.style.backgroundColor = '#f5f5f5';
+        });
+        
+        item.addEventListener('mouseout', function() {
+            this.style.backgroundColor = 'transparent';
+        });
+        
+        item.addEventListener('click', function() {
+            createThreadConnection(sourceId, targetId, sourcePosition, targetPosition, type.value);
+            menu.remove();
+            
+            // Remove temp line
+            if (tempConnectionLine) {
+                tempConnectionLine.remove();
+                tempConnectionLine = null;
+            }
+        });
+        
+        menu.appendChild(item);
+    });
+    
+    // Add cancel option
+    const cancelItem = document.createElement('div');
+    cancelItem.className = 'link-type-menu-item';
+    cancelItem.textContent = 'Cancel';
+    cancelItem.style.padding = '8px 16px';
+    cancelItem.style.borderTop = '1px solid #eee';
+    cancelItem.style.color = '#666';
+    cancelItem.style.cursor = 'pointer';
+    
+    cancelItem.addEventListener('click', function() {
+        menu.remove();
+        
+        // Remove temp line
+        if (tempConnectionLine) {
+            tempConnectionLine.remove();
+            tempConnectionLine = null;
+        }
+    });
+    
+    menu.appendChild(cancelItem);
+    document.body.appendChild(menu);
+    
+    // Close on outside click
+    function closeMenuOnClickOutside(e) {
+        if (!menu.contains(e.target)) {
+            menu.remove();
+            document.removeEventListener('click', closeMenuOnClickOutside);
+            
+            // Remove temp line
+            if (tempConnectionLine) {
+                tempConnectionLine.remove();
+                tempConnectionLine = null;
+            }
+        }
+    }
+    
+    // Delay adding click listener
+    setTimeout(() => {
+        document.addEventListener('click', closeMenuOnClickOutside);
+    }, 100);
+}
+
+// Create thread connection
+function createThreadConnection(sourceId, targetId, sourcePosition, targetPosition, linkType) {
+    // Create form data
+    const formData = new FormData();
+    formData.append('source_id', sourceId);
+    formData.append('target_id', targetId);
+    formData.append('link_type', linkType);
+    formData.append('source_position', sourcePosition || 'right'); 
+    formData.append('target_position', targetPosition || 'left');
+    
+    // Get CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    // Make request
+    fetch('/app_postnote/postnote/api/postnote/link/create/', {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Add to global storage
+            if (!window.postNoteLinks) window.postNoteLinks = [];
+            
+            window.postNoteLinks.push({
+                id: data.link_id,
+                source_id: data.source_id,
+                target_id: data.target_id,
+                link_type: data.link_type,
+                source_position: sourcePosition || 'right',
+                target_position: targetPosition || 'left'
+            });
+            
+            // Draw the connection
+            drawThreadConnection(
+                data.source_id, 
+                data.target_id, 
+                data.link_type, 
+                data.link_id,
+                sourcePosition || 'right',
+                targetPosition || 'left'
+            );
+            
+            // Show success
+            showSuccessMessage('Link created successfully!');
+        } else {
+            console.error('Error creating link:', data.message);
+            
+            if (data.message === 'Link already exists') {
+                alert('A link of this type already exists between these post notes.');
+            } else {
+                alert('Error creating link: ' + data.message);
+            }
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error creating link. Please try again.');
+    });
+}
+
+// Delete post note link
+function deletePostNoteLink(linkId) {
+    // Get CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    // Make request
+    fetch(`/app_postnote/postnote/api/postnote/link/${linkId}/delete/`, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken
+        },
+        body: new FormData()
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Remove from DOM
+            const connection = document.querySelector(`.connection-thread[data-id="${linkId}"], .connection-line[data-id="${linkId}"]`);
+            if (connection) {
+                connection.remove();
+            }
+            
+            // Remove delete icon
+            const deleteIcon = document.querySelector(`.link-delete-icon[data-link-id="${linkId}"]`);
+            if (deleteIcon) {
+                deleteIcon.remove();
+            }
+            
+            // Remove from global storage
+            if (window.postNoteLinks) {
+                window.postNoteLinks = window.postNoteLinks.filter(link => link.id != linkId);
+            }
+            
+            // Show success
+            showSuccessMessage('Link deleted successfully!');
+        } else {
+            console.error('Error deleting link:', data.message);
+            alert('Error deleting link: ' + data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error deleting link. Please try again.');
+    });
+}
+
+// Load project links
+function loadProjectLinks(projectId) {
+    // Get CSRF token
+    const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+    
+    // Add connection points first
+    addConnectionPointsToPostNotes();
+    
+    // Make AJAX request to load links
+    const url = `/app_postnote/postnote/api/project/${projectId}/links/`;
+    console.log('Loading project links:', url);
+    
+    fetch(url, {
+        method: 'POST',
+        headers: {
+            'X-CSRFToken': csrfToken
+        },
+        body: new FormData()
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.status === 'success') {
+            // Store links in global variable
+            window.postNoteLinks = data.links || [];
+            
+            // Clear existing connections
+            document.querySelectorAll('.connection-thread, .connection-line').forEach(conn => conn.remove());
+            document.querySelectorAll('.link-delete-icon').forEach(icon => icon.remove());
+            
+            // Draw all connections
+            window.postNoteLinks.forEach(link => {
+                try {
+                    // Default to right/left positions if not specified
+                    const sourcePosition = link.source_position || 'right';
+                    const targetPosition = link.target_position || 'left';
+                    
+                    drawThreadConnection(
+                        link.source_id, 
+                        link.target_id, 
+                        link.link_type, 
+                        link.id,
+                        sourcePosition,
+                        targetPosition
+                    );
+                } catch (error) {
+                    console.error(`Error drawing link ${link.id}:`, error);
+                }
+            });
+            
+            // Apply visibility settings
+            updateConnectionsVisibility();
+            updateLinkTypeVisibility();
+            
+            // Show link legend if we have links
+            if (window.postNoteLinks.length > 0) {
+                showLinkLegend();
+            }
+            
+            console.log(`Loaded ${window.postNoteLinks.length} project links`);
+        } else {
+            console.error('Error loading project links:', data.message);
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+    });
+}
+
+// Show link legend
+function showLinkLegend() {
+    // Skip if legend already exists
+    if (document.querySelector('.link-legend')) {
+        return;
+    }
+    
+    // Create legend element
+    const legend = document.createElement('div');
+    legend.className = 'link-legend';
+    legend.style.position = 'absolute';
+    legend.style.bottom = '20px';
+    legend.style.right = '20px';
+    legend.style.backgroundColor = 'white';
+    legend.style.padding = '10px';
+    legend.style.borderRadius = '5px';
+    legend.style.boxShadow = '0 2px 10px rgba(0,0,0,0.1)';
+    legend.style.zIndex = '100';
+    
+    // Add legend items
+    legend.innerHTML = `
+        <div style="font-weight: bold; margin-bottom: 5px;">Link Types</div>
+        <div style="display: flex; flex-direction: column; gap: 5px;">
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <div style="width: 12px; height: 12px; background-color: #F44336; border-radius: 2px;"></div>
+                <div>Depends On</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <div style="width: 12px; height: 12px; background-color: #2196F3; border-radius: 2px;"></div>
+                <div>Related To</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <div style="width: 12px; height: 12px; background-color: #4CAF50; border-radius: 2px;"></div>
+                <div>Parent Of</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <div style="width: 12px; height: 12px; background-color: #9C27B0; border-radius: 2px;"></div>
+                <div>Child Of</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <div style="width: 12px; height: 12px; background-color: #FF9800; border-radius: 2px;"></div>
+                <div>Blocks</div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 5px;">
+                <div style="width: 12px; height: 12px; background-color: #795548; border-radius: 2px;"></div>
+                <div>Is Blocked By</div>
+            </div>
+        </div>
+    `;
+    
+    // Add to canvas
+    const canvas = document.getElementById('canvas-view');
+    canvas.appendChild(legend);
+}
+
+// Update all connections
+function updateAllConnections() {
+    document.querySelectorAll('.connection-thread, .connection-line').forEach(connection => {
+        updateThreadConnection(connection);
+    });
+}
+
+// Update a thread connection
+function updateThreadConnection(connection) {
+    if (!connection) return;
+    
+    const canvas = document.getElementById('canvas-view');
+    if (!canvas) return;
+    
+    const canvasRect = canvas.getBoundingClientRect();
+    
+    const sourceId = connection.getAttribute('data-source');
+    const targetId = connection.getAttribute('data-target');
+    const sourcePosition = connection.getAttribute('data-source-position') || 'right';
+    const targetPosition = connection.getAttribute('data-target-position') || 'left';
+    const linkType = connection.getAttribute('data-type');
+    const linkId = connection.getAttribute('data-id');
+    
+    const sourcePostit = document.querySelector(`[data-id="${sourceId}"]`);
+    const targetPostit = document.querySelector(`[data-id="${targetId}"]`);
+    
+    if (!sourcePostit || !targetPostit) {
+        // Remove connection if posts don't exist
+        connection.remove();
+        
+        // Remove delete icon too
+        const deleteIcon = document.querySelector(`.link-delete-icon[data-link-id="${linkId}"]`);
+        if (deleteIcon) deleteIcon.remove();
+        
+        return;
+    }
+    
+    // Get post note positions
+    const sourceRect = sourcePostit.getBoundingClientRect();
+    const targetRect = targetPostit.getBoundingClientRect();
+    
+    // Calculate connection points
+    let sourceX, sourceY, targetX, targetY;
+    
+    // Source position
+    if (sourcePosition === 'left') {
+        sourceX = sourceRect.left - canvasRect.left;
+        sourceY = sourceRect.top + sourceRect.height/2 - canvasRect.top;
+    } else if (sourcePosition === 'right') {
+        sourceX = sourceRect.right - canvasRect.left;
+        sourceY = sourceRect.top + sourceRect.height/2 - canvasRect.top;
+    } else if (sourcePosition === 'top') {
+        sourceX = sourceRect.left + sourceRect.width/2 - canvasRect.left;
+        sourceY = sourceRect.top - canvasRect.top;
+    } else { // bottom
+        sourceX = sourceRect.left + sourceRect.width/2 - canvasRect.left;
+        sourceY = sourceRect.bottom - canvasRect.top;
+    }
+    
+    // Target position
+    if (targetPosition === 'left') {
+        targetX = targetRect.left - canvasRect.left;
+        targetY = targetRect.top + targetRect.height/2 - canvasRect.top;
+    } else if (targetPosition === 'right') {
+        targetX = targetRect.right - canvasRect.left;
+        targetY = targetRect.top + targetRect.height/2 - canvasRect.top;
+    } else if (targetPosition === 'top') {
+        targetX = targetRect.left + targetRect.width/2 - canvasRect.left;
+        targetY = targetRect.top - canvasRect.top;
+    } else { // bottom
+        targetX = targetRect.left + targetRect.width/2 - canvasRect.left;
+        targetY = targetRect.bottom - canvasRect.top;
+    }
+    
+    // Update SVG size
+    connection.setAttribute('width', canvasRect.width);
+    connection.setAttribute('height', canvasRect.height);
+    
+    // Update path
+    const path = connection.querySelector('path');
+    if (path) {
+        const pathD = getConnectionPath(sourceX, sourceY, targetX, targetY, sourcePosition, targetPosition);
+        path.setAttribute('d', pathD);
+    }
+    
+    // Update text position
+    const midX = (sourceX + targetX) / 2;
+    const midY = (sourceY + targetY) / 2 - 10;
+    
+    const text = connection.querySelector('text');
+    if (text) {
+        text.setAttribute('x', midX);
+        text.setAttribute('y', midY);
+    }
+    
+    // Update text background
+    const textBg = connection.querySelector('rect');
+    if (textBg && text) {
+        const textWidth = text.getComputedTextLength ? text.getComputedTextLength() : text.textContent.length * 6;
+        textBg.setAttribute('x', midX - textWidth/2 - 3);
+        textBg.setAttribute('y', midY - 12);
+        textBg.setAttribute('width', textWidth + 6);
+        textBg.setAttribute('height', 16);
+    }
+    
+    // Update delete icon
+    const deleteIcon = document.querySelector(`.link-delete-icon[data-link-id="${linkId}"]`);
+    if (deleteIcon) {
+        deleteIcon.style.left = (midX + canvasRect.left) + 'px';
+        deleteIcon.style.top = (midY + canvasRect.top - 20) + 'px';
+    }
+}
+
+// Show success message
+function showSuccessMessage(message) {
+    const successMsg = document.createElement('div');
+    successMsg.className = 'save-success';
+    successMsg.textContent = message;
+    successMsg.style.position = 'fixed';
+    successMsg.style.bottom = '20px';
+    successMsg.style.right = '20px';
+    successMsg.style.backgroundColor = '#4CAF50';
+    successMsg.style.color = 'white';
+    successMsg.style.padding = '10px 20px';
+    successMsg.style.borderRadius = '4px';
+    successMsg.style.boxShadow = '0 2px 10px rgba(0, 0, 0, 0.2)';
+    successMsg.style.zIndex = '2000';
+    successMsg.style.opacity = '0';
+    successMsg.style.transform = 'translateY(20px)';
+    successMsg.style.transition = 'opacity 0.3s, transform 0.3s';
+    
+    document.body.appendChild(successMsg);
+    
+    // Show with animation
+    setTimeout(() => {
+        successMsg.style.opacity = '1';
+        successMsg.style.transform = 'translateY(0)';
+    }, 10);
+    
+    // Remove after animation
+    setTimeout(() => {
+        successMsg.style.opacity = '0';
+        successMsg.style.transform = 'translateY(20px)';
+        
+        setTimeout(() => {
+            if (successMsg.parentNode) {
+                successMsg.parentNode.removeChild(successMsg);
+            }
+        }, 300);
+    }, 3000);
+}
+
+// Add a refresh button for connections
+function addRefreshButton() {
+    // Skip if button already exists
+    if (document.getElementById('refresh-connections-btn')) {
+        return;
+    }
+    
+    const navbar = document.querySelector('.navbar-actions');
+    if (!navbar) return;
+    
+    const refreshBtn = document.createElement('button');
+    refreshBtn.id = 'refresh-connections-btn';
+    refreshBtn.innerHTML = '🔄 Refresh Links';
+    refreshBtn.style.marginLeft = '10px';
+    refreshBtn.style.backgroundColor = '#2196F3';
+    refreshBtn.style.color = 'white';
+    refreshBtn.style.border = 'none';
+    refreshBtn.style.padding = '5px 10px';
+    refreshBtn.style.borderRadius = '3px';
+    refreshBtn.style.cursor = 'pointer';
+    
+    refreshBtn.addEventListener('click', function() {
+        const projectId = document.querySelector('meta[name="project-id"]')?.getAttribute('content');
+        if (projectId) {
+            loadProjectLinks(projectId);
+        } else {
+            alert('Project ID not found! Cannot refresh links.');
+        }
+    });
+    
+    navbar.appendChild(refreshBtn);
+}
+
+// Initialize everything when document is loaded
+document.addEventListener('DOMContentLoaded', function() {
+    console.log('Initializing PostNote board with connections...');
+    
+    // Initialize settings panel
+    initializeSettingsPanel();
+    
+    // Add connection points to existing post notes
+    addConnectionPointsToPostNotes();
+    
+    // Add refresh button
+    addRefreshButton();
+    
+    // Load links for the project
+    const projectId = document.querySelector('meta[name="project-id"]')?.getAttribute('content');
+    if (projectId) {
+        loadProjectLinks(projectId);
+    }
+    
+    // Update connections when dragging post-its
+    document.addEventListener('mousemove', function(e) {
+        if (typeof draggedItem !== 'undefined' && draggedItem) {
+            updateAllConnections();
+        }
+    });
+    
+    document.addEventListener('mouseup', function(e) {
+        if (typeof draggedItem !== 'undefined' && draggedItem) {
+            setTimeout(updateAllConnections, 100);
+        }
+    });
+    
+    // Monitor for new post notes being added to add connection points
+    const observer = new MutationObserver(function(mutations) {
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+                for (let i = 0; i < mutation.addedNodes.length; i++) {
+                    const node = mutation.addedNodes[i];
+                    if (node.classList && node.classList.contains('postnote') && !node.querySelector('.connection-point')) {
+                        addConnectionPointsToPostNotes();
+                        break;
+                    }
+                }
+            }
+        });
+    });
+    
+    // Start observing the canvas
+    const canvas = document.getElementById('canvas-view');
+    if (canvas) {
+        observer.observe(canvas, { childList: true });
+    }
+});
+</script>
+
+<script>
+    // Add function to update aging dots based on creation date
+function updateAgingDots() {
+  document.querySelectorAll('.postnote').forEach(postnote => {
+    const creationDate = postnote.getAttribute('data-creation-date');
+    if (!creationDate) return;
+    
+    const created = new Date(creationDate);
+    const now = new Date();
+    const daysSinceCreation = Math.floor((now - created) / (1000 * 60 * 60 * 24));
+    
+    const dots = postnote.querySelectorAll('.aging-dot');
+    if (!dots.length) return;
+    
+    // Reset all dots
+    dots.forEach(dot => {
+      dot.classList.remove('level-1', 'level-2', 'level-3');
+    });
+    
+    // Update dots based on age
+    if (daysSinceCreation > 7) {
+      dots[0].classList.add('level-1');
+    }
+    if (daysSinceCreation > 14) {
+      dots[1].classList.add('level-2');
+    }
+    if (daysSinceCreation > 21) {
+      dots[2].classList.add('level-3');
+    }
+  });
+}
+
+// Add function to initialize aging dots for existing postnotes
+function initializeAgingDots() {
+  document.querySelectorAll('.postnote').forEach(postnote => {
+    const footer = postnote.querySelector('.postnote-footer');
+    if (!footer) return;
+    
+    // Check if aging dots already exist
+    if (footer.querySelector('.aging-dots')) return;
+    
+    // Create aging dots
+    const agingDots = document.createElement('div');
+    agingDots.className = 'aging-dots';
+    agingDots.innerHTML = `
+      <div class="aging-dot" title="Aging level"></div>
+      <div class="aging-dot" title="Aging level"></div>
+      <div class="aging-dot" title="Aging level"></div>
+    `;
+    
+    // Insert before footer actions
+    const footerActions = footer.querySelector('.footer-actions');
+    if (footerActions) {
+      footer.insertBefore(agingDots, footerActions);
+    } else {
+      footer.appendChild(agingDots);
+    }
+  });
+  
+  // Update aging dots status
+  updateAgingDots();
+}
+
+// Initialize aging dots when document is loaded
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize aging dots for existing postnotes
+  initializeAgingDots();
+  
+  // Update aging dots periodically
+  setInterval(updateAgingDots, 3600000); // Update every hour
+});
+</script>
+
+
+<script>
+// blocked udpation for all cards
+
+// Add this script to initialize blocked icons on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Add CSS for blocked icon
+    const style = document.createElement('style');
+    style.textContent = `
+        .blocked-icon {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background-color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+            z-index: 10;
+            font-size: 14px;
+        }
+    `;
+    document.head.appendChild(style);
+    
+    // Check for blocked postnotes and ensure the showEditModal function will detect them
+    document.querySelectorAll('.postnote').forEach(postnote => {
+        const isBlocked = postnote.getAttribute('data-blocked') === 'true';
+        if (isBlocked && !postnote.querySelector('.blocked-icon')) {
+            const blockedIcon = document.createElement('div');
+            blockedIcon.className = 'blocked-icon';
+            blockedIcon.innerHTML = '🚫';
+            blockedIcon.title = 'This item is blocked';
+            postnote.appendChild(blockedIcon);
+        }
+    });
+});
+</script>
+</body>
+</html>

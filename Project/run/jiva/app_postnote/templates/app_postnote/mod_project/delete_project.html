@@ -1,0 +1,82 @@
+
+{% extends 'app_1/common_files/front_end/base_full_template.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load custom_tags %}
+{% load app_web_my_filters %}
+{% load markdown_extras  %}
+
+{% block content %}
+{% include 'app_1/common_files/front_end/base_navbar.html' %}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col col-md-12">
+            {% include 'app_postnote/mod_project/breadcrumb_projects.html' %}
+        </div>
+    </div>
+</div>
+<!-- Begin: Content -->
+<form method="post">
+    {% csrf_token %}
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col col-md-12">
+                <div class="container-fluid-width">
+                    <div class="row">
+                        <div class="col col-md-8">
+                            <h2>Delete 
+                                Project :: {{object}}</h2>
+                        </div>
+                        <div class="col col-md-4 text-end">
+                            <a href="{% url 'list_projects'  %}"
+                             class="btn btn-sm btn-primary"><b>List Project(s)</b></a>
+                        </div>
+                    </div>
+                </div>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <div class="container-fluid-width">
+                                <div class="row">
+                                    <div class="col col-md-5">
+                                        {{page_title}}:: {{object}}
+                                    </div>
+                                    <div class="col col-md-7">
+                                        <div class="text-end">
+                                            <a href="{% url 'edit_project'  object.id %}" class="btn btn-sm btn-primary"><b>Edit</b></a>
+                                            &nbsp;&nbsp;&nbsp;
+                                            <a href="{% url 'view_project'  object.id %}" class="btn btn-sm btn-danger"><b>View</b></a>
+                                            
+                                        </div>
+
+                                    </div>
+                                </div>
+                            </div>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                          <td colspan="2" class="text-center">
+                            <div class="row">
+                                <div class="col col-md-12 text-center">
+                                    <p>Are you sure you want to delete "{{ object.name }}"?</p>
+                                    <form method="post">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-sm btn-danger">Confirm</button> 
+                                        &nbsp;&nbsp;&nbsp;
+                                        <a href="{% url 'list_projects'  %}" class="btn btn-sm btn-warning">Cancel</a>
+                                    </form>
+                                </div>
+                            </div>
+                          </td>
+                        </tr>
+                      
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</form>
+<!-- End: Content -->
+{% endblock content %}

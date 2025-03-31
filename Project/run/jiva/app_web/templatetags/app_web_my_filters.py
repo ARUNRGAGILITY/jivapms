@@ -3,7 +3,8 @@ import markdown as md
 from django.template.loader import render_to_string
 import os
 from django.conf import settings
-
+from django.apps import apps
+import re
 register = template.Library()
 
 @register.filter(name='contains')
@@ -180,3 +181,56 @@ def get_attr(obj, attr_name):
 def lowercase(value):
     """Converts a string to lowercase"""
     return value.lower() if isinstance(value, str) else value
+
+
+
+
+@register.simple_tag
+def get_user_roles(user):
+    print(f">>> === GET USER ROLES user: {user} === <<<")
+    try:
+        # Dynamically load the model
+        MemberOrganizationRole = apps.get_model('app_memberprofilerole', 'MemberOrganizationRole')
+        if not MemberOrganizationRole:
+            return []
+        
+        # Safely return filtered roles
+        return MemberOrganizationRole.objects.filter(
+            member__user=user,
+            active=True,
+            member__active=True,
+            role__active=True,
+        ).select_related('role', 'org', 'member')
+
+    except Exception:
+        # Model doesn't exist or other error
+        return []
+
+
+
+
+@register.simple_tag
+def check_user_roles(user):
+    print(f">>> === user: {user} === <<<")
+    try:
+        # Dynamically load the model
+        MemberOrganizationRole = apps.get_model('app_memberprofilerole', 'MemberOrganizationRole')
+        if not MemberOrganizationRole:
+            return []
+        
+        # Safely return filtered roles
+        return MemberOrganizationRole.objects.filter(
+            member__user=user,
+            active=True,
+            member__active=True,
+            role__active=True,
+        ).select_related('role', 'org', 'member')
+
+    except Exception:
+        # Model doesn't exist or other error
+        return []
+
+
+@register.filter
+def slugify(value):
+    return re.sub(r'[\s_]+', '-', value.strip().lower())

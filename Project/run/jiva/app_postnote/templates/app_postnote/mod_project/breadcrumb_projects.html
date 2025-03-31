@@ -1,0 +1,39 @@
+
+{% load static %}
+{% load crispy_forms_tags %}
+{% load custom_tags %}
+{% load app_web_my_filters %}
+{% load markdown_extras  %}
+ <!-- Begin: Breadcrumb -->
+  <style>
+    .breadcrumb {
+        font-size: 14px;
+    }
+ </style>
+ <div class="breadcrumb">
+    <nav aria-label="breadcrumb"> <!-- Inline style for demonstration -->
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item">
+                <a href="/">
+                    <i class="bi bi-house"></i> Home
+                </a>
+            </li>
+          
+            <li class="breadcrumb-item active" aria-current="page">
+                <a href="{% url 'list_projects'  %}">Project</a></li>
+        
+            <!-- decide based on the page -->
+                
+            {% if page|starts_with_any:"create_,edit_,delete_,view_" %}
+                 <li class="breadcrumb-item active" aria-current="page">
+                 Project
+                </li>
+            {% else  %}             
+                 <li class="breadcrumb-item active" aria-current="page">
+                 Project
+                </li>
+            {% endif %}
+        </ol>
+    </nav>
+</div>
+<!-- End: Breadcrumb -->

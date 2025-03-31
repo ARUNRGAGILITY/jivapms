@@ -105,8 +105,10 @@
                                         <th width="20%">Description</th>
                                         <th width="3%">WIP Limit</th>
                                         <th width="3%">Apply WIP</th>
-                                        <th width="3%">Buffer Column</th>
+                                        
                                         <th width="4%">Column Type</th>
+                                        <th width="3%">Buffer Column</th>
+                                        <th width="3%">Buffer Columns Selection</th>
                                         <th width="20%">                                    
                                             Actions
                                             &nbsp;&nbsp;
@@ -142,13 +144,7 @@
                                             >
                                      
                                         </td>
-                                        <td width="3%">
-                                            <input type="checkbox" id="checkbox-{{ tobject.id }}" 
-                                            onchange="updateCheckboxState({{ tobject.id }}, 'buffer_column', this.checked)"
-                                            {% if tobject.buffer_column %}checked{% endif %}
-                                            >
-                                     
-                                        </td>
+                                        
 
                                         <td width="4%">
                                             <select class="form-control form-control-sm"
@@ -159,6 +155,29 @@
                                                 </option>
                                             {% endfor %}
                                         </select>
+                                        </td>
+                                        <td width="3%">
+                                            <input type="checkbox" id="checkbox-{{ tobject.id }}" 
+                                            onchange="updateCheckboxState({{ tobject.id }}, 'buffer_column', this.checked)"
+                                            {% if tobject.buffer_column %}checked{% endif %}
+                                            >
+                                     
+                                        </td>
+                                        <td width="3%">
+                                            {% if tobject.buffer_column %}
+                                                <select class="form-control form-control-sm"
+                                                        onchange="updateField('{{ tobject.id }}', 'subcolumn_pair', this.value, 'ProjectBoardState', 'app_organization')">
+                                                    <option value="">Select a pair</option>
+                                                    {% for choice in sub_column_type_choices %}
+                                                        <option value="{{ choice.0 }}" {% if tobject.subcolumn_pair == choice.0 %}selected{% endif %}>
+                                                            {{ choice.1 }}
+                                                        </option>
+                                                    {% endfor %}
+                                                </select>
+                                            {% else %}
+                                                <span class="text-muted small">—</span>
+                                            {% endif %}
+                                     
                                         </td>
                                        
                                         <td width="20%">

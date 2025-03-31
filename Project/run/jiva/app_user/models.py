@@ -2,19 +2,19 @@ from app_web.imports.all_model_imports import *
 from app_web.models import *
 # Create your models here.
   
-class Role(AppWebBaseModel):
-    start_date = models.DateField(null=True, blank=True, default=None)
-    end_date = models.DateField(null=True, blank=True, default=None)
+# class Role(AppWebBaseModel):
+#     start_date = models.DateField(null=True, blank=True, default=None)
+#     end_date = models.DateField(null=True, blank=True, default=None)
 
-    def __str__(self):
-        return self.title
+#     def __str__(self):
+#         return self.title
 
 class Profile(AppWebBaseModel):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     image = models.ImageField(default='default.png', upload_to='profile_pics')
     bio = models.TextField(null=True, blank=True)
-
-    roles = models.ManyToManyField(Role,  blank=True)
+    test = models.BooleanField(default=False)
+    # roles = models.ManyToManyField(Role,  blank=True)
     def __str__(self):
         return f"{self.user.username}'s Profile"
     

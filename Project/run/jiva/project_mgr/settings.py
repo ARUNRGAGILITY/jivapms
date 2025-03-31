@@ -38,6 +38,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     
+    
+
     'app_web.templatetags',
     'mptt',
     'crispy_forms',
@@ -45,6 +47,7 @@ INSTALLED_APPS = [
     'markdownx',
     'markdown',    
     'imagekit',
+    'app_user',
 ]
 
 MIDDLEWARE = [
@@ -128,7 +131,7 @@ MEDIA_URL = '/media/'
 CRISPY_ALLOWED_TEMPLATE_PACKS = "bootstrap5"
 CRISPY_TEMPLATE_PACK = 'bootstrap5'
 TIME_ZONE = 'Asia/Kolkata'
-LOGIN_URL = '/loginsystem/at_login/'
+LOGIN_URL = '/loginsystem/login/'
 
 #STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 #DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'

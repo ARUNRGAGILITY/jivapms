@@ -1,0 +1,62 @@
+<style>
+    /* Additional CSS for sticky footer */
+    body {
+      display: flex;
+      flex-direction: column;
+      min-height: 100vh;
+    }
+   .btn-xs {
+        padding: 2px 6px;
+        font-size: 10px;
+        line-height: 1.2;
+    }
+    .content-wrap {
+      flex: 1;
+    }
+    /* Additional CSS for filling height */
+    .full-height {
+        height: 100%;
+    }
+    .flex-grow {
+        flex-grow: 1;
+    }
+    /* Additional CSS for footer */
+    .footer-text {
+        font-size: 0.75rem;  /* Adjust the size as needed */
+    }
+    
+    /** color **/
+    .green_bg {
+        background-color: #097054;
+    }
+    .yellow_bg {
+        background-color: #FFDE00;
+    }
+    .lightblue_bg {
+        background-color:  #6599FF;
+    }
+    .orange_bg {
+        background-color: #FF9900;
+    }
+    .lightgrey_bg {
+        background-color:  #E5E4D7;
+    }
+
+    /** vertical scrollbar **/
+    #jstree_display, #content {
+        max-height: calc(100vh - /* Header height */ 120px - /* Footer height */ 30px);
+        overflow-y: auto;
+    }
+    .left_heading1,
+    .right_heading1 {
+    position: sticky;
+    top: 0;
+    z-index: 100; /* To make sure it stays above the content */
+    }
+
+    .nav-link.active {
+    font-weight: bold; /* Bold font weight */
+    font-size: 17px; /* Slightly larger font size */
+    color: #ffffff; /* White text color */
+    }
+  </style>
