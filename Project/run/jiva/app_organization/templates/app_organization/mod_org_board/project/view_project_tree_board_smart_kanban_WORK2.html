@@ -1,0 +1,386 @@
+{% load static %}
+{% load crispy_forms_tags %}
+{% load custom_tags %}
+{% load app_web_my_filters %}
+{% load markdown_extras %}
+{% load mptt_tags %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Responsive Kanban Board</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <!-- Load Font Awesome for icons -->
+  <link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css" rel="stylesheet">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/themes/default/style.min.css" />
+  
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0-beta3/css/all.min.css" rel="stylesheet">
+  <style>
+
+  .placeholder_column {
+    width: 3vw;
+  }
+  .kanban_column, .count_column {
+    width: 10vw;
+    min-width: 8vw;
+    vertical-align: top;
+  }
+
+  /** display headers */
+  .column_title {
+    font-size: 0.75rem;
+    font-weight: bold;
+  }
+  .count_wip {
+    font-size: 0.65rem;
+    font-weight: bold;
+    color: #707070;
+  }
+  .column_number {
+    font-size: 0.55rem;
+    font-weight: bold;
+    color: #707070;
+    font-family: 'Pacifico', cursive;    
+  }
+
+  /** swimlane **/
+  /* Swimlane title rotated vertically */
+  .swimlane_title {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg); /* Makes text go bottom to top */
+    text-align: center;
+    background-color: #eedf13;  /* Light beige or choose your own */
+    border-top-left-radius: 0px;
+    border-bottom-left-radius: 0px;
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+    padding: 8px;
+    font-weight: bold;
+    color: #333;  
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+
+  /** card display **/
+  .card {
+    background-color: #f0c506;
+    border-radius: 5px;
+    padding: 5px;
+    margin: 12px;
+    font-size: 0.55rem;
+    color: #333;
+    cursor: move; /* Cursor style for draggable cards */
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    transition: background-color 0.3s, box-shadow 0.3s;
+
+    min-height: 10vh;
+  }
+
+
+
+
+  /** BORDERS */
+
+  .left_border {
+    border-left: 1px solid lightgrey;
+  }
+
+  .right_border {
+    border-right: 1px solid lightgrey;
+  }
+
+  .top_border {
+    border-top: 1px solid lightgrey;
+  }
+
+  .bottom_border {
+    border-bottom: 1px solid lightgrey;
+  }
+
+  .sketchy_dotted_border {
+    border: 1px dotted lightgrey;
+    border-left-style: dashed;
+    border-right-style: dotted;
+  }
+
+  .sketchy_right_solid_border {
+    border-right: 2px solid blue;  
+  }
+
+  .sketchy_left_solid_border {
+    border-left: 2px solid blue;  
+  }
+
+  .sketchy_top_solid_border {
+    border-top: 2px solid blue;  
+    padding-bottom: 25px;
+  }
+
+  .sketchy_bottom_solid_border {
+    border-bottom: 2px solid blue;  
+  }
+
+  .sketchy_bottom_solid_white_border {
+    border-bottom: 2px solid white;  
+  }
+
+  </style>
+</head>
+<body>
+  
+<!-- Begin:  Kanban Board -->
+<div class="container-fluid">
+  <div class="row mt-2">
+    <div class="col col md-4">
+      <b class="">Project:</b>
+      {{project}}
+      <b class="">Project Board:</b>
+      {{project_board}}
+    </div>
+
+    <div class="col col md-4 text-end">
+
+      <div class="action-controls">
+        <a href="{% url 'board_card_settings' project_board.id %}"><i class="fas fa-edit"></i></a>
+        <a href="{% url 'list_project_boards' project.id %}"><i class="fas fa-cog"></i></a>
+      </div>
+
+      <a href="" class="btn btn-sm btn-primary">
+        <i class="bi bi-arrow-left"></i> Back to Backlog
+      </a>
+    </div>
+  </div>
+</div>
+<div class="container-fluid">
+  <div class="row">
+    <div class="col col md-12">
+      <!-- Kanban Table-->
+      <table class=" ">
+
+        <!-- Headers -->
+        <thead>
+          <!--
+          FIRST ROW
+          COUNTS
+          -->
+          <tr>
+            <td class="placeholder_column">
+              <!-- Place holder for swimlane -->
+            </td>
+            <td class="count_column count_no_wip_limit">
+              <!-- Backlog counts -->
+              <div class="container">
+                <div class="row">
+                  <div class="col col md-6 text-center">
+                    <div class="column_number">
+                      1
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </td>
+            {% for state in project_board_states %}
+            {% if state.buffer_column %}              
+            <td class="count_column {% if not state.apply_wip_limit %}count_no_wip_limit{% else %}count_wip_limit{% endif %}" colspan="2">
+              <div class="container">
+                <div class="row">
+                  <div class="col col md-6 text-center">
+                    <div class="column_number">
+                      {{ forloop.counter|add:"1" }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </td>
+            {% else %}
+            <td class="count_column {% if not state.apply_wip_limit %}count_no_wip_limit{% else %}count_wip_limit{% endif %}" colspan="1">
+              <div class="container">
+                <div class="row">
+                  <div class="col col md-6 text-center">
+                    <div class="column_number">
+                      {{ forloop.counter|add:"1" }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </td>
+            {% endif %}
+            {% endfor %}
+          </tr>
+
+
+
+
+          <!--
+          SECOND ROW
+          COUNTS
+          -->
+          <tr>
+            <td class="placeholder_column">
+              <!-- Place holder for swimlane -->
+            </td>
+            <td class="count_column count_no_wip_limit">
+              <!-- Backlog counts -->
+              <div class="container">
+                <div class="row">
+                  <div class="col col md-6 text-center">
+                    <div class="display_count_and_limit">
+                      <div class="count_wip">∞</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </td>
+            {% for state in project_board_states %}
+            {% if state.buffer_column %}              
+            <td class="count_column {% if not state.apply_wip_limit %}count_no_wip_limit{% else %}count_wip_limit{% endif %}" colspan="2">
+              <div class="container">
+                <div class="row">
+                  <div class="col col md-6 text-center">
+                    <div class="display_count_and_limit">
+                      <div class="count_wip">{% if state.apply_wip_limit %}{{ state.wip_limit }}{% else %}∞{% endif %}</div>                      
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </td>
+            {% else %}
+            <td class="count_column {% if not state.apply_wip_limit %}count_no_wip_limit{% else %}count_wip_limit{% endif %}" colspan="1">
+              <div class="container">
+                <div class="row">
+                  <div class="col col md-6 text-center">
+                    <div class="display_count_and_limit">
+                      <div class="count_wip">{% if state.apply_wip_limit %}{{ state.wip_limit }}{% else %}∞{% endif %}</div>   
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </td>
+            {% endif %}
+            {% endfor %}
+          </tr>
+
+
+          <!--
+          THIRD ROW
+          HEADER
+          -->
+          <tr class="">
+            <td class="placeholder_column sketchy_bottom_solid_white_border">
+              <!-- Place holder for swimlane -->
+            </td>
+            <!-- Backlog -->
+            <td class="kanban_column backlog_column sketchy_left_solid_border sketchy_right_solid_border">
+              <div class="container">
+                <div class="row">
+                  <div class="col col md-6 text-center">
+                    <div class="column_title">
+                      Backlog
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </td>
+
+            <!-- other columns -->
+            {% for state in project_board_states %}
+              <!-- Step1: Display columns and then columns with buffer states -->
+              {% if state.buffer_column %}
+              <td class="kanban_column buffer_column sketchy_right_solid_border" colspan="2">
+                <div class="container">
+                  <div class="row">
+                    <div class="col col md-6 text-center">
+                      <div class="column_title">
+                        {{state.name}}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </td>
+              {% else %}
+              <td class="kanban_column normal_column sketchy_right_solid_border" colspan="1">
+                <div class="container">
+                  <div class="row">
+                    <div class="col col md-6 text-center">
+                      <div class="column_title">
+                        {{state.name}}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </td>
+              {% endif %}
+            {% endfor %}
+          </tr>
+        </thead>
+
+
+        <!--
+        BODY
+        -->
+        <tbody>
+          <!-- Step2: Display swimlanes and then cards in swimlanes
+           default swimlane is general, expedite, fixed-date, standard, intangible  -->
+          <tr class="sketchy_top_solid_border ">
+            <!-- swimlane display -->
+             <td class="placeholder_column ">
+              <div class="swimlane_title">General</div>
+             </td>
+
+             <!-- Backlog items -->
+              <td class="kanban_column backlog_column sketchy_left_solid_border sketchy_right_solid_border">
+                {% for item in backlog_items %}
+                  <div class="card {{item.priority}} mb-2" id="{{item.id}}" draggable="true">{{item.name}}</div>
+                {% endfor %}
+              </td>
+
+              <!-- OTHER column items -->              
+              {% for state in project_board_states %}
+                <!-- Step1: Display columns and then columns with buffer states -->
+                {% if state.buffer_column %}
+                <td class="kanban_column buffer_column sketchy_right_solid_border" colspan="2">
+                  {% for item in state_items|get_item:state.id %}
+                    <div class="card {{item.priority}} mb-2" id="{{item.id}}" draggable="true">{{item|display_if_not_none}}</div>
+                  {% endfor %}
+                </td>
+                {% else %}
+                <td class="kanban_column normal_column sketchy_right_solid_border" colspan="1">
+                  {% for item in state_items|get_item:state.id %}
+                    <div class="card {{item.priority}} mb-2" id="{{item.id}}" draggable="true">{{item|display_if_not_none}}</div>
+                  {% endfor %}
+                </td>
+                {% endif %}
+              {% endfor %}
+
+          </tr>
+          <!-- end of display -->
+        </tbody>
+
+
+      </table>
+    </div>
+  </div>
+</div>
+
+  
+
+
+<!-- End: Design Kanban Board -->
+
+<!-- Include jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.16/jstree.min.js" 
+integrity="sha512-ekwRoEshEqHU64D4luhOv/WNmhml94P8X5LnZd9FNOiOfSKgkY12cDFz3ZC6Ws+7wjMPQ4bPf94d+zZ3cOjlig==" 
+crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+  <script>
+
+  </script>
+</body>
+</html>

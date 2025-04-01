@@ -133,7 +133,6 @@
   }
 
   </style>
-  
 </head>
 <body>
   
@@ -531,6 +530,15 @@ function handleDragEnd(e) {
   console.log('Drag ended for card:', this.id);
 }
 
+// Drop target handlers
+function handleDragOver(e) {
+  if (e.preventDefault) {
+    e.preventDefault(); // Necessary to allow drop
+  }
+  
+  e.dataTransfer.dropEffect = 'move';
+  return false;
+}
 
 function handleDragEnter(e) {
   // Add a class to highlight valid drop target
@@ -542,38 +550,16 @@ function handleDragLeave(e) {
   this.classList.remove('drag-over');
 }
 
-// Replace your existing handleDrop function with this:
 function handleDrop(e) {
   // Prevent default behavior (prevent file open)
   if (e.stopPropagation) {
     e.stopPropagation();
   }
-  e.preventDefault();
   
   // Only proceed if we have a valid dragged card
   if (draggedCard) {
-    // Find the closest card to insert before/after
-    const closestCard = getClosestCard(this, e.clientY);
-    
-    if (closestCard) {
-      // Insert before the closest card if mouse is above its midpoint
-      const rect = closestCard.getBoundingClientRect();
-      const midpoint = rect.top + rect.height / 2;
-      
-      if (e.clientY < midpoint) {
-        this.insertBefore(draggedCard, closestCard);
-      } else {
-        // Insert after the closest card
-        if (closestCard.nextElementSibling) {
-          this.insertBefore(draggedCard, closestCard.nextElementSibling);
-        } else {
-          this.appendChild(draggedCard);
-        }
-      }
-    } else {
-      // If no cards in the column or not close to any card, append to the end
-      this.appendChild(draggedCard);
-    }
+    // Move the card to the new column
+    this.appendChild(draggedCard);
     
     console.log('Card', draggedCard.id, 'dropped into column');
     
@@ -583,85 +569,6 @@ function handleDrop(e) {
   
   // Remove the drag-over class
   this.classList.remove('drag-over');
-  
-  return false;
-}
-
-// Add this new function to find the closest card to the drop position
-function getClosestCard(column, mouseY) {
-  const cards = Array.from(column.querySelectorAll('.card'));
-  
-  if (cards.length === 0) return null;
-  
-  // Calculate the distance from the mouse to the center of each card
-  let closestCard = null;
-  let closestDistance = Infinity;
-  
-  cards.forEach(card => {
-    if (card === draggedCard) return; // Skip the dragged card itself
-    
-    const rect = card.getBoundingClientRect();
-    const cardY = rect.top + rect.height / 2; // Y coordinate of card center
-    const distance = Math.abs(mouseY - cardY);
-    
-    if (distance < closestDistance) {
-      closestDistance = distance;
-      closestCard = card;
-    }
-  });
-  
-  return closestCard;
-}
-
-// Also update the mouse feedback CSS to show insertion position
-const style1 = document.createElement('style');
-style1.textContent = `
-  .card.dragging {
-    opacity: 0.4;
-  }
-  
-  .kanban_column.drag-over {
-    background-color: rgba(0, 123, 255, 0.1);
-    border: 2px dashed #007bff !important;
-  }
-  
-  .card.insert-above {
-    border-top: 2px solid #007bff;
-  }
-  
-  .card.insert-below {
-    border-bottom: 2px solid #007bff;
-  }
-`;
-document.head.appendChild(style1);
-
-// Add these functions to show visual indicator for insertion position
-function handleDragOver(e) {
-  if (e.preventDefault) {
-    e.preventDefault(); // Necessary to allow drop
-  }
-  
-  e.dataTransfer.dropEffect = 'move';
-  
-  // Clear all insertion indicators
-  document.querySelectorAll('.card.insert-above, .card.insert-below').forEach(card => {
-    card.classList.remove('insert-above', 'insert-below');
-  });
-  
-  // Find the closest card and show insertion indicator
-  const column = this;
-  const closestCard = getClosestCard(column, e.clientY);
-  
-  if (closestCard && closestCard !== draggedCard) {
-    const rect = closestCard.getBoundingClientRect();
-    const midpoint = rect.top + rect.height / 2;
-    
-    if (e.clientY < midpoint) {
-      closestCard.classList.add('insert-above');
-    } else {
-      closestCard.classList.add('insert-below');
-    }
-  }
   
   return false;
 }

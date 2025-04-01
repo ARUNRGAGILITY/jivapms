@@ -5,14 +5,6 @@
 {% load app_web_my_filters %}
 {% load markdown_extras %}
 {% load mptt_tags %}
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
-<!-- Load Font Awesome for icons -->
-<link href="https://cdn.lineicons.com/4.0/lineicons.css" rel="stylesheet" />
-<link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.8.1/font/bootstrap-icons.css" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/themes/default/style.min.css" />
-
-<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0-beta3/css/all.min.css" rel="stylesheet">
 {% block content %}
 <style>
     
@@ -1196,69 +1188,6 @@ Project Iteration Board
 </div>
 {% endif %}
 
-<!-- Card Modal -->
-<div class="modal fade" id="cardModal" tabindex="-1" aria-labelledby="cardModalLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="cardModalLabel">Card Details</h5>
-                <div class="form-check form-switch ms-3">
-                    <input class="form-check-input" type="checkbox" id="editModeToggle">
-                    <label class="form-check-label" for="editModeToggle">Edit Mode</label>
-                </div>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-md-8">
-                        <div class="mb-3 view-mode">
-                            <label class="form-label">Title</label>
-                            <div id="cardTitle" class="form-control-static"></div>
-                        </div>
-                        <div class="mb-3 edit-mode" style="display: none;">
-                            <label for="cardTitleEdit" class="form-label">Title</label>
-                            <input type="text" class="form-control" id="cardTitleEdit">
-                        </div>
-                        
-                        <div class="mb-3 view-mode">
-                            <label class="form-label">Description</label>
-                            <div id="cardDescription" class="form-control-static"></div>
-                        </div>
-                        <div class="mb-3 edit-mode" style="display: none;">
-                            <label for="cardDescriptionEdit" class="form-label">Description</label>
-                            <textarea class="form-control" id="cardDescriptionEdit" rows="5"></textarea>
-                        </div>
-                    </div>
-                    <div class="col-md-4">
-                        <div class="mb-3 view-mode">
-                            <label class="form-label">Priority</label>
-                            <div id="cardPriority" class="form-control-static"></div>
-                        </div>
-                        <div class="mb-3 edit-mode" style="display: none;">
-                            <label for="cardPriorityEdit" class="form-label">Priority</label>
-                            <select class="form-select" id="cardPriorityEdit">
-                                <option value="Low">Low</option>
-                                <option value="Medium">Medium</option>
-                                <option value="High">High</option>
-                                <option value="Critical">Critical</option>
-                            </select>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label class="form-label">Card ID</label>
-                            <div id="cardId" class="form-control-static"></div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                <button type="button" class="btn btn-primary edit-mode" style="display: none;" id="saveCardButton">Save changes</button>
-            </div>
-        </div>
-    </div>
-</div>
-
 <!-- Loading Spinner -->
 <div id="loading-spinner" style="
     display: none;
@@ -1288,8 +1217,6 @@ Project Iteration Board
 <!-- Include jQuery -->
 <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
 <script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.16/jstree.min.js" integrity="sha512-ekwRoEshEqHU64D4luhOv/WNmhml94P8X5LnZd9FNOiOfSKgkY12cDFz3ZC6Ws+7wjMPQ4bPf94d+zZ3cOjlig==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
 <script>
     // Column color mapping for card status
 const columnColorMapping = {
@@ -1504,7 +1431,7 @@ function updateCardSubstate(id, stateId, subState) {
     fetch("/common/common_ajax/ajax_update_app_model_field_value/", {
         method: "POST",
         headers: {
-            "X-CSRFToken": "{{ csrf_token }}",
+            "X-CSRFToken": document.querySelector('input[name="csrfmiddlewaretoken"]').value
         },
         body: formData
     })
@@ -1523,11 +1450,11 @@ function updateCardSubstate(id, stateId, subState) {
 
 // Update card state function
 function updateCardState(cardId, fromStateId, toStateId, destPositions, destColumn, projectId, boardId, fromColumn) {
-    fetch("{% url 'ajax_update_project_board_card_state' %}", {
+    fetch("/ajax_update_project_board_card_state/", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
-            "X-CSRFToken": "{{ csrf_token }}",
+            "X-CSRFToken": document.querySelector('input[name="csrfmiddlewaretoken"]').value
         },
         body: JSON.stringify({
             card_id: cardId,
@@ -1590,7 +1517,7 @@ function save_element_text(element, id, appName, modelName, fieldName) {
         url: '/common/common_ajax/ajax_save_element_text/',
         type: 'POST',
         data : {
-            'csrfmiddlewaretoken': "{{ csrf_token }}",
+            'csrfmiddlewaretoken': document.querySelector('input[name="csrfmiddlewaretoken"]').value,
             'model_name': modelName,
             'app_name': appName,
             'field_name': fieldName,
@@ -1625,211 +1552,5 @@ document.addEventListener('DOMContentLoaded', function() {
         setTimeout(updateWIPCounts, 100);
     });
 });
-</script>
-
-<script>
-   // Card Modal Functions
-let currentCardId = null;
-let cardModal = null;
-// Initialize the modal
-function initCardModal() {
-    // Make sure the modal element exists before initializing
-    const modalElement = document.getElementById('cardModal');
-    if (!modalElement) return;
-    
-    // Initialize the Bootstrap modal
-    cardModal = new bootstrap.Modal(modalElement);
-    
-    // Add event listeners for the edit mode toggle and save button
-    document.getElementById('editModeToggle').addEventListener('change', function() {
-        const editMode = this.checked;
-        const viewElements = document.querySelectorAll('.view-mode');
-        const editElements = document.querySelectorAll('.edit-mode');
-        
-        viewElements.forEach(el => {
-            el.style.display = editMode ? 'none' : 'block';
-        });
-        
-        editElements.forEach(el => {
-            el.style.display = editMode ? 'block' : 'none';
-        });
-    });
-    
-    document.getElementById('saveCardButton').addEventListener('click', function() {
-        saveCardChanges(currentCardId);
-    });
-    
-    // Add double-click handler to all kanban cards
-    document.querySelectorAll('.kanban-card').forEach(card => {
-        card.addEventListener('dblclick', function(e) {
-            // Prevent click from propagating (avoid drag issues)
-            e.stopPropagation();
-            
-            // Get data directly from card elements
-            const id = this.getAttribute('data-id');
-            const titleElement = this.querySelector('b');
-            const descElement = this.querySelector('p');
-            const priorityElement = this.querySelector('.priority');
-            
-            // Extract clean data
-            const title = titleElement ? titleElement.textContent.trim() : '';
-            const description = descElement ? descElement.textContent.trim() : '';
-            const priorityClass = priorityElement ? priorityElement.className : '';
-            
-            // Extract priority from class name (e.g., "priority priority-High" -> "High")
-            let priority = 'Normal';
-            if (priorityClass) {
-                const priorityMatch = priorityClass.match(/priority-(\w+)/);
-                if (priorityMatch && priorityMatch[1]) {
-                    priority = priorityMatch[1];
-                }
-            }
-            
-            openCardModal(id, title, description, priority);
-        });
-    });
-}
-// Open the card modal
-function openCardModal(id, title, description, priority) {
-    if (!cardModal) {
-        console.error("Modal not initialized");
-        return;
-    }
-
-    currentCardId = id;
-    
-    // Set view mode content
-    document.getElementById('cardId').textContent = id;
-    document.getElementById('cardTitle').textContent = title;
-    document.getElementById('cardDescription').textContent = description || 'No description provided';
-    
-    const priorityElement = document.getElementById('cardPriority');
-    priorityElement.innerHTML = `<span class="priority-badge ${priority}">${priority}</span>`;
-    
-    // Set edit mode content
-    document.getElementById('cardTitleEdit').value = title;
-    document.getElementById('cardDescriptionEdit').value = description || '';
-    
-    // Set the correct priority in the dropdown
-    const prioritySelect = document.getElementById('cardPriorityEdit');
-    // First find and clear any selected options
-    Array.from(prioritySelect.options).forEach(option => {
-        option.selected = false;
-    });
-    
-    // Then find and select the matching option
-    Array.from(prioritySelect.options).forEach(option => {
-        if (option.value.toLowerCase() === priority.toLowerCase()) {
-            option.selected = true;
-        }
-    });
-    
-    // If no option was found, try to add one
-    if (!Array.from(prioritySelect.options).some(opt => opt.value.toLowerCase() === priority.toLowerCase())) {
-        const newOption = new Option(priority, priority);
-        newOption.selected = true;
-        prioritySelect.add(newOption);
-    }
-    
-    // Reset edit mode toggle
-    document.getElementById('editModeToggle').checked = false;
-    document.querySelectorAll('.view-mode').forEach(el => el.style.display = 'block');
-    document.querySelectorAll('.edit-mode').forEach(el => el.style.display = 'none');
-    
-    // Show the modal
-    cardModal.show();
-}
-
-// Make sure the DOM is fully loaded before initializing
-document.addEventListener('DOMContentLoaded', function() {
-    // Initialize the Bootstrap modal
-    initCardModal();
-});
-// Save card changes
-function saveCardChanges(id) {
-    const title = document.getElementById('cardTitleEdit').value;
-    const description = document.getElementById('cardDescriptionEdit').value;
-    const priority = document.getElementById('cardPriorityEdit').value;
-    console.log("TITLE : ", title);
-    // Create FormData for each field
-    const titleFormData = new FormData();
-    titleFormData.append("id", id);
-    titleFormData.append("model_name", "Backlog");
-    titleFormData.append("app_name", "app_organization");
-    titleFormData.append("field_name", "name");
-    titleFormData.append("new_value", title);
-    
-    const descFormData = new FormData();
-    descFormData.append("id", id);
-    descFormData.append("model_name", "Backlog");
-    descFormData.append("app_name", "app_organization");
-    descFormData.append("field_name", "description");
-    descFormData.append("new_value", description);
-    
-    const priorityFormData = new FormData();
-    priorityFormData.append("id", id);
-    priorityFormData.append("model_name", "Backlog");
-    priorityFormData.append("app_name", "app_organization");
-    priorityFormData.append("field_name", "priority");
-    priorityFormData.append("new_value", priority);
-    
-    // Save the title
-    fetch("/common/common_ajax/ajax_update_app_model_field_value/", {
-        method: "POST",
-        headers: {
-            "X-CSRFToken": "{{ csrf_token }}",
-        },
-        body: titleFormData
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.error) {
-            console.error("Error updating title:", data.error);
-        } else {
-            console.log("Title update successful:", data);
-            
-            // Update the description
-            return fetch("/common/common_ajax/ajax_update_app_model_field_value/", {
-                method: "POST",
-                headers: {
-                    "X-CSRFToken": "{{ csrf_token }}",
-                },
-                body: descFormData
-            });
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.error) {
-            console.error("Error updating description:", data.error);
-        } else {
-            console.log("Description update successful:", data);
-            
-            // Update the priority
-            return fetch("/common/common_ajax/ajax_update_app_model_field_value/", {
-                method: "POST",
-                headers: {
-                    "X-CSRFToken": "{{ csrf_token }}",
-                },
-                body: priorityFormData
-            });
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.error) {
-            console.error("Error updating priority:", data.error);
-        } else {
-            console.log("Priority update successful:", data);
-            
-            // Refresh the page to show updated content
-            refreshKanbanBoard();
-        }
-    })
-    .catch(error => {
-        console.error("Error:", error);
-    });
-}
-
 </script>
 {% endblock content %}

@@ -463,7 +463,7 @@ def ajax_update_app_model_field_value(request):
         new_value = request.POST.get('new_value', None)  # Updated value
         model_name = request.POST.get('model_name', None)
         given_app_name = request.POST.get('app_name', None)
-
+        print(f">>> === Model class: {field_name}  ===> {new_value} === <<<")
         if not (object_id and field_name and new_value and model_name):
             return JsonResponse({'success': False, 'error': 'Missing parameters'})
 

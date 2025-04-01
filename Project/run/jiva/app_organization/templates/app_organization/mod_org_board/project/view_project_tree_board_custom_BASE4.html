@@ -1,0 +1,931 @@
+{% extends 'app_common/common_files/base_template.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load custom_tags %}
+{% load app_web_my_filters %}
+{% load markdown_extras %}
+{% load mptt_tags %}
+{% block content %}
+<style>
+    /* Main Kanban Board Layout */
+.kanban-board {
+    display: flex;
+    gap: 15px;
+    overflow-x: auto; /* Enable horizontal scrolling */
+    overflow-y: hidden; /* Disable vertical scrolling of the board */
+    padding: 10px 0;
+    height: 75vh; /* Use viewport height for responsive sizing */
+    align-items: flex-start;
+    width: 100%;
+    margin-bottom: 20px;
+    /* Better scrollbar styling */
+    scrollbar-width: thin;
+    scrollbar-color: #007bff #f1f5f8;
+}
+
+/* Ensure container doesn't create its own scrollbars */
+.contentbar, .content-wrapper, .container-fluid {
+    overflow: hidden !important; /* Prevent scrollbars on containers */
+}
+
+/* Make sure body doesn't create extra scrollbars */
+body, html {
+    overflow-x: hidden; /* Prevent body horizontal scrollbar */
+}
+
+/* Column Styling with Viewport-based Height */
+.kanban-column {
+    background: #f1f5f8;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    width: 5vw; /* Reduced width */
+    min-width: 1vw;
+    height: 70vh; /* Use viewport height for responsive sizing */
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0px 1px 4px rgba(0, 0, 0, 0.1);
+    overflow-y: auto; /* Enable vertical scrolling within columns */
+    padding: 5px;
+    flex-shrink: 0; /* Prevent columns from shrinking */
+}
+
+/* Buffer column is wider */
+.kanban-column.buffer-column {
+    /* Width is controlled by column_header1 class below */
+}
+
+.column_title {
+    display: flex;
+    align-items: center;     /* Vertically center content */
+    justify-content: center; /* Horizontally center content */
+    height: 30px;            /* Fixed height for consistency */
+    background: #f8f9fa;
+    border-bottom: 1px solid #ddd;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+.column_title h4 {
+    margin: 0;               /* Remove default margin */
+    font-size: 0.85rem;
+    color: #333;
+    font-weight: bold;
+}
+
+/* Swimlane Container - Takes remaining height after header */
+.kanban-swimlane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    height: calc(100% - 30px); /* Adjusted for header height */
+    overflow-y: auto;
+    padding: 5px 0;
+}
+
+/* Card Styling with responsive heights */
+.kanban-card {
+    background: #f0efed;
+    border-radius: 6px;
+    padding: 3px;
+    border: 1px solid #e0e0e0;
+    box-shadow: 0px 1px 3px rgba(0, 0, 0, 0.1);
+    transition: transform 0.2s ease, box-shadow 0.2s ease;
+    cursor: grab;
+    font-size: 0.55rem;
+    display: flex;
+    flex-direction: column;
+    min-height: 6vh; /* Responsive minimum height */
+    max-width: 10vw;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    word-wrap: break-word;
+    margin-bottom: 5px;
+    position: relative;
+}
+
+.kanban-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0px 3px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* Card Header with Priority and ID */
+.kanban-card-header {
+    font-size: 0.5rem;
+    color: #555;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid #ddd;
+    padding-bottom: 3px;
+    margin-bottom: 3px;
+}
+
+.kanban-card .priority {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    font-size: 0.50rem;
+    font-weight: bold;
+    text-align: center;
+    line-height: 14px;
+    color: white;
+}
+
+/* Priority colors */
+.priority-High { background-color: #ff5252; }
+.priority-Critical { background-color: #e91e63; }
+.priority-Medium { background-color: #ff9800; }
+.priority-Low { background-color: #b1ce11; }
+.priority-Normal { background-color: #e00ecf; }
+.priority-none { background-color: #9e9e9e; }
+.priority-high { background-color: #ff5252; }
+.priority-critical { background-color: #e91e63; }
+.priority-medium { background-color: #ff9800; }
+.priority-low { background-color: #4caf50; }
+
+/* Card Content */
+.kanban-card h5 {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #333;
+    margin: 5px 0;
+}
+
+.kanban-card p {
+    font-size: 0.7rem;
+    color: #555;
+    margin: 0;
+    line-height: 1;
+}
+
+.kanban-card-footer {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: auto; /* Push to bottom of card */
+    font-size: 0.65rem;
+}
+
+/* Buffer Column Layout */
+.kanban-buffer {
+    display: flex;
+    flex-direction: row;
+    border: 1px solid #ddd;
+    border-radius: 6px;
+    background: #f8f9fa;
+    padding: 5px;
+    width: 100%;
+    gap: 5px;
+    height: 100%; /* Take full height of parent */
+}
+
+.kanban-subcolumn {
+    width: 100%;
+    height: 100%; /* Take full height of parent */
+    padding: 5px;
+    background: #fdfdfd;
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; /* Allow scrolling within subcolumn */
+}
+
+.kanban-subcolumn.doing {
+    border: 2px dashed #ff9800;
+    background-color: #fff8e1;
+}
+
+.kanban-subcolumn.done {
+    border: 2px dashed #4caf50;
+    background-color: #e8f5e9;
+}
+
+/* Card Status Colors */
+.kanban-card { background-color: #dcdcdc; color: #333 !important; }
+.kanban-card.todo { background-color: #bbdefb; color: #0d47a1 !important; }
+.kanban-card.in-progress, .kanban-card.WIP, .kanban-card.wip { 
+    background-color: #fff59d; 
+    color: #f57f17 !important; 
+}
+.kanban-card.blocked { background-color: lightcoral; color: #ffffff !important; }
+.kanban-card.done { background-color: #81c784; color: #1b5e20 !important; }
+
+/* Placeholder for dragging */
+.kanban-card-placeholder {
+    background: #f0f0f0;
+    border: 1px dashed #aaa;
+    height: 50px; 
+    border-radius: 6px;
+    margin: 5px 0;
+    width: 100%;
+}
+
+/* WIP Limit Visual Indicator */
+@keyframes blinkBorder {
+    0% { border-color: red; }
+    50% { border-color: transparent; }
+    100% { border-color: red; }
+}
+
+.blink-border {
+    border: 3px solid red;
+    animation: blinkBorder 1s infinite;
+}
+
+/* Highlight for droppable targets */
+.kanban-subcolumn.kanban-droppable-hover,
+.kanban-column.kanban-droppable-hover {
+    background: rgba(0, 123, 255, 0.1);
+    border: 2px dashed #007bff;
+}
+
+/* Loading Spinner */
+.spinner-border {
+    border: 0.25em solid #f3f3f3;
+    border-top: 0.25em solid #007bff;
+    border-radius: 50%;
+    width: 3rem;
+    height: 3rem;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Fixed navbar */
+.navbar {
+    margin: 0 !important;
+    padding: 0 !important;
+    height: 50px;
+}
+
+/* Custom Select for Swimlane filter */
+.custom-select {
+    appearance: none;
+    background-color: #fff;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    padding: 6px 8px;
+    padding-right: 25px;
+    font-size: 14px;
+    cursor: pointer;
+}
+
+/* Responsive Adjustments */
+@media (max-width: 768px) {
+    .kanban-column {
+        min-width: 150px;
+    }
+    .kanban-card {
+        max-width: 100px;
+        padding: 5px;
+    }
+    
+    /* Adjust heights for smaller screens */
+    .kanban-board {
+        height: 85vh; /* Slightly taller on small screens to accommodate scrolling */
+    }
+}
+
+/* WIP Limit Counter Styling */
+.column_header1 {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0; /* Prevent shrinking */
+}
+
+.column_header1 > span {
+    font-size: 0.7rem; /* Smaller font */
+    text-align: center;
+    margin-bottom: 3px;
+    font-weight: bold;
+}
+
+/* Make sure columns stay aligned */
+.column_header1 .kanban-column {
+    width: 175px;
+    min-width: 175px;
+}
+
+.column_header1 .kanban-column.buffer-column {
+    width: 400px;
+    min-width: 400px;
+}
+
+/* Ensure loading spinner doesn't affect layout */
+#loading-spinner {
+    position: fixed;
+    z-index: 9999;
+}
+
+/* Add padding to the bottom of content area to ensure scrollbar is visible */
+.container-fluid {
+    padding-bottom: 15px;
+}
+
+/* WIP Limit Counter Styling - Enhanced */
+.column_header1 {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    flex-shrink: 0; /* Prevent shrinking */
+}
+
+.column_header1 > span {
+    font-size: 0.7rem;
+    text-align: center;
+    margin-bottom: 3px;
+    font-weight: bold;
+    min-height: 20px; /* Ensure consistent spacing for all columns */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+/* Styling for WIP counts in buffer column titles */
+.kanban-subcolumn b {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 3px 5px;
+    margin-bottom: 5px;
+    border-radius: 4px;
+    background-color: rgba(0, 0, 0, 0.05);
+    transition: background-color 0.3s ease;
+}
+
+.kanban-subcolumn b .wip-count {
+    font-size: 0.65rem;
+    opacity: 0.9;
+    padding: 0 5px;
+    border-radius: 3px;
+    background-color: rgba(0, 0, 0, 0.1);
+    margin-left: 5px;
+    transition: all 0.3s ease;
+}
+
+/* Styling for exceeded WIP count */
+.kanban-subcolumn b .wip-count.exceeded {
+    background-color: rgba(255, 0, 0, 0.2);
+    color: #d00;
+    font-weight: bold;
+    box-shadow: 0 0 3px rgba(255, 0, 0, 0.3);
+}
+
+/* Buffer column exceeded styling */
+.buffer-exceeded {
+    background-color: rgba(255, 0, 0, 0.05) !important;
+    border: 2px solid rgba(255, 0, 0, 0.3) !important;
+}
+
+/* Individual subcolumn exceeded styling */
+.subcolumn-exceeded {
+    border: 2px dashed rgba(255, 0, 0, 0.5) !important;
+    background-color: rgba(255, 0, 0, 0.08) !important;
+    box-shadow: inset 0 0 8px rgba(255, 0, 0, 0.1);
+}
+
+.subcolumn-exceeded b {
+    background-color: rgba(255, 0, 0, 0.1);
+    color: #900;
+    font-weight: bold;
+}
+
+/* More prominent WIP limit visualization */
+.blink-border {
+    border: 3px solid red !important;
+    animation: blinkBorder 1s infinite;
+    box-shadow: 0 0 8px rgba(255, 0, 0, 0.5);
+}
+
+@keyframes blinkBorder {
+    0% { border-color: red !important; }
+    50% { border-color: rgba(255, 0, 0, 0.3) !important; }
+    100% { border-color: red !important; }
+}
+</style>
+<!--
+1. This is default or when get_swimlane_id is -1 where we need to display 
+Project Iteration Board
+-->
+
+{% if project_iteration_flag == True %}
+
+<div class="content-wrapper">
+
+
+    <div class="contentbar mb-5" id="contentbar">
+        {% if project.project_details.template.name == 'Kanban' %}
+        <div class="container-fluid mb-1">
+            <div class="row">
+                <div class="col col-md-6">
+                    <b class="me-2">Project: </b>
+                    {{project}} 
+                    <b class="mb-2 me-2">Release: </b>
+                    {{project.project_release}}
+                    <b class="mb-2 me-2">Iteration: </b>
+                    {{current_iteration}}
+                <b class="mb-2 me-2">Project Board: </b>
+                    {{project_board}}
+                    
+                </div>
+
+                <div class="col col-md-6 text-end">
+                    {% if page == 'custom' %}
+                    <a href="{% url 'view_project_tree_board_smart_kanban' project.id %}" class="me-2">SMART</a>
+                    <b>Custom</b>
+                    {% else %}
+                    <b>SMART</b>
+                    <a href="{% url 'view_project_tree_board_custom' project.id %}" class="me-2">Custom</a>
+                    
+                    {% endif %}
+                    
+                    
+                     <a href="{% url 'list_project_boards' project.id %}" class="btn btn-sm btn-primary me-2">Board</a>
+                     <a href="{% url 'board_card_settings' project_board.id %}" class="btn btn-sm btn-success me-2">Card</a>
+                    <select id="parentFilter" class="custom-select">
+                        <option value="">-- Select SwimLane --</option>
+                        <option value="0">-- All SwimLanes --</option>
+                        <option value="-1" selected>-- Project Iteration --</option>
+                        {% for efcc in efcc_backlog_items %}
+                            <option value="{{ efcc.id }}">{{ efcc }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        <div class="container-fluid">
+            <div class="d-flex justify-content-end align-items-center">
+                <div class="display_topic"></div>
+                <div class="view_options"></div>
+                <div class="dropdown"></div>
+                <div class="menu"></div>
+            </div>
+            
+            <!-- Board-->
+            <div id="kanban-board" data-board-id="{{ project_board.id }}" class="kanban-board mb-5">
+                <!-- Backlog Column -->
+                <div class="column_header1">
+                    <span style="color: red;" id="card-count-0">∞</span>                    
+                    <div class="kanban-column" data-id="0" id="backlog"
+                    data-apply-wip-limit="false"
+                    >
+                        <div class="column_title"><h4>Backlog</h4></div>
+                        <div class="kanban-swimlane">
+                        {% for item in backlog_items %}
+                            <div class="kanban-card" data-id="{{ item.id }}">
+                                <div class="kanban-card-header">
+                                    <span class="priority priority-{{item.priority}}">{{item.priority|get_first_letter_caps}}</span>
+                                    <span><a href="{% url 'edit_project_tree_backlog_item' project.id item.id %}?back_to=view_project_tree_board&project_id={{project.id}}">#{{item.id}}</a> {{item.iteration| display_if_not_none }}</span>
+                                </div>
+                                <b>{{ item }}</b>
+                                <p>{{ item.description | display_if_not_none }}</p>
+                                <div class="kanban-card-footer">
+                                    <div class="parent"></div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                {% for state in project_board_states %}
+                <div class="column_header1">
+                    {% if state.apply_wip_limit %}                            
+                    <span id="card-count-{{ state.id }}" style="color: green;">0</span>
+                    {% else %}
+                    <span id="card-count-{{ state.id }}" style="color: red;">∞</span>  
+                    {% endif %}  
+                    
+                <!-- Kanban Column -->
+                <div class="kanban-column {% if state.buffer_column %}buffer-column{% endif %}" data-id="{{ state.id }}" id="column-{{ state.name }}" 
+                        data-column-type="{{ state.column_type }}" data-wip-limit="{{ state.wip_limit }}" 
+                        data-apply-wip-limit="{{ state.apply_wip_limit|yesno:'true,false' }}">
+                        <!-- Column Header with Dynamic Card Count -->                        
+                        <div class="column_title"><h4>{{ state.name }}</h4></div>
+                    <!-- Split column if buffer_column=True -->
+                    {% if state.buffer_column %}
+                        <div class="kanban-buffer">
+                            {% with subcolumns=state.get_subcolumns %}
+                            {% for substate_choice in subcolumns %}
+                                <div class="kanban-subcolumn {{ substate_choice|lower|slugify }}"
+                                     data-id="{{ state.id }}"
+                                     id="{{ substate_choice|lower|slugify }}-{{ state.id }}"
+                                     data-substate="{{ substate_choice }}"
+                                     data-buffer-subcolumn-wip-limit="2">
+                                     
+                                    <b>{{ state.name }}: {{ substate_choice }}</b>
+                        
+                                    {% for item in state_items|get_item:state.id %}
+                                        {% if item.backlog.iteration.id == current_iteration.id and item.substate == substate_choice %}
+                                            <!-- Card HTML here -->
+                                            <div class="kanban-card {{ state.column_type|lower }}" style="color: white;" data-id="{{ item.id }}">
+                                                <div class="kanban-card-header">
+                                                    <span class="priority priority-{{ item.backlog.priority }}">{{ item.backlog.priority|get_first_letter_caps }}</span>
+                                                    <span><a href="{% url 'edit_project_tree_backlog_item' project.id item.backlog.id %}?back_to=view_project_tree_board&project_id={{ project.id }}">
+                                                        #{{ item.backlog.id }}</a> {{ item.backlog.iteration }}</span>
+                                                </div>
+                                                <b>{{ item }}</b>
+                                                <p>{{ item.description | display_if_not_none }}
+                                                   
+                                                </p>
+                                                <div class="kanban-card-footer">
+                                                    <div class="parent"></div>
+                                                </div>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                        
+                                </div>
+                            {% endfor %}
+                        {% endwith %}
+                        
+
+                           
+                        </div>
+                    {% else %}
+                        <div class="kanban-swimlane">
+                        {% for item in state_items|get_item:state.id %}
+                            {% if item.backlog.iteration.id == current_iteration.id %}
+                                <div class="kanban-card {{ state.column_type|lower }}" style="color: white;" data-id="{{ item.id }}">
+                                    <div class="kanban-card-header">
+                                        <span class="priority priority-{{ item.backlog.priority }}">{{ item.backlog.priority|get_first_letter_caps }}</span>
+                                        <span><a href="{% url 'edit_project_tree_backlog_item' project.id item.backlog.id %}?back_to=view_project_tree_board&project_id={{ project.id }}">#{{ item.backlog.id }}</a> {{ item.backlog.iteration }}</span>
+                                    </div>
+                                    <b>{{ item }}</b>
+                                    <p>{{ item.description | display_if_not_none }}</p>
+                                    <div class="kanban-card-footer">
+                                        <div class="parent"></div>
+                                    </div>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+
+{% endif %}
+<div id="loading-spinner" style="
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(255, 255, 255, 0.7);
+    z-index: 9999;
+    display: flex;
+    align-items: center;
+    justify-content: center;">
+    <div class="spinner-border text-primary" role="status" style="width: 3rem; height: 3rem;">
+        <span class="visually-hidden">Loading...</span>
+    </div>
+</div>
+
+<!-- Include jQuery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://code.jquery.com/ui/1.13.2/jquery-ui.min.js"></script>
+
+<script>
+ // Enhanced WIP Count function with dynamic substates
+function updateWIPCounts() {
+    document.querySelectorAll(".kanban-column").forEach(column => {
+        let stateId = column.getAttribute("data-id");
+        let wipLimit = parseInt(column.getAttribute("data-wip-limit"), 10);
+        let applyWipLimit = column.getAttribute("data-apply-wip-limit") === "true";
+        let isBufferColumn = column.classList.contains("buffer-column");
+        
+        // Set default WIP limit of 2 for buffer columns if not already set
+        if (isBufferColumn && (!wipLimit || isNaN(wipLimit))) {
+            wipLimit = 2;
+            column.setAttribute("data-wip-limit", "2");
+            column.setAttribute("data-apply-wip-limit", "true");
+            applyWipLimit = true;
+        }
+        
+        // Count cards differently for regular vs buffer columns
+        let cardCount = 0;
+        
+        if (isBufferColumn) {
+            // Get all subcolumns (now we might have more than just Doing and Done)
+            const subcolumns = column.querySelectorAll(".kanban-subcolumn");
+            let subcolumnCounts = {};
+            let totalCount = 0;
+            
+            // Count cards in each subcolumn
+            subcolumns.forEach(subcolumn => {
+                const substate = subcolumn.getAttribute("data-substate");
+                const count = subcolumn.querySelectorAll(".kanban-card").length;
+                subcolumnCounts[substate] = count;
+                totalCount += count;
+            });
+            
+            cardCount = totalCount;
+            
+            // Update top column count display with just the total
+            let countElement = document.getElementById(`card-count-${stateId}`);
+            if (countElement) {
+                // Display Total: count/wipLimit or Total: count/∞ if no WIP limit
+                const limitDisplay = applyWipLimit ? wipLimit : "∞";
+                countElement.innerHTML = `<span>Total: ${cardCount}/${limitDisplay}</span>`;
+                countElement.style.color = (!applyWipLimit || cardCount <= wipLimit) ? "green" : "red";
+            }
+            
+            // Update each subcolumn title with its count
+            subcolumns.forEach(subcolumn => {
+                const substate = subcolumn.getAttribute("data-substate");
+                const wip_limit_attr = subcolumn.getAttribute("data-buffer-subcolumn-wip-limit");
+                const subWipLimit = wip_limit_attr ? parseInt(wip_limit_attr) : 2;
+                const count = subcolumnCounts[substate];
+                
+                // Set the WIP limit attribute if not already set
+                if (!wip_limit_attr) {
+                    subcolumn.setAttribute("data-buffer-subcolumn-wip-limit", subWipLimit);
+                }
+                
+                // Update the title
+                const title = subcolumn.querySelector("b");
+                if (title) {
+                    const columnName = title.textContent.split(":")[0];
+                    title.innerHTML = `${columnName}: ${substate} <span class="wip-count ${count > subWipLimit ? 'exceeded' : ''}">${count}/${subWipLimit}</span>`;
+                }
+                
+                // Highlight subcolumn if count exceeds limit
+                if (count > subWipLimit) {
+                    subcolumn.classList.add("subcolumn-exceeded");
+                } else {
+                    subcolumn.classList.remove("subcolumn-exceeded");
+                }
+            });
+            
+            // Highlight whole column if total exceeds limit
+            if (applyWipLimit && cardCount > wipLimit) {
+                column.classList.add("blink-border");
+                column.querySelector(".kanban-buffer").classList.add("buffer-exceeded");
+            } else {
+                column.classList.remove("blink-border");
+                column.querySelector(".kanban-buffer").classList.remove("buffer-exceeded");
+            }
+            
+        } else {
+            // For regular columns, just count all cards
+            cardCount = column.querySelectorAll(".kanban-card").length;
+            
+            // Update the count display
+            let countElement = document.getElementById(`card-count-${stateId}`);
+            if (countElement) {
+                // Check if WIP limit is applied and format accordingly (count/wipLimit or count/∞)
+                if (applyWipLimit) {
+                    countElement.innerText = `${cardCount}/${wipLimit}`;
+                    countElement.style.color = (cardCount <= wipLimit) ? "green" : "red";
+                } else {
+                    countElement.innerHTML = `${cardCount}/∞`;
+                    countElement.style.color = "green"; // Always green for unlimited columns
+                }
+            }
+            
+            // Add blinking border if WIP limit is exceeded
+            if (applyWipLimit && cardCount > wipLimit) {
+                column.classList.add("blink-border");
+            } else {
+                column.classList.remove("blink-border");
+            }
+        }
+    });
+}
+
+// Run when page loads
+window.addEventListener("load", updateWIPCounts);
+
+// Also run after any drag-and-drop operations
+$(document).on("sortreceive sortstop", function() {
+    setTimeout(updateWIPCounts, 100);
+});
+</script>
+
+<script>
+    document.getElementById('parentFilter').addEventListener('change', function () {
+        let selectedValue = this.value;
+        let url = new URL(window.location.href);
+
+        if (url.searchParams.has('swimlane_id')) {
+            url.searchParams.set('swimlane_id', selectedValue);
+        } else {
+            url.searchParams.append('swimlane_id', selectedValue);
+        }
+
+        window.location.href = url.toString();
+    });
+</script>
+
+<script>
+    const columnColorMapping = {
+        "Backlog": "kanban-card",
+        "ToDo": "kanban-card todo",
+        "In Progress": "kanban-card WIP",
+        "WIP": "kanban-card WIP",
+        "Blocked": "kanban-card blocked",
+        "Done": "kanban-card done"
+    };
+</script>
+
+<script>
+   $(function() {
+    $(".kanban-column, .kanban-column .kanban-swimlane, .kanban-subcolumn").sortable({
+        connectWith: ".kanban-column, .kanban-column .kanban-swimlane, .kanban-subcolumn",
+        placeholder: "kanban-card-placeholder",
+        tolerance: 'pointer',
+        scroll: true,
+        scrollSensitivity: 100,
+        scrollSpeed: 10,
+        appendTo: "body",
+        helper: "clone",
+        forcePlaceholderSize: true,
+        items: ".kanban-card",
+        cancel: ".non-draggable",
+        over: function(event, ui) {
+            $(this).addClass("kanban-droppable-hover");
+        },
+        out: function(event, ui) {
+            $(this).removeClass("kanban-droppable-hover");
+        },
+        
+        start: function(event, ui) {
+            var fromColumn;
+            if (ui.item.closest(".kanban-subcolumn").length) {
+                fromColumn = ui.item.closest(".kanban-subcolumn").closest(".kanban-column");
+            } else {
+                fromColumn = ui.item.closest(".kanban-column");
+            }
+            ui.item.data("start-state", fromColumn.data("id"));
+            ui.item.data("from-column", fromColumn.find("h4").text().trim());
+            
+            // Make item visible during drag
+            ui.helper.css('z-index', 1000);
+        },
+
+        stop: function(event, ui) {
+            var projectId = {{ project.id }};
+            var cardId = ui.item.data("id");
+            var boardId = {{ project_board.id }};
+            var fromStateId = ui.item.data("start-state");
+            var fromColumn = ui.item.data("from-column");
+
+            var toColumn = ui.item.closest(".kanban-subcolumn, .kanban-column");
+            var toStateId = toColumn.data("id");
+            var subState = toColumn.attr("data-substate");
+            var destColumn = toColumn.attr("id").replace("column-", "").trim().toLowerCase();
+            var columnType = toColumn.closest(".kanban-column").data("column-type");
+            
+            var destPositions = [];
+            toColumn.find(".kanban-card").each(function(index) {
+                var id = $(this).data("id");
+                destPositions.push({ card_id: id, position: index + 1 });
+            });
+            
+            const card = ui.item;
+            card.removeClass("todo wip blocked done");
+            const newClass = columnColorMapping[columnType] || "kanban-card";
+            card.attr("class", newClass);
+            
+            if (subState) {                
+                setTimeout(function() {
+                    updateCardSubstate(cardId, toStateId, subState);
+                }, 3);
+            }
+            
+            setTimeout(function() {
+                updateCardState(cardId, fromStateId, toStateId, destPositions, destColumn, {{ project.id }}, boardId, fromColumn);
+            }, 3);
+            
+            ui.item.removeData("start-state").removeData("from-column");
+            ui.item.data("start-state", toStateId);
+            ui.item.data("from-column", destColumn);
+
+            if (fromColumn == 'Backlog' || destColumn == 'Backlog') {
+                refreshKanbanBoard();
+            }
+
+            updateWIPCounts();
+        }
+    }).disableSelection();
+});
+
+function updateCardSubstate(id, stateId, subState) {
+    console.log(`Updating substate for Card ${id} -> ${subState}`);
+
+    let formData = new FormData();
+    formData.append("id", id);
+    formData.append("model_name", "ProjectBoardCard");
+    formData.append("app_name", "app_organization");
+    formData.append("field_name", "substate");
+    formData.append("new_value", subState);
+
+    fetch("/common/common_ajax/ajax_update_app_model_field_value/", {
+        method: "POST",
+        headers: {
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: formData
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            console.error("Error:", data.error);
+        } else {
+            console.log("Substate Update Success:", data);
+        }
+    })
+    .catch(error => {
+        console.error("Error:", error);
+    });
+}
+
+function updateCardState(cardId, fromStateId, toStateId, destPositions, destColumn, projectId, boardId, fromColumn) {
+    fetch("{% url 'ajax_update_project_board_card_state' %}", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json",
+            "X-CSRFToken": "{{ csrf_token }}"
+        },
+        body: JSON.stringify({
+            card_id: cardId,
+            board_id: {{ project_board.id }},
+            from_state_id: fromStateId,
+            to_state_id: toStateId,
+            positions: destPositions,
+            dest_column: destColumn,
+            project_id: projectId,
+            board_id: boardId,
+            from_column: fromColumn
+        })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.error) {
+            console.error("Error:", data.error);
+        } else {
+            console.log("Success:", data);
+        }
+    })
+    .catch(error => {
+        console.error("Error:", error);
+    });
+}
+
+function refreshKanbanBoard() {
+    document.getElementById("loading-spinner").style.display = "flex";
+    setTimeout(() => {
+        location.reload();
+    }, 200);
+}
+
+window.addEventListener('load', function() {
+    document.getElementById("loading-spinner").style.display = "none";
+    
+    // Re-initialize sortable after page load to ensure it works properly
+    setTimeout(function() {
+        $(".kanban-column, .kanban-column .kanban-swimlane, .kanban-subcolumn").sortable("refresh");
+    }, 100);
+});
+</script>
+
+<script>
+    function makeEditable(element) {
+        element.contentEditable = true;
+        element.focus();
+    }
+
+    function save_element_text(element, id, appName, modelName, fieldName) {
+        element.contentEditable = false;
+        $.ajax({
+            url: '/common/common_ajax/ajax_save_element_text/',
+            type: 'POST',
+            data : {
+                'csrfmiddlewaretoken': "{{ csrf_token }}",
+                'model_name': modelName,
+                'app_name': appName,
+                'field_name': fieldName,
+                'text': element.textContent, 
+                'id': id,
+            },
+            dataType: 'json',
+            success: function(data) {
+                console.log(data);
+            }
+        });
+    }
+</script>
+
+{% endblock content %}

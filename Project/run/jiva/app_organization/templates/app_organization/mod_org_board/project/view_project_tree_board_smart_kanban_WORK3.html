@@ -28,9 +28,7 @@
     min-width: 8vw;
     vertical-align: top;
   }
-  .third_row {
-    vertical-align: top;
-  }
+
   /** display headers */
   .column_title {
     font-size: 0.75rem;
@@ -109,9 +107,7 @@
     border-left-style: dashed;
     border-right-style: dotted;
   }
-  .sketchy_right_dotted_border {
-    border-right: 2px dotted red;  
-  }
+
   .sketchy_right_solid_border {
     border-right: 2px solid blue;  
   }
@@ -133,7 +129,6 @@
   }
 
   </style>
-  
 </head>
 <body>
   
@@ -279,7 +274,7 @@
               <!-- Place holder for swimlane -->
             </td>
             <!-- Backlog -->
-            <td class="third_row sketchy_left_solid_border sketchy_right_solid_border" rowspan="3">
+            <td class="sketchy_left_solid_border sketchy_right_solid_border" rowspan="3">
               <div class="container">
                 <div class="row">
                   <div class="col col md-6 text-center">
@@ -339,7 +334,7 @@
               {% if state.buffer_column %}
                 {% with subcolumns=state.get_subcolumns %}
                 {% for substate_choice in subcolumns %}
-                <td class=" buffer_sub_column sketchy_right_solid_border sketchy_top_solid_border" colspan="1">                
+                <td class="  sketchy_right_solid_border sketchy_top_solid_border" colspan="1">                
                   <div class="display_count_and_limit text-center">
                     <div class="count_wip">{% if state.apply_wip_limit %}{{ state.wip_limit }}{% else %}∞{% endif %}</div>                      
                   </div>
@@ -423,11 +418,10 @@
                 {% if state.buffer_column %}
                   {% with subcolumns=state.get_subcolumns %}
                   {% for substate_choice in subcolumns %}
-                  
-                  <td class="kanban_column buffer_column sketchy_top_solid_border sketchy_right_dotted_border {% if forloop.counter == 1 %}sketchy_right_dotted_border{% else %}sketchy_right_solid_border{% endif %}" colspan="1">                
+                  <td class="kanban_column buffer_column sketchy_right_solid_border sketchy_top_solid_border" colspan="1">                
                     {% for item in state_items|get_item:state.id %}
                       {% if item.substate == substate_choice %}
-                      <div class="card {{item.priority}} mb-2" id="{{item.id}}" draggable="true">{{item}} test</div>
+                      <div class="card {{item.priority}} mb-2" id="{{item.id}}" draggable="true">{{item}}</div>
                       {% endif %}
                     {% endfor %}
                   </td>
@@ -465,212 +459,21 @@
 integrity="sha512-ekwRoEshEqHU64D4luhOv/WNmhml94P8X5LnZd9FNOiOfSKgkY12cDFz3ZC6Ws+7wjMPQ4bPf94d+zZ3cOjlig==" 
 crossorigin="anonymous" referrerpolicy="no-referrer"></script>
   <script>
-    document.addEventListener('DOMContentLoaded', function() {
-  // Set up drag and drop functionality
-  setupDragAndDrop();
-  
+document.addEventListener('DOMContentLoaded', function() {
   // Initial card count
   countAllCards();
+  
+  // Add event listeners to update counts when cards are moved
+  document.querySelectorAll('.card[draggable="true"]').forEach(card => {
+    card.addEventListener('dragend', function() {
+      setTimeout(countAllCards, 100);
+      console.log('Card moved, updating counts...');
+    });
+  });
 });
-
-function setupDragAndDrop() {
-  console.log('Setting up drag and drop...');
-  
-  // Get all draggable cards
-  const cards = document.querySelectorAll('.card[draggable="true"]');
-  
-  // Get all drop targets (columns)
-  const dropTargets = document.querySelectorAll('.kanban_column');
-  
-  // Add drag event listeners to each card
-  cards.forEach(card => {
-    card.addEventListener('dragstart', handleDragStart);
-    card.addEventListener('dragend', handleDragEnd);
-  });
-  
-  // Add drop event listeners to each column
-  dropTargets.forEach(column => {
-    column.addEventListener('dragover', handleDragOver);
-    column.addEventListener('dragenter', handleDragEnter);
-    column.addEventListener('dragleave', handleDragLeave);
-    column.addEventListener('drop', handleDrop);
-  });
-}
-
-// Track the card being dragged
-let draggedCard = null;
-
-// Drag handlers
-function handleDragStart(e) {
-  draggedCard = this;
-  
-  // Add a class to indicate this card is being dragged
-  this.classList.add('dragging');
-  
-  // Set the drag data (for Firefox compatibility)
-  e.dataTransfer.setData('text/plain', this.id);
-  
-  // Make the drag image semi-transparent
-  e.dataTransfer.effectAllowed = 'move';
-  
-  console.log('Drag started for card:', this.id);
-}
-
-function handleDragEnd(e) {
-  // Remove the dragging class
-  this.classList.remove('dragging');
-  
-  // Reset all columns to normal state
-  document.querySelectorAll('.kanban_column').forEach(column => {
-    column.classList.remove('drag-over');
-  });
-  
-  // Recalculate card counts
-  setTimeout(countAllCards, 100);
-  
-  console.log('Drag ended for card:', this.id);
-}
-
-
-function handleDragEnter(e) {
-  // Add a class to highlight valid drop target
-  this.classList.add('drag-over');
-}
-
-function handleDragLeave(e) {
-  // Remove highlight class
-  this.classList.remove('drag-over');
-}
-
-// Replace your existing handleDrop function with this:
-function handleDrop(e) {
-  // Prevent default behavior (prevent file open)
-  if (e.stopPropagation) {
-    e.stopPropagation();
-  }
-  e.preventDefault();
-  
-  // Only proceed if we have a valid dragged card
-  if (draggedCard) {
-    // Find the closest card to insert before/after
-    const closestCard = getClosestCard(this, e.clientY);
-    
-    if (closestCard) {
-      // Insert before the closest card if mouse is above its midpoint
-      const rect = closestCard.getBoundingClientRect();
-      const midpoint = rect.top + rect.height / 2;
-      
-      if (e.clientY < midpoint) {
-        this.insertBefore(draggedCard, closestCard);
-      } else {
-        // Insert after the closest card
-        if (closestCard.nextElementSibling) {
-          this.insertBefore(draggedCard, closestCard.nextElementSibling);
-        } else {
-          this.appendChild(draggedCard);
-        }
-      }
-    } else {
-      // If no cards in the column or not close to any card, append to the end
-      this.appendChild(draggedCard);
-    }
-    
-    console.log('Card', draggedCard.id, 'dropped into column');
-    
-    // Update card counts after drop
-    setTimeout(countAllCards, 100);
-  }
-  
-  // Remove the drag-over class
-  this.classList.remove('drag-over');
-  
-  return false;
-}
-
-// Add this new function to find the closest card to the drop position
-function getClosestCard(column, mouseY) {
-  const cards = Array.from(column.querySelectorAll('.card'));
-  
-  if (cards.length === 0) return null;
-  
-  // Calculate the distance from the mouse to the center of each card
-  let closestCard = null;
-  let closestDistance = Infinity;
-  
-  cards.forEach(card => {
-    if (card === draggedCard) return; // Skip the dragged card itself
-    
-    const rect = card.getBoundingClientRect();
-    const cardY = rect.top + rect.height / 2; // Y coordinate of card center
-    const distance = Math.abs(mouseY - cardY);
-    
-    if (distance < closestDistance) {
-      closestDistance = distance;
-      closestCard = card;
-    }
-  });
-  
-  return closestCard;
-}
-
-// Also update the mouse feedback CSS to show insertion position
-const style1 = document.createElement('style');
-style1.textContent = `
-  .card.dragging {
-    opacity: 0.4;
-  }
-  
-  .kanban_column.drag-over {
-    background-color: rgba(0, 123, 255, 0.1);
-    border: 2px dashed #007bff !important;
-  }
-  
-  .card.insert-above {
-    border-top: 2px solid #007bff;
-  }
-  
-  .card.insert-below {
-    border-bottom: 2px solid #007bff;
-  }
-`;
-document.head.appendChild(style1);
-
-// Add these functions to show visual indicator for insertion position
-function handleDragOver(e) {
-  if (e.preventDefault) {
-    e.preventDefault(); // Necessary to allow drop
-  }
-  
-  e.dataTransfer.dropEffect = 'move';
-  
-  // Clear all insertion indicators
-  document.querySelectorAll('.card.insert-above, .card.insert-below').forEach(card => {
-    card.classList.remove('insert-above', 'insert-below');
-  });
-  
-  // Find the closest card and show insertion indicator
-  const column = this;
-  const closestCard = getClosestCard(column, e.clientY);
-  
-  if (closestCard && closestCard !== draggedCard) {
-    const rect = closestCard.getBoundingClientRect();
-    const midpoint = rect.top + rect.height / 2;
-    
-    if (e.clientY < midpoint) {
-      closestCard.classList.add('insert-above');
-    } else {
-      closestCard.classList.add('insert-below');
-    }
-  }
-  
-  return false;
-}
 
 function countAllCards() {
   console.log('Counting cards in all columns...');
-  
-  // Default WIP limit for sub-columns
-  const DEFAULT_SUBCOLUMN_WIP_LIMIT = 2;
   
   // 1. Backlog column (first column)
   const backlogColumn = document.querySelector('.backlog_column.kanban_column');
@@ -678,10 +481,8 @@ function countAllCards() {
   
   if (backlogColumn && backlogCountEl) {
     const backlogCards = backlogColumn.querySelectorAll('.card').length;
-    // Get just the limit part
-    const limitPart = '∞';
-    backlogCountEl.textContent = backlogCards + '/' + limitPart;
-    console.log('Backlog count: ' + backlogCards + '/' + limitPart);
+    backlogCountEl.textContent = backlogCards + '/∞';
+    console.log('Backlog count: ' + backlogCards + '/∞');
   }
   
   // 2. Process all normal columns
@@ -693,32 +494,23 @@ function countAllCards() {
     if (idx < normalCountEls.length) {
       const countEl = normalCountEls[idx];
       const cardCount = column.querySelectorAll('.card').length;
-      
-      // Extract just the limit part from the original text
-      let originalText = countEl.textContent.trim();
-      let limitPart = '∞';
-      
-      if (originalText.includes('/')) {
-        limitPart = originalText.split('/')[1];
-      } else {
-        limitPart = originalText;
-      }
+      const limit = countEl.textContent.trim();
       
       // Update the count display
-      countEl.textContent = cardCount + '/' + limitPart;
+      countEl.textContent = cardCount + '/' + limit;
       
       // Highlight if over limit
-      if (limitPart !== '∞' && cardCount > parseInt(limitPart)) {
+      if (limit !== '∞' && cardCount > parseInt(limit)) {
         countEl.style.color = 'red';
       } else {
         countEl.style.color = '#707070';
       }
       
-      console.log('Normal column ' + idx + ' count: ' + cardCount + '/' + limitPart);
+      console.log('Normal column ' + idx + ' count: ' + cardCount + '/' + limit);
     }
   });
   
-  // 3. Process all buffer column sets (parent columns)
+  // 3. Process all buffer column sets
   const bufferCountEls = document.querySelectorAll('.count_column[colspan="2"] .count_wip');
   bufferCountEls.forEach((countEl, idx) => {
     // Find corresponding buffer columns
@@ -735,66 +527,22 @@ function countAllCards() {
       }
     }
     
-    // Extract just the limit part from the original text
-    let originalText = countEl.textContent.trim();
-    let limitPart = '∞';
-    
-    if (originalText.includes('/')) {
-      limitPart = originalText.split('/')[1];
-    } else {
-      limitPart = originalText;
-    }
+    // Get the original limit
+    const limit = countEl.textContent.trim();
     
     // Update the count display
-    countEl.textContent = cardCount + '/' + limitPart;
+    countEl.textContent = cardCount + '/' + limit;
     
     // Highlight if over limit
-    if (limitPart !== '∞' && cardCount > parseInt(limitPart)) {
+    if (limit !== '∞' && cardCount > parseInt(limit)) {
       countEl.style.color = 'red';
     } else {
       countEl.style.color = '#707070';
     }
     
-    console.log('Buffer column set ' + idx + ' count: ' + cardCount + '/' + limitPart);
-  });
-  
-  // 4. Process individual buffer sub-columns in the fourth row
-  const bufferSubColumns = document.querySelectorAll('.buffer_sub_column .count_wip');
-  const kanbanBufferColumns = document.querySelectorAll('.buffer_column.kanban_column');
-  
-  bufferSubColumns.forEach((subColCountEl, idx) => {
-    if (idx < kanbanBufferColumns.length) {
-      // Count cards in this specific buffer sub-column
-      const cardCount = kanbanBufferColumns[idx].querySelectorAll('.card').length;
-      
-      // Update the count display with default sub-column WIP limit
-      subColCountEl.textContent = cardCount + '/' + DEFAULT_SUBCOLUMN_WIP_LIMIT;
-      
-      // Highlight if over limit
-      if (cardCount > DEFAULT_SUBCOLUMN_WIP_LIMIT) {
-        subColCountEl.style.color = 'red';
-      } else {
-        subColCountEl.style.color = '#707070';
-      }
-      
-      console.log('Buffer sub-column ' + idx + ' count: ' + cardCount + '/' + DEFAULT_SUBCOLUMN_WIP_LIMIT);
-    }
+    console.log('Buffer column set ' + idx + ' count: ' + cardCount + '/' + limit);
   });
 }
-
-// Add some CSS for drag and drop visual feedback
-const style = document.createElement('style');
-style.textContent = `
-  .card.dragging {
-    opacity: 0.4;
-  }
-  
-  .kanban_column.drag-over {
-    background-color: rgba(0, 123, 255, 0.1);
-    border: 2px dashed #007bff !important;
-  }
-`;
-document.head.appendChild(style);
   </script>
 
   

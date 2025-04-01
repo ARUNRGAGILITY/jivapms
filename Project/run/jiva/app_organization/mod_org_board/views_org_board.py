@@ -800,13 +800,13 @@ def backlog_to_column_update(positions, board_id, this_card_id, from_column, fro
     logger.debug(f">>> === BACKLOG_TO_COLUMN: {positions} {board_id} {this_card_id} {from_column} {from_state_id} {dest_column} {to_state_id}=== <<<") 
     try:
         # Fetch or create the ProjectBoardCard for the backlog item
-        print(f">>> === BACKLOG_TO_COLUMN1:  === <<<")
+
         card, created = ProjectBoardCard.objects.get_or_create(
             board_id=board_id,
             backlog_id=this_card_id,
             defaults={ "state_id": to_state_id, "position": 0}
         )
-        print(f">>> === BACKLOG_TO_COLUMN2:  === <<<")
+
         if not created:
             card.state_id = to_state_id  # Move to column
             card.save()
@@ -818,7 +818,7 @@ def backlog_to_column_update(positions, board_id, this_card_id, from_column, fro
                 # Update the moved card
                 ProjectBoardCard.objects.filter(backlog_id=this_card_id).update(position=position, state_id=to_state_id, board_id=board_id)
                 updated_pbc = ProjectBoardCard.objects.filter(backlog_id=card_id).first()
-                logger.debug(f">>> === BACKLOG_TO_COLUMN_UPDATED: {updated_pbc} {updated_pbc.board}=== <<<")
+                logger.debug(f">>> === BACKLOG_TO_COLUMN_UPDATED: {updated_pbc} {updated_pbc.board} {updated_pbc.state} {updated_pbc.swimlane}=== <<<")
             else:
                 # Update other cards in the column
                 ProjectBoardCard.objects.filter(id=card_id).update(position=position, board_id=board_id)      
@@ -828,7 +828,7 @@ def backlog_to_column_update(positions, board_id, this_card_id, from_column, fro
         return JsonResponse({"success": True})
 
     except Exception as e:
-        print(f"Backlog_to_column Error: {str(e)}")
+        print(f"***************************** Error *****************************: {str(e)}")
         return JsonResponse({"success": False, "error": str(e)})
 
 def within_column_update(positions, board_id, card_id, dest_column, to_state_id):   
@@ -1255,8 +1255,8 @@ def _COMMON_for_kanban(request, project_id):
         ).select_related('backlog').order_by('position', '-created_at')
         for state in project_board.board_states.filter(active=True)
     }
-    logger.debug(f">>> === state_items: {state_items} === <<<")
-    logger.debug(f">>> === PROJECT BOARD COLUMNS: {project_board_states} === <<<")
+    #logger.debug(f">>> === state_items: {state_items} === <<<")
+    #logger.debug(f">>> === PROJECT BOARD COLUMNS: {project_board_states} === <<<")
     state_items_list = [
         (state, ProjectBoardCard.objects.filter(
             board=project_board,
@@ -1271,7 +1271,7 @@ def _COMMON_for_kanban(request, project_id):
     # Step9: Check the swimlane
     board_swimlanes = ProjectBoardSwimLane.objects.filter(board=project_board, active=True)
     board_swimlanes_count = board_swimlanes.count()    
-    print(f">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> BOARD SWIMLANES {board_swimlanes} {board_swimlanes_count}")
+    #print(f">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> BOARD SWIMLANES {board_swimlanes} {board_swimlanes_count}")
     # Step10: Set the flags
     FLAG_board_swimlane_exists = board_swimlanes_count > 0
     if FLAG_board_swimlane_exists:
@@ -1311,11 +1311,11 @@ def _COMMON_for_kanban(request, project_id):
 
 
 
-    print(f"SWIMLANES>>>>>>>>>>>>>>>>>>>>>>>>>>>>exists>>>>>>>>>>>>> {efcc_backlog_items_swimlane}")
+    # print(f"SWIMLANES>>>>>>>>>>>>>>>>>>>>>>>>>>>>exists>>>>>>>>>>>>> {efcc_backlog_items_swimlane}")
 
-    print(f">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> BACKLOG ITEMS {actual_project_backlog_items} ")
+    # print(f">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> BACKLOG ITEMS {actual_project_backlog_items} ")
     count_of_actual_backlog_items = actual_project_backlog_items.count()
-    print(f">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> BACKLOG ITEMS COUNT {count_of_actual_backlog_items} ")
+    #print(f">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> BACKLOG ITEMS COUNT {count_of_actual_backlog_items} ")
     project_type = project.project_details.template.name
     
     context = {
