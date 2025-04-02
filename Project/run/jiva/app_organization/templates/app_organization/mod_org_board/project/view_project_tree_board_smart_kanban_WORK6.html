@@ -82,120 +82,8 @@
 
     min-height: 10vh;
   }
-  .card.orange { background-color: #ff9800; color: #000; }
-  .card.blue { background-color: #2196f3; color: #fff; }
-  .card.green { background-color: #4caf50; color: #fff; }
-  .card.red { background-color: #f44336; color: #fff; }
-  .card.purple { background-color: #9c27b0; color: #fff; }
-  .card.teal { background-color: #80deea; color: #006064; }
-/* 
-  .card.High { background-color: #ff9800; color: #000; }
-  .card.Medium { background-color: #2196f3; color: #fff; }
-  .card.Normal { background-color: #4caf50; color: #fff; }
-  .card.Critical { background-color: #f44336; color: #fff; }
-  .card.Low { background-color: #9c27b0; color: #fff; } */
-  /* Enhanced Card Styling */
-.card {
-  background: rgb(233, 200, 11);
-  border-radius: 8px;
-  padding: 12px;
-  margin: 10px;
-  font-size: 0.8rem;
-  color: #333;
-  cursor: move;
-  box-shadow: 0 3px 6px rgba(0,0,0,0.1);
-  transition: all 0.2s ease;
-  border-left: 4px solid #4a6cf7;
-  min-height: auto;
-  position: relative;
-  overflow: hidden;
-}
 
-.card:hover {
-  box-shadow: 0 5px 12px rgba(0,0,0,0.15);
-  transform: translateY(-2px);
-}
 
-/* Priority Colors */
-.card.Critical {
-  border-left-color: #e53935;
-}
-.card.High {
-  border-left-color: #cc9a11;
-}
-.card.Medium {
-  border-left-color: #ff9800;
-}
-
-.card.Low {
-  border-left-color: #4caf50;
-}
-
-.card.Normal {
-  border-left-color: #4a6cf7;
-}
-
-/* Card Content Layout */
-.card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-  font-weight: bold;
-}
-
-.card-id {
-  font-size: 0.7rem;
-  color: #888;
-  background: #f1f1f1;
-  padding: 2px 6px;
-  border-radius: 10px;
-}
-
-.card-title {
-  font-weight: 500;
-  line-height: 1.3;
-  margin-bottom: 8px;
-}
-
-.card-footer {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 8px;
-  font-size: 0.65rem;
-}
-
-.card-meta {
-  display: flex;
-  gap: 8px;
-}
-
-.card-tag {
-  background: #e3f2fd;
-  color: #1976d2;
-  padding: 2px 6px;
-  border-radius: 10px;
-  font-size: 0.65rem;
-}
-
-/* Visual indicator for dragging */
-.card.dragging {
-  opacity: 0.7;
-  transform: scale(1.05);
-  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
-}
-
-/* Insertion indicators */
-.card.insert-above {
-  border-top: 2px solid #2196f3;
-  padding-top: 10px;
-}
-
-.card.insert-below {
-  border-bottom: 2px solid #2196f3;
-  padding-bottom: 10px;
-}
 
 
   /** BORDERS */
@@ -222,10 +110,7 @@
     border-right-style: dotted;
   }
   .sketchy_right_dotted_border {
-    border-right: 2px dotted blue;  
-  }
-  .sketchy_right_dashed_border {
-    border-right: 2px dashed blue;  
+    border-right: 2px dotted red;  
   }
   .sketchy_right_solid_border {
     border-right: 2px solid blue;  
@@ -249,80 +134,11 @@
 
 
 
-  .kanban_column.drag-over {
-    background-color: rgba(0, 123, 255, 0.1);
-    border: 2px dashed #007bff !important;
-  }
-
-  
-  </style>
-  
-<!-- CSS Styles for the Modal -->
-<style>
-  .modal-lg {
-    height: 80vh;
-  }
-  
-  .modal-content {
-    height: 100%;
-    display: flex;
-    flex-direction: column;
-  }
-  
-  .modal-body {
-    flex: 1;
-    overflow-y: auto;
-  }
-  
-  .info-header {
-    font-weight: 600;
-    border-bottom: 1px solid #e0e0e0;
-    padding-bottom: 6px;
-    margin-bottom: 10px;
-  }
-  
-  .card-info-panel, .card-description-panel {
-    background-color: #f8f9fa;
-    border-radius: 6px;
-    padding: 15px;
-    height: 100%;
-  }
-  
-  .card-description-display {
-    background-color: white;
-    border-radius: 4px;
-    min-height: 150px;
-    border: 1px solid #ced4da;
-  }
-  
-  /* Priority Tag Colors */
-  .priority-tag {
-    display: inline-block;
-    padding: 2px 6px;
-    border-radius: 4px;
-    font-size: 0.8rem;
-  }
-  
-  .priority-High {
-    background-color: #ffebee;
-    color: #e53935;
-  }
-  
-  .priority-Medium {
-    background-color: #fff3e0;
-    color: #ff9800;
-  }
-  
-  .priority-Low {
-    background-color: #e8f5e9;
-    color: #4caf50;
-  }
-  
-  .priority-Normal {
-    background-color: #e3f2fd;
-    color: #1976d2;
+  .drag-over {
+    border: 2px dashed #000;
   }
   </style>
+  
 </head>
 <body>
   
@@ -336,22 +152,13 @@
       {{project_board}}
     </div>
 
-    <div class="col col md-6 text-end">
+    <div class="col col md-4 text-end">
 
       <div class="action-controls">
         <a href="{% url 'board_card_settings' project_board.id %}"><i class="fas fa-edit"></i></a>
         <a href="{% url 'list_project_boards' project.id %}"><i class="fas fa-cog"></i></a>
       </div>
-      {% if page == 'custom' %}
-      <a href="{% url 'view_project_tree_board_smart_kanban' project.id %}" class="me-2">SMART</a>
-      <b>Custom</b>
-      {% else %}
-      <b>SMART</b>
-      <a href="{% url 'view_project_tree_board_custom' project.id %}" class="me-2">Custom</a>
-      {% endif %}
-      
-      <a href="{% url 'list_project_boards' project.id %}" class="btn btn-sm btn-primary me-2">Board</a>
-      <a href="{% url 'board_card_settings' project_board.id %}" class="btn btn-sm btn-success me-2">Card</a>
+
       <a href="" class="btn btn-sm btn-primary">
         <i class="bi bi-arrow-left"></i> Back to Backlog
       </a>
@@ -624,14 +431,14 @@
                   {% with subcolumns=state.get_subcolumns %}
                   {% for substate_choice in subcolumns %}
                   
-                  <td class="kanban_column buffer_column sketchy_top_solid_border {% if forloop.counter == 1 %}sketchy_right_dashed_border{% else %}sketchy_right_solid_border{% endif %}" colspan="1"
-                      id="{{state.id}}"  data-column-name="{{state}}__{{substate_choice}}" 
+                  <td class="kanban_column buffer_column sketchy_top_solid_border sketchy_right_dotted_border {% if forloop.counter == 1 %}sketchy_right_dotted_border{% else %}sketchy_right_solid_border{% endif %}" colspan="1"
+                      id="{{state.id}}"  data-column-name="{{state}}_{{substate_choice}}" 
                       data-column-type="{{ state.column_type }}" data-sc-wip-limit="2" 
                       data-apply-wip-limit="{{ state.apply_wip_limit|yesno:'true,false' }}"
                   >                
                     {% for item in state_items|get_item:state.id %}
                       {% if item.substate == substate_choice %}
-                      <div class="card {{item.backlog.priority}} mb-2" id="{{item.id}}" draggable="true">{{item|display_if_not_none}}</div>
+                      <div class="card {{item.priority}} mb-2" id="{{item.id}}" draggable="true">{{item}}</div>
                       {% endif %}
                     {% endfor %}
                   </td>
@@ -644,7 +451,7 @@
                 data-apply-wip-limit="{{ state.apply_wip_limit|yesno:'true,false' }}"
                 >
                   {% for item in state_items|get_item:state.id %}
-                    <div class="card {{item.backlog.priority}} mb-2" id="{{item.id}}" draggable="true">{{item|display_if_not_none}}</div>
+                    <div class="card {{item.priority}} mb-2" id="{{item.id}}" draggable="true">{{item|display_if_not_none}}</div>
                   {% endfor %}
                 </td>
                 {% endif %}
@@ -660,8 +467,7 @@
   </div>
 </div>
 
-
-
+  
 
 
 <!-- End: Design Kanban Board -->
@@ -677,78 +483,12 @@ crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     document.addEventListener('DOMContentLoaded', function() {
       setupDragAndDrop();
       countAllCards();
-      addNotificationContainer();
     });
     let draggedCard = null;
     let originalFromColumn = null;
     let originalFromStateId = null;
     let originalFromColumnName = null;
-// Add the notification container to the DOM
-function addNotificationContainer() {
-  const notificationContainer = document.createElement('div');
-  notificationContainer.id = 'notification-container';
-  notificationContainer.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 9999;
-    max-width: 350px;
-  `;
-  document.body.appendChild(notificationContainer);
-}
 
-// Create and show a notification
-function showNotification(message) {
-  // Ensure container exists
-  if (!document.getElementById('notification-container')) {
-    addNotificationContainer();
-  }
-  
-  const container = document.getElementById('notification-container');
-  
-  // Create notification element
-  const notification = document.createElement('div');
-  notification.className = 'notification';
-  notification.style.cssText = `
-    background-color: #007bff;
-    color: white;
-    padding: 12px 16px;
-    margin-bottom: 10px;
-    border-radius: 4px;
-    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    opacity: 0.8;
-    transition: opacity 0.3s;
-    font-size: 14px;
-    position: fixed;
-    top: 10px;
-    left: 50%;
-    transform: translateX(-50%);
-    z-index: 9999;
-    max-width: 40vw;
-    text-align: center;
-  `;
-  
-  // Add message
-  notification.textContent = message;
-  
-  // Add to container
-  container.appendChild(notification);
-  
-  // Fade in
-  setTimeout(() => {
-    notification.style.opacity = '1';
-  }, 10);
-  
-  // Fade out and remove after 3 seconds
-  setTimeout(() => {
-    notification.style.opacity = '0';
-    setTimeout(() => {
-      if (notification.parentNode) {
-        notification.parentNode.removeChild(notification);
-      }
-    }, 300); // Wait for fade out animation
-  }, 3000);
-}
 function handleDragStart(e) {
   draggedCard = this;
   originalFromColumn = this.closest('.kanban_column');
@@ -772,23 +512,27 @@ function handleDragEnd(e) {
   setTimeout(countAllCards, 100);
 }
 
+function handleDragEnter(e) {
+  this.classList.add('drag-over');
+}
+
+function handleDragLeave(e) {
+  this.classList.remove('drag-over');
+}
+
 function handleDrop(e) {
   if (e.stopPropagation) {
     e.stopPropagation();
   }
   e.preventDefault();
-  const destColumn = this;
+  
   if (draggedCard) {
     const closestCard = getClosestCard(this, e.clientY);
-    const currentCards = Array.from(destColumn.querySelectorAll('.card'));
-    let insertIndex = -1;
-    insertIndex = currentCards.indexOf(closestCard);
+    
     if (closestCard) {
       const rect = closestCard.getBoundingClientRect();
       const midpoint = rect.top + rect.height / 2;
-      if (e.clientY > midpoint) {
-        insertIndex++;
-      }
+      
       if (e.clientY < midpoint) {
         this.insertBefore(draggedCard, closestCard);
       } else {
@@ -802,7 +546,7 @@ function handleDrop(e) {
       this.appendChild(draggedCard);
     }
     
-    
+    const destColumn = this;
     const toStateId = destColumn.dataset.stateId || destColumn.id;
     
     const isBufferColumn = destColumn.classList.contains('buffer_column');
@@ -811,42 +555,22 @@ function handleDrop(e) {
     if (isBufferColumn) {
       const columnName = destColumn.dataset.columnName;
       if (columnName && columnName.includes('_')) {
-        substate = columnName.split('__')[1];
+        substate = columnName.split('_')[1];
       }
     }
     
     const destCards = Array.from(destColumn.querySelectorAll('.card'));
-    // Create formatted positions array
-    let formattedPositions = [];
+    const destPositions = destCards.map((card, index) => ({
+      card_id: card.id,
+      position: index + 1
+    }));
+    alert("Positions " + JSON.stringify(destPositions));
     
-    // Special handling for backlog
-    if (destColumn.classList.contains('backlog_column')) {
-      formattedPositions = destCards.map((card, index) => {
-        return {
-          card_id: card.id,
-          position: index + 1
-        };
-      });
-    } else {
-      formattedPositions = destCards.map((card, index) => {
-        return {
-          card_id: card.id,
-          position: index + 1
-        };
-      });
-    }
-    const destPositions = formattedPositions;
     const projectId = '{{ project.id }}';
     const boardId = '{{ project_board.id }}';
-    const card = draggedCard;
-    const cardId = draggedCard.id;
-    const cardTitle = draggedCard.innerText;
-    const toColumnName = destColumn.dataset.columnName || destColumn.className;
-    var fromColumnName = originalFromColumnName;
-    var fromSubColumnName = "";
-    var fromBufferColumn = false;
+    
     updateCardState(
-      cardId,
+      draggedCard.id,
       originalFromStateId,
       toStateId,
       destPositions,
@@ -859,26 +583,7 @@ function handleDrop(e) {
     if (isBufferColumn && substate) {
       updateCardSubstate(draggedCard.id, toStateId, substate);
     }
-
-    // Show notification
-    if (originalFromColumnName && originalFromColumnName.includes('__')) {
-      fromColumnName = originalFromColumnName.split('__')[0];
-      fromSubColumnName = originalFromColumnName.split('__')[1];
-      fromBufferColumn = true;
-    }
-    let notificationMsg = "";
-    if (fromBufferColumn) {
-      notificationMsg += `Card #${cardId}:  Moved from ${fromColumnName} / ${fromSubColumnName}`;
-    } else {
-      notificationMsg += `Card #${cardId}:  Moved from ${fromColumnName}`;
-    }
     
-    if (isBufferColumn) {
-      notificationMsg += ` to ${toColumnName.split('__')[0]} / ${substate || 'None'}`;
-    } else {
-      notificationMsg += ` to ${toColumnName}`;
-    }
-    showNotification(notificationMsg);
     setTimeout(countAllCards, 100);
   }
   
@@ -954,6 +659,15 @@ style1.textContent = `
     opacity: 0.4;
   }
   
+  .kanban_column.drag-over {
+    background-color: rgba(0, 123, 255, 0.1);
+    border: 2px dashed #007bff !important;
+  }
+  /* Drag-and-Drop Feedback */
+  .drag-over {
+    border: 2px dashed #000;
+  }
+
   .card.insert-above {
     border-top: 2px solid #007bff;
   }
@@ -971,7 +685,10 @@ style.textContent = `
     opacity: 0.4;
   }
   
- 
+  .kanban_column.drag-over {
+    background-color: rgba(0, 123, 255, 0.1);
+    border: 2px dashed #007bff !important;
+  }
 `;
 document.head.appendChild(style);
 // Add these functions to show visual indicator for insertion position
@@ -1121,7 +838,7 @@ function countAllCards() {
   });
 }
 
-</script>
+  </script>
 
   
 <script>
@@ -1208,8 +925,11 @@ function updateCardState(cardId, fromStateId, toStateId, destPositions, destColu
       });
   }
 
+
+
+
+
   
 </script>
-
 </body>
 </html>

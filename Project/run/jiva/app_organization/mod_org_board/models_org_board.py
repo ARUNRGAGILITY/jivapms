@@ -53,7 +53,7 @@ class ProjectBoardCard(BaseModelTrackDateImpl):
         # else:
         #     return str(self.id)
         
-        return f"{self.backlog} {self.backlog.id}"
+        return f"{self.backlog}"
 
 
 
@@ -105,9 +105,9 @@ class ProjectBoardStateTransition(BaseModelTrackDateImpl):
 
     def __str__(self):
         if self.card.id:
-            return f"CARD_MOVEMENT: {self.formatted_date()} {self.formatted_time()} - {self.card.id}: {self.from_state} → {self.to_state}"
+            return f"CARD_MOVEMENT: {self.formatted_date()} {self.formatted_time()} - {self.card.id}:  → {self.to_state}"
         else:
-            return f"NEW_CARD_MOVEMENT: {self.formatted_date()} {self.formatted_time()} - {self.from_state} → {self.to_state}"
+            return f"NEW_CARD_MOVEMENT: {self.formatted_date()} {self.formatted_time()} -  → {self.to_state}"
 
 
 

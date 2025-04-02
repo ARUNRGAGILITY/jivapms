@@ -751,9 +751,9 @@ def column_to_column_update(positions, board_id, card_id, from_column, from_stat
     pbc = ProjectBoardCard.objects.filter(id=card_id).first()
     print(f">>> === landing CHECK CARD: CARD_ID {card_id} {pbc} {positions} === <<<")
     # Sort positions before updating (ensure correct order)
-    sorted_positions = sorted(positions, key=lambda x: x.get('position'))
+    #sorted_positions = sorted(positions, key=lambda x: x.get('position'))
 
-    for pos in sorted_positions:
+    for pos in positions:
         pos_card_id  = pos.get('card_id')
         position = pos.get('position')    
         check_card = ProjectBoardCard.objects.filter(id=pos_card_id )
@@ -880,10 +880,9 @@ def ajax_update_project_board_card_state(request):
 
         # position 
         positions = data.get('positions')
-        from_column = data.get('from_column')
-        dest_column = data.get('dest_column')
+        from_column = data.get('from_column').strip()
+        dest_column = data.get('dest_column').strip()
         project_id = data.get('project_id')
-        board_id = data.get('board_id')
         # just to set 
         to_column = dest_column
         is_new_card = data.get('is_new_card')
@@ -904,7 +903,16 @@ def ajax_update_project_board_card_state(request):
         print(f">>> === card_text: {card_text} === <<<")
         print(f">>> === card_priority: {card_priority} === <<<")
         print(f">>> === card_substate: {card_substate} === <<<")
-        
+       
+
+        if from_state_id != None:
+            from_state_id = int(from_state_id)
+
+        if to_state_id != None:
+            to_state_id = int(to_state_id)
+
+
+
         if is_new_card:
             # If it's a new card, create it and set its state
             context = _GET_BACKLOG_TYPES(request, project_id)
@@ -925,20 +933,20 @@ def ajax_update_project_board_card_state(request):
             update_project_board_state_transition(board_id, card, from_state_id, to_state_id)
             return JsonResponse({"success": True})
         else:
-            if from_state_id == 0 and from_state_id == to_state_id and to_state_id == 0:
-                logger.debug(f">>> === Backlog: Within column movement === <<<")
+            if from_state_id == 0  and to_state_id == 0:
+                logger.debug(f">>> === Backlogx: Within column movement === <<<")
                 within_backlog_update(positions, board_id, card_id)
-            elif from_state_id !=0 and to_state_id != 0 and from_state_id == to_state_id:
+            elif from_column != 'Backlog' and from_state_id !=0 and to_state_id != 0 and from_state_id == to_state_id:
                 logger.debug(f">>> === {dest_column}: Within column movement  === <<<")
                 within_column_update(positions, board_id, card_id, dest_column, to_state_id)
-            elif from_state_id !=0 and to_state_id != 0 and from_state_id != to_state_id:
-                logger.debug(f">>> === {from_column} to {dest_column}: Between column movement  === <<<")
+            elif from_column != 'Backlog' and from_state_id !=0 and to_state_id != 0 and from_state_id != to_state_id:
+                logger.debug(f">>> === FSID{from_state_id},TSID{to_state_id} {from_column} to {dest_column}: Between column movement  === <<<")
                 column_to_column_update(positions, board_id, card_id, from_column, from_state_id, dest_column, to_state_id)
                 actual_card = ProjectBoardCard.objects.filter(id=card_id).first()
                 actual_card_id = actual_card.backlog.id
                 update_backlog_text_status(actual_card_id, dest_column)
-            elif from_state_id == 0 and to_state_id != 0:
-                logger.debug(f">>> ===  {from_column} to {dest_column}: Between column movement (from Backlog) === <<<")
+            elif from_column == 'Backlog' and to_state_id != 0:
+                logger.debug(f">>> ===  FSID{from_state_id},TSID{to_state_id} {from_column} to {dest_column}: Between column movement (from Backlog) === <<<")
                 backlog_to_column_update(positions, board_id, card_id, from_column, from_state_id, dest_column, to_state_id)
                 update_backlog_text_status(card_id, dest_column)
             elif to_state_id == 0 and from_state_id != 0:
