@@ -1,0 +1,25 @@
+
+{% load static %}
+{% load crispy_forms_tags %}
+{% load custom_tags %}
+{% load app_web_my_filters %}
+{% load markdown_extras  %}
+<!-- Begin: Breadcrumb -->
+<nav aria-label="breadcrumb" class="breadcrumb">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="/">Home</a></li>
+        {% if org_id != None %}
+            <li class="breadcrumb-item"><a href="{% url 'list_organizations' %}">Organizations</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'list_organizations' %}">{{org}}</a></li>
+            {% if project != None %}
+                <li class="breadcrumb-item"><a href="{% url 'list_projects' org_id %}">Projects</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'project_home' org_id project.id %}">{{project.id}}</a></li>
+            {% endif %}
+        {% endif %}
+        <li class="breadcrumb-item active" aria-current="page">
+            <a href=""></a>
+        </li>
+       
+    </ol>
+</nav>
+<!-- End: Breadcrumb -->

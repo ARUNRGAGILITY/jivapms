@@ -1,142 +1,485 @@
 {% extends 'app_common/common_files/jiva/jiva_base_template.html' %}
 {% load static %}
+{% load app_web_my_filters %}
+
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .dashboard-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        padding: 20px;
+        margin-bottom: 20px;
+        transition: transform 0.3s;
+    }
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+    }
+    .stat-card {
+        padding: 15px;
+        border-radius: 8px;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        height: 130px;
+    }
+    .stat-number {
+        font-size: 32px;
+        font-weight: bold;
+        margin: 10px 0;
+    }
+    .stat-title {
+        font-size: 16px;
+        text-transform: uppercase;
+    }
+    .bg-primary-gradient {
+        background: linear-gradient(45deg, #4a6fdc, #6c8df5);
+    }
+    .bg-success-gradient {
+        background: linear-gradient(45deg, #2e9b4f, #38c964);
+    }
+    .bg-warning-gradient {
+        background: linear-gradient(45deg, #f2994a, #f5bc62);
+    }
+    .bg-info-gradient {
+        background: linear-gradient(45deg, #3daec9, #57c6e0);
+    }
+    .bg-purple-gradient {
+        background: linear-gradient(45deg, #7848b8, #9d69de);
+    }
+    .bg-pink-gradient {
+        background: linear-gradient(45deg, #e35183, #f37ba0);
+    }
+    .chart-container {
+        position: relative;
+        margin: auto;
+        height: 250px;
+    }
+    .table-container {
+        height: 370px;
+        overflow-y: auto;
+    }
+    .section-title {
+        font-size: 20px;
+        margin-bottom: 15px;
+        color: #333;
+        font-weight: 600;
+        padding-bottom: 5px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+    .activity-item {
+        padding: 10px 0;
+        border-bottom: 1px solid #f0f0f0;
+    }
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+    .badge-role {
+        font-size: 11px;
+        padding: 4px 8px;
+        border-radius: 12px;
+    }
+</style>
+{% endblock %}
 
 {% block content %}
 {% include 'app_common/common_files/jiva/jiva_navbar.html' %}
-
 
 <div class="content-wrapper">
     {% include 'app_organization/mod_project/sidebar_menu_super_user.html' %}
 
     <div class="contentbar" id="contentbar">
-        <!-- <div id="loading">Loading...</div> -->
-        <div id="content">
-            <!-- Welcome Super Admin dashboard -->
-            <div id="listSiteContent" style="display: none;">
-                <h1>Welcome Super User</h1>
-                <p>Stats for this Site</p>
+        <div class="container-fluid py-4">
+            <!-- Header Section -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="dashboard-card">
+                        <h1 class="mb-0"><i class="bi bi-speedometer2 me-2"></i>Super User Dashboard</h1>
+                        <p class="text-muted">Welcome back, Admin! Here's what's happening across the platform.</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Key Stats Cards -->
+            <div class="row mb-4">
+                <div class="col-md-4 col-xl-2">
+                    <div class="stat-card bg-primary-gradient">
+                        <div class="stat-number">{{ org_count }}</div>
+                        <div class="stat-title">Organizations</div>
+                    </div>
+                </div>
+                <div class="col-md-4 col-xl-2">
+                    <div class="stat-card bg-success-gradient">
+                        <div class="stat-number">{{ total_projects }}</div>
+                        <div class="stat-title">Projects</div>
+                    </div>
+                </div>
+                <div class="col-md-4 col-xl-2">
+                    <div class="stat-card bg-warning-gradient">
+                        <div class="stat-number">{{ total_members }}</div>
+                        <div class="stat-title">Members</div>
+                    </div>
+                </div>
+                <div class="col-md-4 col-xl-2">
+                    <div class="stat-card bg-info-gradient">
+                        <div class="stat-number">{{ framework_count }}</div>
+                        <div class="stat-title">Frameworks</div>
+                    </div>
+                </div>
+                <div class="col-md-4 col-xl-2">
+                    <div class="stat-card bg-purple-gradient">
+                        <div class="stat-number">{{ public_framework_count }}</div>
+                        <div class="stat-title">Public Frameworks</div>
+                    </div>
+                </div>
+                <div class="col-md-4 col-xl-2">
+                    <div class="stat-card bg-pink-gradient">
+                        {% with site_admin=role_counts|get_dict_item:"Site Admin" org_admin=role_counts|get_dict_item:"Org Admin" project_admin=role_counts|get_dict_item:"Project Admin" %}
+                        <div class="stat-number">{{ site_admin|add:org_admin|add:project_admin }}</div>
+                        {% endwith %}
+                        <div class="stat-title">Admin Users</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Charts Section -->
+            <div class="row mb-4">
+                <!-- Organization Projects -->
+                <div class="col-md-6">
+                    <div class="dashboard-card">
+                        <h3 class="section-title">Projects by Organization</h3>
+                        <div class="chart-container">
+                            <canvas id="orgProjectsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
                 
-                <div class="row">
-                    <div class="col-md-4">
-                        <b>Stats</b>
-                        <table class="table-bordered">
-                            <tr>
-                                <td>
-                                    <b>Total Organizations: </b>
-                                    
-                                </td>
-                                <td>
-                                    {{org_count}}
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <b>Total Frameworks: </b>
-                                    
-                                </td>
-                                <td>
-                                    {{framework_count}}
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>
-                                    <b>Total Public Frameworks: </b>
-                                    
-                                </td>
-                                <td>
-                                    {{public_framework_count}}
-                                </td>
-                            </tr>
-                        </table>
+                <!-- Project States -->
+                <div class="col-md-6">
+                    <div class="dashboard-card">
+                        <h3 class="section-title">Project State Distribution</h3>
+                        <div class="chart-container">
+                            <canvas id="projectStatesChart"></canvas>
+                        </div>
                     </div>
-                    <div class="col-md-4">
-                        <b>High Level Details</b>
-                        <table class="table-bordered">
-                            <tr>
-                                <th>#</th>
-                                <th>Organization</th>
-                                <th>Projects</th>
-                                <th>Members</th>
-                            </tr>
-                            {% for org in org_project_member_counts %}
-                            <tr>
-                                <td>{{forloop.counter}}</td>
-                                <td>{{org.org_name}}</td>
-                                <td>{{org.project_count}}</td>
-                                <td>{{org.member_count}}</td>
-                            </tr>
-                            {% endfor %}
-                        </table>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <!-- Member Distribution -->
+                <div class="col-md-6">
+                    <div class="dashboard-card">
+                        <h3 class="section-title">Members by Organization</h3>
+                        <div class="chart-container">
+                            <canvas id="memberDistributionChart"></canvas>
+                        </div>
                     </div>
-                    <div class="col-md-4">
-                        <b>Project Roles / Memberships</b>
-                      
-                        <table class="table-bordered">
-                            <tr>
-                                <th>#</th>
-                                <th>Project</th>
-                                <th>Member</th>
-                                <th>Role</th>
-                                <th>Team</th>
-                            </tr>
-                            {% for member in project_memberships %}
-                            <tr>
-                                <td>{{ forloop.counter }}</td>
-                                <td>{{ member.project }}</td>
-                                <td>{{ member.member }}</td>
-                                <td>{{ member.project_role }}</td>
-                                <td>{{ member.team }}</td>
-                            </tr>
-                            {% endfor %}
-                        </table>
+                </div>
+                
+                <!-- Role Distribution -->
+                <div class="col-md-6">
+                    <div class="dashboard-card">
+                        <h3 class="section-title">Role Distribution</h3>
+                        <div class="chart-container">
+                            <canvas id="roleDistributionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Activity & Data Table Section -->
+            <div class="row">
+                <!-- Organization Table -->
+                <div class="col-md-7">
+                    <div class="dashboard-card">
+                        <h3 class="section-title">Organization Overview</h3>
+                        <div class="table-container">
+                            <table class="table table-striped table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Organization</th>
+                                        <th>Projects</th>
+                                        <th>Members</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for org in org_project_member_counts %}
+                                    <tr>
+                                        <td>{{ forloop.counter }}</td>
+                                        <td>{{ org.org_name }}</td>
+                                        <td>
+                                            <span class="badge bg-success rounded-pill">{{ org.project_count }}</span>
+                                        </td>
+                                        <td>
+                                            <span class="badge bg-primary rounded-pill">{{ org.member_count }}</span>
+                                        </td>
+                                        <td>
+                                            <a href="#" class="btn btn-sm btn-outline-primary">View</a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Activity & Growth -->
+                <div class="col-md-5">
+                    <div class="dashboard-card">
+                        <h3 class="section-title">Growth Metrics</h3>
+                        <div class="row">
+                            <div class="col-sm-6">
+                                <div class="p-3 border rounded mb-3">
+                                    <h5 class="text-muted">Last Week</h5>
+                                    <div class="d-flex justify-content-between mt-2">
+                                        <span>New Orgs</span>
+                                        <strong>{{ time_stats.orgs_last_week }}</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between mt-2">
+                                        <span>New Projects</span>
+                                        <strong>{{ time_stats.projects_last_week }}</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between mt-2">
+                                        <span>New Members</span>
+                                        <strong>{{ time_stats.members_last_week }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-sm-6">
+                                <div class="p-3 border rounded mb-3">
+                                    <h5 class="text-muted">Last Month</h5>
+                                    <div class="d-flex justify-content-between mt-2">
+                                        <span>New Orgs</span>
+                                        <strong>{{ time_stats.orgs_last_month }}</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between mt-2">
+                                        <span>New Projects</span>
+                                        <strong>{{ time_stats.projects_last_month }}</strong>
+                                    </div>
+                                    <div class="d-flex justify-content-between mt-2">
+                                        <span>New Members</span>
+                                        <strong>{{ time_stats.members_last_month }}</strong>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                         
+                        <h3 class="section-title mt-4">Recent Members</h3>
+                        <div class="table-container" style="height: 200px;">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>Member</th>
+                                        <th>Joined</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for member in recent_members %}
+                                    <tr>
+                                        <td>{{ member.name }}</td>
+                                        <td>{{ member.created_at|date:"M d, Y" }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-               
-            
-            <div id="settingsContent" style="display: none;">
-                <h1>Settings</h1>
-                <p>Configure and adjust Site settings and preferences.</p>
             </div>
-            <div id="dashboardContent" style="display: none;">
-                <h1>SuperAdmin Dashboard</h1>
-                <p>Information about the site.</p>
-                
-                <div class="row">
-                    <!-- Pie Chart for Organizations Overview -->
-                    <div class="col-md-4">
-                        <canvas id="organizationsChart" style="max-width: 400px;"></canvas>
-                    </div>
-
-                    <!-- Pie Chart for Projects Overview -->
-                    <div class="col-md-4">
-                        <canvas id="projectsChart" style="max-width: 400px;"></canvas>
-                    </div>
-
-                    <!-- Line Chart for Users Growth -->
-                    <div class="col-md-4">
-                        <canvas id="usersChart" style="max-width: 400px;"></canvas>
+            
+            <!-- Project Memberships -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="dashboard-card">
+                        <h3 class="section-title">Recent Project Memberships</h3>
+                        <div class="table-container">
+                            <table class="table table-sm">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Project</th>
+                                        <th>Member</th>
+                                        <th>Role</th>
+                                        <th>Team</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for member in project_memberships %}
+                                    <tr>
+                                        <td>{{ forloop.counter }}</td>
+                                        <td>{{ member.project }}</td>
+                                        <td>{{ member.member }}</td>
+                                        <td>
+                                            <span class="badge badge-role {% if 'Admin' in member.project_role|stringformat:'s' %}bg-danger{% elif 'Editor' in member.project_role|stringformat:'s' %}bg-warning{% else %}bg-info{% endif %}">
+                                                {{ member.project_role }}
+                                            </span>
+                                        </td>
+                                        <td>{{ member.team|default:"-" }}</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
-            </div>      
-            
-            <div id="aboutContent" style="display: none;">
-                <h1>About the Project</h1>
-                <p>Information about the project's goals, team, and background.</p>
-               
-            </div>               
-            <div id="profileContent" style="display: none;">
-                <h1>User Profile</h1>
-                <p>Manage your profile information and settings.</p>
-            </div>
-            <div id="logoutContent" style="display: none;">
-                <h1>Logout</h1>
-                <p>You have been logged out.</p>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Charts JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Chart colors
+    const colors = [
+        'rgba(54, 162, 235, 0.8)',
+        'rgba(255, 99, 132, 0.8)',
+        'rgba(75, 192, 192, 0.8)',
+        'rgba(255, 159, 64, 0.8)',
+        'rgba(153, 102, 255, 0.8)',
+        'rgba(255, 205, 86, 0.8)',
+        'rgba(201, 203, 207, 0.8)',
+        'rgba(255, 99, 132, 0.8)',
+    ];
+    
+    // Projects by Organization Chart
+    const orgProjectsCtx = document.getElementById('orgProjectsChart').getContext('2d');
+    new Chart(orgProjectsCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ chart_data.org_names|safe }},
+            datasets: [{
+                label: 'Projects',
+                data: {{ chart_data.org_project_counts|safe }},
+                backgroundColor: colors,
+                borderColor: colors.map(c => c.replace('0.8', '1')),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                title: {
+                    display: true,
+                    text: 'Number of Projects per Organization'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    }
+                }
+            }
+        }
+    });
+
+    // Project States Chart
+    const projectStatesCtx = document.getElementById('projectStatesChart').getContext('2d');
+    new Chart(projectStatesCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ chart_data.project_states|safe }},
+            datasets: [{
+                data: {{ chart_data.project_state_counts|safe }},
+                backgroundColor: colors,
+                borderColor: colors.map(c => c.replace('0.8', '1')),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right'
+                },
+                title: {
+                    display: true,
+                    text: 'Project States'
+                }
+            }
+        }
+    });
+
+    // Members by Organization Chart
+    const memberDistributionCtx = document.getElementById('memberDistributionChart').getContext('2d');
+    new Chart(memberDistributionCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ chart_data.org_names|safe }},
+            datasets: [{
+                label: 'Members',
+                data: {{ chart_data.org_member_counts|safe }},
+                backgroundColor: colors.map(c => c.replace('0.8', '0.6')),
+                borderColor: colors.map(c => c.replace('0.8', '1')),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                title: {
+                    display: true,
+                    text: 'Number of Members per Organization'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    }
+                }
+            }
+        }
+    });
+
+    // Role Distribution Chart
+    const roleDistributionCtx = document.getElementById('roleDistributionChart').getContext('2d');
+    new Chart(roleDistributionCtx, {
+        type: 'pie',
+        data: {
+            labels: {{ chart_data.role_names|safe }},
+            datasets: [{
+                data: {{ chart_data.role_counts|safe }},
+                backgroundColor: colors,
+                borderColor: colors.map(c => c.replace('0.8', '1')),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right'
+                },
+                title: {
+                    display: true,
+                    text: 'User Role Distribution'
+                }
+            }
+        }
+    });
+});
+</script>
 
 <!-- End: Content -->
 {% endblock content %}

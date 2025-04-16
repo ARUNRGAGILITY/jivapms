@@ -1,0 +1,46 @@
+
+    # Populate dictionary with extracted values
+    var_value_dict = {
+        "__TITLE__": f"{title}",
+        "__SUBTITLE__": f"{sub_title}",
+
+        "__APPPREFIX__": app_prefix,
+        "__APIPREFIX__": api_prefix,
+
+        "__PROJECTNAME__": project_name,
+        "__APPNAME__": app_name,
+        "__MODNAME__": mod_name,     
+        "__PARENTMODNAME__": parent_mod_name.lower(),
+        "__ROOTMODNAME__": root_mod_name.lower(),
+
+        "__ROOTOBJECTMODEL__": root_object_model_name.lower(),
+        "__ROOTOBJECTMODELFLUC__": root_object_model_name.lower().title(),
+
+        "__PARENTOBJECTMODEL__": parent_object_model_name.lower(),
+        "__PARENTOBJECTMODELFLUC__": parent_object_model_name.lower().title(),
+
+        "__OBJECTMODEL__": object_model_name.lower(),
+        "__OBJECTMODELFLUC__": object_model_name.lower().title(),
+
+
+        "__ROOTOBJECT__": root_object.lower(),
+        "__ROOTOBJECTPLURAL__": p.plural(root_object.lower()),
+        "__ROOTOBJECTFLUC__": root_object.title(),
+        "__ROOTOBJECTFLUCPLURAL__": p.plural(root_object).lower().title(),
+
+        "__PARENTOBJECT__": parent_object.lower(),
+        "__PARENTOBJECTPLURAL__": p.plural(parent_object.lower()),
+        "__PARENTOBJECTFLUC__": parent_object.title(),
+        "__PARENTOBJECTFLUCPLURAL__": p.plural(parent_object.lower()).title(),
+
+        "__OBJECT__": object.lower(),
+        "__OBJECTPLURAL__": p.plural(object.lower()),
+        "__OBJECTFLUC__": object.lower().title(),
+        "__OBJECTFLUCPLURAL__": p.plural(object).lower().title(),
+
+        "__DISPLAYOBJECTNAME__": display_object_name,
+        "__DISPLAYPARENTOBJECTNAME__": display_parent_object_name,
+        "__DISPLAYROOTOBJECTNAME__": display_root_object_name,
+    }
+
+    return var_value_dict

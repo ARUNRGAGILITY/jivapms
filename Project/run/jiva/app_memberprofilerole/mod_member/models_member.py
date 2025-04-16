@@ -18,6 +18,19 @@ class Member(BaseModelImpl):
             return f"{self.user.username}"
         else:
             return "test"
+            
+    @property
+    def name(self):
+        """Return a properly formatted member name"""
+        if not self.user:
+            return "No User"
+            
+        if self.user.first_name and self.user.last_name:
+            return f"{self.user.first_name} {self.user.last_name}"
+        elif self.user.first_name:
+            return self.user.first_name
+        else:
+            return self.user.username
    
 class MemberOrganizationRole(BaseModelImpl):
     member = models.ForeignKey(Member, on_delete=models.CASCADE, null=True, blank=True,

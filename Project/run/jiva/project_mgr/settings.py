@@ -31,6 +31,9 @@ INSTALLED_APPS = [
     'app_loginsystem',
     'app_common',
     'app_web',
+    'app_org_blog',
+    'app_scrum_product',
+    'app_scrum',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -48,6 +51,8 @@ INSTALLED_APPS = [
     'markdown',    
     'imagekit',
     'app_user',
+    'app_usermgmt',
+    'app_todos',
 ]
 
 MIDDLEWARE = [

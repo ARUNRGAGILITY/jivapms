@@ -14,7 +14,7 @@ from django.template import Template, Context
 from markdownx.utils import markdownify
 from django.conf import settings
 from django.db.models import Q
-from django.db.models.functions import Lower, Trim
+from django.db.models.functions import Lower, Trim, TruncMonth
 from itertools import chain
 from markdownx.models import MarkdownxField
 from django.conf import settings

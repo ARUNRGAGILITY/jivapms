@@ -1,0 +1,94 @@
+
+{% extends 'app_common/common_files/base_template.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load custom_tags %}
+{% load app_web_my_filters %}
+{% load markdown_extras  %}
+{% load mptt_tags %}
+{% block content %}
+{% include 'app_common/common_files/navbar.html' %}
+{% include 'app_jivapms/mod_web/common_files/css.html' %}
+
+<!-- Begin: Content -->
+<div class="content-wrapper">
+   {% include 'app_scrum/mod_deliver/breadcrumb_delivers.html' %}
+    
+    {% include 'app_organization/mod_project/sidebar_menu.html' %}
+    <form method="post">
+    {% csrf_token %}
+    <div class="contentbar mb-5" id="contentbar">
+    <div class="container-fluid">
+        <div class="row">
+            <div class="col col-md-12">
+                <div class="container-fluid-width">
+                    <div class="row">
+                        <div class="col col-md-8">
+                            <h2>{% if form.instance.pk %}Edit{% else %}Create{% endif %} 
+                                Deliver</h2>
+                        </div>
+                        <div class="col col-md-4 text-end">
+                            <a href="{% url 'list_delivers' organization_id %}"
+                             class="btn btn-sm btn-primary"><b>List Deliver(s)</b></a>
+                        </div>
+                    </div>
+                </div>
+                <table class="table table-bordered">
+                    <thead>
+                        <tr>
+                            <th colspan="2">
+                                <div class="container-fluid-width">
+                                    <div class="row">
+                                        <div class="col col-md-5">
+                                            {{page_title}}:: {{form.instance}}
+                                        </div>
+                                        <div class="col col-md-7">
+                                            <div class="text-end">
+                                                <a href="{% url 'view_deliver' organization_id form.instance.id %}" class="btn btn-sm btn-primary"><b>View</b></a>
+                                                &nbsp;&nbsp;&nbsp;
+                                                <a href="{% url 'delete_deliver' organization_id form.instance.id %}" class="btn btn-sm btn-danger"><b>Delete</b></a>
+                                                
+                                            </div>
+    
+                                        </div>
+                                    </div>
+                                </div>
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td width="15%">
+                                <strong>Deliver</strong>
+                            </td>
+                            <td>
+                                {{form.name|as_crispy_field}}
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <strong>Description</strong>
+                            </td>
+                            <td>
+                                {{form.description|as_crispy_field}}
+                            </td>
+                        </tr>
+                       <tr>
+                            <td colspan="2" class="text-center"><button type="submit"
+                                class="btn btn-sm btn-success">Save</button></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+    </div>
+</div>
+</form>
+<script>
+    focusField = document.getElementById('id_name');
+    focusField.focus();
+</script>
+
+<!-- End: Content -->
+{% endblock content %}

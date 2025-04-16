@@ -1,0 +1,901 @@
+{% extends 'app_common/common_files/base_template.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load custom_tags %}
+{% load app_web_my_filters %}
+
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    body {
+        background-color: #f8f9fa;
+    }
+    
+    .dashboard-header {
+        background-color: #fff;
+        border-radius: 0.5rem;
+        box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .dashboard-title {
+        color: #343a40;
+        font-weight: 700;
+        margin-bottom: 0.5rem;
+    }
+    
+    .dashboard-subtitle {
+        color: #6c757d;
+        font-size: 1rem;
+    }
+    
+    .stat-card {
+        background-color: #fff;
+        border-radius: 0.5rem;
+        box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+        padding: 1.25rem;
+        height: 100%;
+        transition: transform 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
+    }
+    
+    .stat-card:hover {
+        transform: translateY(-0.25rem);
+        box-shadow: 0 0.5rem 1rem rgba(0,0,0,0.15);
+    }
+    
+    .stat-card.primary {
+        border-top: 4px solid #0d6efd;
+    }
+    
+    .stat-card.success {
+        border-top: 4px solid #198754;
+    }
+    
+    .stat-card.warning {
+        border-top: 4px solid #ffc107;
+    }
+    
+    .stat-card.danger {
+        border-top: 4px solid #dc3545;
+    }
+    
+    .stat-number {
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0.5rem 0;
+        color: #343a40;
+    }
+    
+    .stat-title {
+        font-size: 0.875rem;
+        font-weight: 600;
+        color: #6c757d;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+    
+    .dashboard-card {
+        background-color: #fff;
+        border-radius: 0.5rem;
+        box-shadow: 0 0.125rem 0.25rem rgba(0,0,0,0.075);
+        padding: 1.5rem;
+        margin-bottom: 1.5rem;
+        height: 100%;
+    }
+    
+    .card-title {
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 1.25rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid #dee2e6;
+        color: #343a40;
+        display: flex;
+        align-items: center;
+    }
+    
+    .card-title i {
+        margin-right: 0.75rem;
+        color: #6c757d;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 250px;
+        margin-bottom: 1rem;
+    }
+    
+    .blog-list-item {
+        padding: 1rem;
+        border-bottom: 1px solid #f0f0f0;
+        transition: background-color 0.2s ease;
+    }
+    
+    .blog-list-item:last-child {
+        border-bottom: none;
+    }
+    
+    .blog-list-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .blog-title {
+        font-weight: 600;
+        margin-bottom: 0.25rem;
+    }
+    
+    .blog-title a {
+        color: #343a40;
+        text-decoration: none;
+    }
+    
+    .blog-title a:hover {
+        color: #0d6efd;
+    }
+    
+    .blog-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        font-size: 0.75rem;
+        color: #6c757d;
+    }
+    
+    .blog-meta-item {
+        display: flex;
+        align-items: center;
+    }
+    
+    .blog-meta-item i {
+        margin-right: 0.25rem;
+    }
+    
+    .status-badge {
+        display: inline-block;
+        padding: 0.25rem 0.5rem;
+        border-radius: 50rem;
+        font-size: 0.75rem;
+        font-weight: 600;
+    }
+    
+    .status-badge-published {
+        background-color: #d1e7dd;
+        color: #0f5132;
+    }
+    
+    .status-badge-draft {
+        background-color: #e2e3e5;
+        color: #41464b;
+    }
+    
+    .status-badge-archived {
+        background-color: #f8d7da;
+        color: #842029;
+    }
+    
+    .team-tabs .nav-link {
+        color: #495057;
+        border: none;
+        padding: 0.75rem 1rem;
+        font-weight: 500;
+    }
+    
+    .team-tabs .nav-link.active {
+        color: #0d6efd;
+        background-color: transparent;
+        border-bottom: 2px solid #0d6efd;
+    }
+    
+    .team-tabs .nav-link:hover:not(.active) {
+        color: #0d6efd;
+        border-bottom: 2px solid #e9ecef;
+    }
+    
+    .member-item {
+        display: flex;
+        align-items: center;
+        padding: 0.75rem;
+        border-bottom: 1px solid #f0f0f0;
+        transition: background-color 0.2s ease;
+    }
+    
+    .member-item:last-child {
+        border-bottom: none;
+    }
+    
+    .member-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .member-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 1rem;
+        flex-shrink: 0;
+    }
+    
+    .member-avatar i {
+        color: #6c757d;
+    }
+    
+    .member-info {
+        flex-grow: 1;
+    }
+    
+    .member-name {
+        font-weight: 600;
+        margin-bottom: 0.125rem;
+    }
+    
+    .member-role {
+        font-size: 0.75rem;
+        color: #6c757d;
+    }
+    
+    .quick-action {
+        background-color: #f8f9fa;
+        border-radius: 0.5rem;
+        text-align: center;
+        padding: 1.5rem;
+        height: 100%;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        color: #343a40;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+    }
+    
+    .quick-action:hover {
+        background-color: #e9ecef;
+        transform: translateY(-0.25rem);
+        color: #343a40;
+    }
+    
+    .quick-action i {
+        font-size: 2rem;
+        margin-bottom: 0.75rem;
+        color: #0d6efd;
+    }
+    
+    .quick-action.create {
+        border: 1px solid rgba(13, 110, 253, 0.2);
+    }
+    
+    .quick-action.manage {
+        border: 1px solid rgba(25, 135, 84, 0.2);
+    }
+    
+    .quick-action.manage i {
+        color: #198754;
+    }
+    
+    .quick-action.view {
+        border: 1px solid rgba(13, 202, 240, 0.2);
+    }
+    
+    .quick-action.view i {
+        color: #0dcaf0;
+    }
+    
+    .quick-action.archive {
+        border: 1px solid rgba(108, 117, 125, 0.2);
+    }
+    
+    .quick-action.archive i {
+        color: #6c757d;
+    }
+    
+    .empty-tab {
+        text-align: center;
+        padding: 2rem 0;
+    }
+    
+    .empty-tab i {
+        font-size: 2rem;
+        color: #dee2e6;
+        margin-bottom: 0.75rem;
+    }
+    
+    .empty-tab p {
+        color: #6c757d;
+    }
+    
+    @media (max-width: 767.98px) {
+        .dashboard-header {
+            padding: 1rem;
+        }
+        
+        .stat-card, .dashboard-card {
+            margin-bottom: 1rem;
+        }
+        
+        .stat-number {
+            font-size: 2rem;
+        }
+        
+        .chart-container {
+            height: 200px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% include 'app_common/common_files/navbar.html' %}
+{% include 'app_jivapms/mod_web/common_files/css.html' %}
+<div class="container py-4">
+    <!-- Header -->
+    <div class="dashboard-header">
+        <div class="row align-items-center">
+            <div class="col-md-6">
+                <h1 class="dashboard-title">Blog Dashboard</h1>
+                <p class="dashboard-subtitle">Manage and monitor your organization's blog</p>
+            </div>
+            <div class="col-md-6 text-md-end">
+                <a href="{% url 'list_blogs' organization_id=organization_id %}" class="btn btn-outline-primary me-2">
+                    <i class="bi bi-list-ul"></i> All Blogs
+                </a>
+                <a href="{% url 'create_blog' organization_id=organization_id %}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> New Blog
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Key Stats -->
+    <div class="row g-3 mb-4">
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card primary">
+                <div class="stat-title">Total Blogs</div>
+                <div class="stat-number">{{ total_blogs }}</div>
+                <div class="progress mt-2" style="height: 4px;">
+                    <div class="progress-bar" role="progressbar" style="width: 100%; background-color: #0d6efd;" aria-valuenow="100" aria-valuemin="0" aria-valuemax="100"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card success">
+                <div class="stat-title">Published</div>
+                <div class="stat-number">{{ published_blogs }}</div>
+                <div class="progress mt-2" style="height: 4px;">
+                    <div class="progress-bar bg-success" role="progressbar" style="width: {% widthratio published_blogs total_blogs 100 %}%;" aria-valuenow="{{ published_blogs }}" aria-valuemin="0" aria-valuemax="{{ total_blogs }}"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card warning">
+                <div class="stat-title">Drafts</div>
+                <div class="stat-number">{{ draft_blogs }}</div>
+                <div class="progress mt-2" style="height: 4px;">
+                    <div class="progress-bar bg-warning" role="progressbar" style="width: {% widthratio draft_blogs total_blogs 100 %}%;" aria-valuenow="{{ draft_blogs }}" aria-valuemin="0" aria-valuemax="{{ total_blogs }}"></div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3 col-sm-6">
+            <div class="stat-card danger">
+                <div class="stat-title">Last Month</div>
+                <div class="stat-number">{{ time_stats.projects_last_month }}</div>
+                <div class="progress mt-2" style="height: 4px;">
+                    <div class="progress-bar bg-danger" role="progressbar" style="width: {% widthratio time_stats.projects_last_month total_blogs 100 %}%;" aria-valuenow="{{ time_stats.projects_last_month }}" aria-valuemin="0" aria-valuemax="{{ total_blogs }}"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Charts Row -->
+    <div class="row g-3 mb-4">
+        <div class="col-lg-8">
+            <div class="dashboard-card">
+                <h2 class="card-title">
+                    <i class="bi bi-graph-up"></i> Blog Activity
+                </h2>
+                <div class="chart-container">
+                    <canvas id="activityChart"></canvas>
+                </div>
+                <div class="small text-muted text-center">Blog posts created over time</div>
+            </div>
+        </div>
+        <div class="col-lg-4">
+            <div class="dashboard-card">
+                <h2 class="card-title">
+                    <i class="bi bi-pie-chart-fill"></i> Blog Status
+                </h2>
+                <div class="chart-container">
+                    <canvas id="statusChart"></canvas>
+                </div>
+                <div class="small text-muted text-center">Distribution by status</div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Blog Lists -->
+    <div class="row g-3 mb-4">
+        <!-- Recent Blogs -->
+        <div class="col-lg-6">
+            <div class="dashboard-card">
+                <h2 class="card-title">
+                    <i class="bi bi-clock-history"></i> Recent Blogs
+                </h2>
+                
+                {% if recent_blogs %}
+                <div class="blog-list">
+                    {% for blog in recent_blogs %}
+                    <div class="blog-list-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="blog-title">
+                                <a href="{% url 'view_blog' organization_id=organization_id blog_id=blog.id %}">{{ blog.title|default:blog.name }}</a>
+                            </div>
+                            <span class="status-badge status-badge-{{ blog.status }}">{{ blog.status|title }}</span>
+                        </div>
+                        <div class="blog-meta">
+                            <div class="blog-meta-item">
+                                <i class="bi bi-calendar3"></i>
+                                <span>{{ blog.created_at|date:"M d, Y" }}</span>
+                            </div>
+                            <div class="blog-meta-item">
+                                <i class="bi bi-person"></i>
+                                <span>{{ blog.author.username }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-tab">
+                    <i class="bi bi-journal-x"></i>
+                    <p>No blogs created yet</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Popular Blogs -->
+        <div class="col-lg-6">
+            <div class="dashboard-card">
+                <h2 class="card-title">
+                    <i class="bi bi-star"></i> Popular Blogs
+                </h2>
+                
+                {% if popular_blogs %}
+                <div class="blog-list">
+                    {% for blog in popular_blogs %}
+                    <div class="blog-list-item">
+                        <div class="d-flex justify-content-between align-items-start">
+                            <div class="blog-title">
+                                <a href="{% url 'view_blog' organization_id=organization_id blog_id=blog.id %}">{{ blog.title|default:blog.name }}</a>
+                            </div>
+                            <span class="blog-meta-item">
+                                <i class="bi bi-eye"></i>
+                                <span>{{ blog.views_count }}</span>
+                            </span>
+                        </div>
+                        <div class="blog-meta">
+                            <div class="blog-meta-item">
+                                <i class="bi bi-calendar3"></i>
+                                <span>{{ blog.published_at|default:blog.created_at|date:"M d, Y" }}</span>
+                            </div>
+                            <div class="blog-meta-item">
+                                <i class="bi bi-person"></i>
+                                <span>{{ blog.author.username }}</span>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+                {% else %}
+                <div class="empty-tab">
+                    <i class="bi bi-journal-x"></i>
+                    <p>No published blogs yet</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="row g-3 mb-4">
+        <div class="col-12">
+            <div class="dashboard-card">
+                <!-- Dashboard Tabs at the Top -->
+                <ul class="nav nav-tabs mb-4" id="dashboardTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+                            <i class="bi bi-speedometer2 me-1"></i> Overview
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="team-tab" data-bs-toggle="tab" data-bs-target="#team" type="button" role="tab">
+                            <i class="bi bi-people me-1"></i> Team <span class="badge bg-primary rounded-pill">{{ blog_admins|length|add:blog_writers|length|add:blog_editors|length }}</span>
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="stats-tab" data-bs-toggle="tab" data-bs-target="#stats" type="button" role="tab">
+                            <i class="bi bi-graph-up me-1"></i> Analytics
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="actions-tab" data-bs-toggle="tab" data-bs-target="#actions" type="button" role="tab">
+                            <i class="bi bi-lightning-charge me-1"></i> Actions
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content" id="dashboardTabContent">
+                    <!-- Overview Tab (Default) -->
+                    <div class="tab-pane fade show active" id="overview" role="tabpanel">
+                        <div class="row g-3">
+                            <div class="col-lg-6">
+                                <h4 class="mb-3"><i class="bi bi-clock-history me-2"></i>Recent Blogs</h4>
+                                {% if recent_blogs %}
+                                <div class="blog-list">
+                                    {% for blog in recent_blogs %}
+                                    <div class="blog-list-item">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="blog-title">
+                                                <a href="{% url 'view_blog' organization_id=organization_id blog_id=blog.id %}">{{ blog.title|default:blog.name }}</a>
+                                            </div>
+                                            <span class="status-badge status-badge-{{ blog.status }}">{{ blog.status|title }}</span>
+                                        </div>
+                                        <div class="blog-meta">
+                                            <div class="blog-meta-item">
+                                                <i class="bi bi-calendar3"></i>
+                                                <span>{{ blog.created_at|date:"M d, Y" }}</span>
+                                            </div>
+                                            <div class="blog-meta-item">
+                                                <i class="bi bi-person"></i>
+                                                <span>{{ blog.author.username }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <div class="empty-tab">
+                                    <i class="bi bi-journal-x"></i>
+                                    <p>No blogs created yet</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-lg-6">
+                                <h4 class="mb-3"><i class="bi bi-star me-2"></i>Popular Blogs</h4>
+                                {% if popular_blogs %}
+                                <div class="blog-list">
+                                    {% for blog in popular_blogs %}
+                                    <div class="blog-list-item">
+                                        <div class="d-flex justify-content-between align-items-start">
+                                            <div class="blog-title">
+                                                <a href="{% url 'view_blog' organization_id=organization_id blog_id=blog.id %}">{{ blog.title|default:blog.name }}</a>
+                                            </div>
+                                            <span class="blog-meta-item">
+                                                <i class="bi bi-eye"></i>
+                                                <span>{{ blog.views_count }}</span>
+                                            </span>
+                                        </div>
+                                        <div class="blog-meta">
+                                            <div class="blog-meta-item">
+                                                <i class="bi bi-calendar3"></i>
+                                                <span>{{ blog.published_at|default:blog.created_at|date:"M d, Y" }}</span>
+                                            </div>
+                                            <div class="blog-meta-item">
+                                                <i class="bi bi-person"></i>
+                                                <span>{{ blog.author.username }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <div class="empty-tab">
+                                    <i class="bi bi-journal-x"></i>
+                                    <p>No published blogs yet</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Team Management Tab -->
+                    <div class="tab-pane fade" id="team" role="tabpanel">
+                        <div class="d-flex justify-content-between align-items-center mb-4">
+                            <h4 class="mb-0"><i class="bi bi-people-fill me-2"></i>Blog Team Members</h4>
+                            <a href="{% url 'manage_blog_members' organization_id=organization_id %}" class="btn btn-primary">
+                                <i class="bi bi-person-plus-fill me-1"></i> Manage Team
+                            </a>
+                        </div>
+                        
+                        <ul class="nav nav-pills mb-3" id="teamSubTabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="admins-tab" data-bs-toggle="pill" data-bs-target="#admins" type="button" role="tab">
+                                    Admins <span class="badge bg-primary">{{ blog_admins|length }}</span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="writers-tab" data-bs-toggle="pill" data-bs-target="#writers" type="button" role="tab">
+                                    Writers <span class="badge bg-primary">{{ blog_writers|length }}</span>
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="editors-tab" data-bs-toggle="pill" data-bs-target="#editors" type="button" role="tab">
+                                    Editors <span class="badge bg-primary">{{ blog_editors|length }}</span>
+                                </button>
+                            </li>
+                        </ul>
+                        
+                        <div class="tab-content" id="teamSubTabsContent">
+                            <!-- Admins Tab -->
+                            <div class="tab-pane fade show active" id="admins" role="tabpanel">
+                                {% if blog_admins %}
+                                <div class="member-list">
+                                    {% for member in blog_admins %}
+                                    <div class="member-item">
+                                        <div class="member-avatar">
+                                            <i class="bi bi-person-fill"></i>
+                                        </div>
+                                        <div class="member-info">
+                                            <div class="member-name">{{ member.member.user.username }}</div>
+                                            <div class="member-role">Admin for {{ member.blog.title|default:member.blog.name|truncatechars:30 }}</div>
+                                        </div>
+                                        <form method="post" action="{% url 'remove_blog_member' organization_id=organization_id member_id=member.id %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to remove this member?')">
+                                                <i class="bi bi-person-x-fill"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <div class="empty-tab">
+                                    <i class="bi bi-people"></i>
+                                    <p>No blog admins assigned yet</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Writers Tab -->
+                            <div class="tab-pane fade" id="writers" role="tabpanel">
+                                {% if blog_writers %}
+                                <div class="member-list">
+                                    {% for member in blog_writers %}
+                                    <div class="member-item">
+                                        <div class="member-avatar">
+                                            <i class="bi bi-person-fill"></i>
+                                        </div>
+                                        <div class="member-info">
+                                            <div class="member-name">{{ member.member.user.username }}</div>
+                                            <div class="member-role">Writer for {{ member.blog.title|default:member.blog.name|truncatechars:30 }}</div>
+                                        </div>
+                                        <form method="post" action="{% url 'remove_blog_member' organization_id=organization_id member_id=member.id %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to remove this member?')">
+                                                <i class="bi bi-person-x-fill"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <div class="empty-tab">
+                                    <i class="bi bi-people"></i>
+                                    <p>No writers assigned yet</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Editors Tab -->
+                            <div class="tab-pane fade" id="editors" role="tabpanel">
+                                {% if blog_editors %}
+                                <div class="member-list">
+                                    {% for member in blog_editors %}
+                                    <div class="member-item">
+                                        <div class="member-avatar">
+                                            <i class="bi bi-person-fill"></i>
+                                        </div>
+                                        <div class="member-info">
+                                            <div class="member-name">{{ member.member.user.username }}</div>
+                                            <div class="member-role">Editor for {{ member.blog.title|default:member.blog.name|truncatechars:30 }}</div>
+                                        </div>
+                                        <form method="post" action="{% url 'remove_blog_member' organization_id=organization_id member_id=member.id %}">
+                                            {% csrf_token %}
+                                            <button type="submit" class="btn btn-sm btn-outline-danger" onclick="return confirm('Are you sure you want to remove this member?')">
+                                                <i class="bi bi-person-x-fill"></i>
+                                            </button>
+                                        </form>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% else %}
+                                <div class="empty-tab">
+                                    <i class="bi bi-people"></i>
+                                    <p>No editors assigned yet</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Analytics Tab -->
+                    <div class="tab-pane fade" id="stats" role="tabpanel">
+                        <div class="row g-3">
+                            <div class="col-lg-8">
+                                <h4 class="mb-3"><i class="bi bi-graph-up me-2"></i>Blog Activity</h4>
+                                <div class="chart-container" style="height: 300px;">
+                                    <canvas id="activityChart"></canvas>
+                                </div>
+                                <div class="small text-muted text-center">Blog posts created over time</div>
+                            </div>
+                            <div class="col-lg-4">
+                                <h4 class="mb-3"><i class="bi bi-pie-chart-fill me-2"></i>Blog Status</h4>
+                                <div class="chart-container" style="height: 300px;">
+                                    <canvas id="statusChart"></canvas>
+                                </div>
+                                <div class="small text-muted text-center">Distribution by status</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Actions Tab -->
+                    <div class="tab-pane fade" id="actions" role="tabpanel">
+                        <h4 class="mb-4"><i class="bi bi-lightning-charge-fill me-2"></i>Quick Actions</h4>
+                        <div class="row g-3">
+                            <div class="col-md-3 col-sm-6">
+                                <a href="{% url 'create_blog' organization_id=organization_id %}" class="quick-action create">
+                                    <i class="bi bi-pencil-square"></i>
+                                    <span>Create Blog</span>
+                                </a>
+                            </div>
+                            <div class="col-md-3 col-sm-6">
+                                <a href="{% url 'manage_blog_members' organization_id=organization_id %}" class="quick-action manage">
+                                    <i class="bi bi-people"></i>
+                                    <span>Manage Team</span>
+                                </a>
+                            </div>
+                            <div class="col-md-3 col-sm-6">
+                                <a href="{% url 'public_blog_list' organization_id=organization_id %}" class="quick-action view">
+                                    <i class="bi bi-eye"></i>
+                                    <span>Public View</span>
+                                </a>
+                            </div>
+                            <div class="col-md-3 col-sm-6">
+                                <a href="{% url 'list_deleted_blogs' organization_id=organization_id %}" class="quick-action archive">
+                                    <i class="bi bi-archive"></i>
+                                    <span>Deleted Blogs</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Get chart data from context
+    const chartData = {{ chart_data|safe }};
+    
+    // Set Chart.js defaults
+    Chart.defaults.font.family = "'Inter', 'Helvetica Neue', 'Helvetica', 'Arial', sans-serif";
+    Chart.defaults.font.size = 12;
+    Chart.defaults.color = '#6c757d';
+    
+    // Activity Chart - Line Chart
+    const activityCtx = document.getElementById('activityChart').getContext('2d');
+    new Chart(activityCtx, {
+        type: 'line',
+        data: {
+            labels: chartData.activity.labels,
+            datasets: [{
+                label: 'Blog Posts',
+                data: chartData.activity.data,
+                borderColor: '#0d6efd',
+                backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                borderWidth: 2,
+                tension: 0.4,
+                fill: true,
+                pointBackgroundColor: '#fff',
+                pointBorderColor: '#0d6efd',
+                pointBorderWidth: 2,
+                pointRadius: 4,
+                pointHoverRadius: 6
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                    padding: 10,
+                    usePointStyle: true,
+                    callbacks: {
+                        title: function(context) {
+                            return context[0].label;
+                        },
+                        label: function(context) {
+                            return 'Blog Posts: ' + context.parsed.y;
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    },
+                    grid: {
+                        borderDash: [3, 3],
+                    }
+                },
+                x: {
+                    grid: {
+                        display: false
+                    }
+                }
+            }
+        }
+    });
+    
+    // Status Chart - Doughnut Chart
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: chartData.status.labels,
+            datasets: [{
+                data: chartData.status.data,
+                backgroundColor: [
+                    '#198754', // Published - Green
+                    '#6c757d', // Draft - Gray
+                    '#dc3545'  // Archived - Red
+                ],
+                borderWidth: 0,
+                hoverOffset: 15
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            cutout: '70%',
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                    labels: {
+                        padding: 20,
+                        usePointStyle: true,
+                        pointStyle: 'circle'
+                    }
+                },
+                tooltip: {
+                    backgroundColor: 'rgba(0, 0, 0, 0.7)',
+                    padding: 10,
+                    usePointStyle: true,
+                    callbacks: {
+                        label: function(context) {
+                            const value = context.parsed;
+                            const total = context.dataset.data.reduce((acc, data) => acc + data, 0);
+                            const percentage = Math.round((value * 100) / total) + '%';
+                            return context.label + ': ' + value + ' (' + percentage + ')';
+                        }
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

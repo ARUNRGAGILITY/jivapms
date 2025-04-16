@@ -1,0 +1,680 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kanban Card Design Options</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+  <style>
+    body {
+      padding: 20px;
+      background-color: #f5f7fa;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    h2 {
+      margin-top: 30px;
+      margin-bottom: 15px;
+      font-size: 18px;
+      color: #333;
+      border-bottom: 1px solid #ddd;
+      padding-bottom: 8px;
+    }
+    
+    .design-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 30px;
+      justify-content: center;
+    }
+    
+    .design-option {
+      width: 300px;
+      margin-bottom: 20px;
+    }
+    
+    /* Common Card Properties */
+    .card {
+      cursor: move;
+      transition: all 0.2s ease;
+      width: 100%;
+    }
+    
+    .card:hover {
+      transform: translateY(-5px);
+    }
+    
+    /* Design 1: Modern with Color Accent */
+    .card-design-1 {
+      border-radius: 8px;
+      overflow: hidden;
+      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
+      border: none;
+      border-top: 4px solid #4a6cf7;
+    }
+    
+    .card-design-1 .card-header {
+      display: flex;
+      justify-content: space-between;
+      background-color: #fff;
+      border-bottom: 1px solid #eee;
+      padding: 10px 12px;
+    }
+    
+    .card-design-1 .card-title {
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+    }
+    
+    .card-design-1 .card-meta {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 12px;
+      font-size: 0.7rem;
+      color: #666;
+    }
+    
+    .card-design-1 .priority {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 12px;
+      background: #e3f2fd;
+      color: #0d47a1;
+      font-size: 0.7rem;
+    }
+    
+    .card-design-1 .priority.High { background: #ffebee; color: #c62828; }
+    
+    /* Design 2: Material Design Inspired */
+    .card-design-2 {
+      border-radius: 4px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      border: none;
+      position: relative;
+    }
+    
+    .card-design-2 .priority-marker {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 4px;
+      background-color: #4caf50;
+    }
+    
+    .card-design-2 .priority-marker.High { background-color: #f44336; }
+    
+    .card-design-2 .card-body {
+      padding: 16px;
+    }
+    
+    .card-design-2 .card-title {
+      font-weight: 500;
+      margin-bottom: 12px;
+      font-size: 0.95rem;
+    }
+    
+    .card-design-2 .card-text {
+      font-size: 0.8rem;
+      color: #555;
+      margin-bottom: 12px;
+    }
+    
+    .card-design-2 .card-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: #757575;
+    }
+    
+    /* Design 3: Clean & Minimalist */
+    .card-design-3 {
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      background: #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      padding: 12px;
+    }
+    
+    .card-design-3 .card-tags {
+      display: flex;
+      gap: 5px;
+      margin-bottom: 10px;
+    }
+    
+    .card-design-3 .tag {
+      font-size: 0.65rem;
+      padding: 2px 6px;
+      border-radius: 3px;
+      background: #f0f0f0;
+      color: #555;
+    }
+    
+    .card-design-3 .tag.priority { background: #ff9800; color: white; }
+    .card-design-3 .tag.iteration { background: #673ab7; color: white; }
+    
+    .card-design-3 .card-title {
+      font-weight: 600;
+      font-size: 0.85rem;
+      margin-bottom: 6px;
+    }
+    
+    .card-design-3 .card-text {
+      font-size: 0.75rem;
+      color: #666;
+      margin-bottom: 10px;
+    }
+    
+    .card-design-3 .card-footer {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 10px;
+      font-size: 0.7rem;
+      color: #999;
+      border-top: 1px solid #eee;
+      padding-top: 8px;
+    }
+    
+    /* Design 4: Rounded & Playful */
+    .card-design-4 {
+      border-radius: 20px;
+      background: white;
+      box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+      padding: 15px;
+      border: none;
+    }
+    
+    .card-design-4 .card-title {
+      font-weight: 700;
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+      color: #333;
+    }
+    
+    .card-design-4 .card-text {
+      font-size: 0.8rem;
+      color: #666;
+      margin-bottom: 10px;
+    }
+    
+    .card-design-4 .card-badge {
+      display: inline-block;
+      background: #e3f2fd;
+      color: #1976d2;
+      font-size: 0.7rem;
+      padding: 3px 8px;
+      border-radius: 12px;
+      margin-bottom: 10px;
+    }
+    
+    .card-design-4 .card-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: #888;
+      margin-top: 15px;
+    }
+    
+    /* Design 5: Corporate & Structured */
+    .card-design-5 {
+      border: none;
+      border-radius: 0;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      background: white;
+    }
+    
+    .card-design-5 .card-header {
+      background: #f8f9fa;
+      padding: 10px 15px;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .card-design-5 .card-id {
+      font-size: 0.75rem;
+      color: #555;
+      font-weight: 600;
+    }
+    
+    .card-design-5 .status {
+      font-size: 0.7rem;
+      color: white;
+      background: #2196f3;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    
+    .card-design-5 .card-title {
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+    }
+    
+    .card-design-5 .card-body {
+      padding: 12px 15px;
+    }
+    
+    .card-design-5 .card-text {
+      font-size: 0.8rem;
+      color: #555;
+      margin-bottom: 15px;
+    }
+    
+    .card-design-5 .card-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-size: 0.7rem;
+      color: #666;
+    }
+    
+    .card-design-5 .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+    /* Design 6: Modern Side Accent */
+    .card-design-6 {
+      border: none;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      position: relative;
+      overflow: hidden;
+    }
+    
+    .card-design-6 .priority-bar {
+      position: absolute;
+      left: 0;
+      top: 0;
+      bottom: 0;
+      width: 6px;
+      background: #4caf50;
+    }
+    
+    .card-design-6 .priority-bar.High { background: #f44336; }
+    
+    .card-design-6 .card-body {
+      padding: 12px 12px 12px 20px;
+    }
+    
+    .card-design-6 .card-title {
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+    }
+    
+    .card-design-6 .card-text {
+      font-size: 0.8rem;
+      color: #666;
+      margin-bottom: 12px;
+    }
+    
+    .card-design-6 .card-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: #777;
+    }
+    
+    /* Design 7: Compact & Efficient */
+    .card-design-7 {
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      background: white;
+    }
+    
+    .card-design-7 .card-header {
+      background: none;
+      padding: 10px 12px 0;
+      border: none;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .card-design-7 .card-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      margin: 0;
+    }
+    
+    .card-design-7 .priority {
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: #4caf50;
+    }
+    
+    .card-design-7 .priority.High { background: #f44336; }
+    
+    .card-design-7 .card-body {
+      padding: 6px 12px 12px;
+    }
+    
+    .card-design-7 .card-text {
+      font-size: 0.75rem;
+      color: #666;
+      margin-bottom: 10px;
+    }
+    
+    .card-design-7 .card-tags {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+    }
+    
+    .card-design-7 .tag {
+      font-size: 0.65rem;
+      padding: 1px 5px;
+      background: #f0f0f0;
+      color: #555;
+      border-radius: 3px;
+    }
+    
+    /* Design 8: Bold & Vibrant */
+    .card-design-8 {
+      border: none;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .card-design-8 .card-header {
+      background: #651fff;
+      color: white;
+      padding: 12px 15px;
+      border: none;
+    }
+    
+    .card-design-8 .card-header.High { background: #ff3d00; }
+    
+    .card-design-8 .card-title {
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin: 0;
+    }
+    
+    .card-design-8 .card-body {
+      padding: 15px;
+    }
+    
+    .card-design-8 .card-text {
+      font-size: 0.8rem;
+      color: #555;
+      margin-bottom: 12px;
+    }
+    
+    .card-design-8 .card-meta {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: #777;
+    }
+    
+    /* Design 9: Neumorphic Style */
+    .card-design-9 {
+      border: none;
+      border-radius: 15px;
+      background: #f0f0f0;
+      box-shadow: 5px 5px 10px #d1d1d1, -5px -5px 10px #ffffff;
+      padding: 15px;
+    }
+    
+    .card-design-9 .card-title {
+      font-weight: 700;
+      font-size: 0.85rem;
+      margin-bottom: 10px;
+      color: #444;
+    }
+    
+    .card-design-9 .card-text {
+      font-size: 0.75rem;
+      color: #666;
+      margin-bottom: 12px;
+    }
+    
+    .card-design-9 .card-tags {
+      display: flex;
+      margin-bottom: 10px;
+      gap: 8px;
+    }
+    
+    .card-design-9 .tag {
+      font-size: 0.7rem;
+      padding: 3px 10px;
+      background: white;
+      border-radius: 10px;
+      box-shadow: 2px 2px 5px #d1d1d1, -2px -2px 5px #ffffff;
+      color: #555;
+    }
+    
+    .card-design-9 .card-meta {
+      font-size: 0.7rem;
+      color: #777;
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    /* Design 10: Glass Morphism */
+    .card-design-10 {
+      background: rgba(255, 255, 255, 0.7);
+      backdrop-filter: blur(10px);
+      border-radius: 10px;
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+      padding: 15px;
+    }
+    
+    .card-design-10 .priority-indicator {
+      width: 40px;
+      height: 4px;
+      background: #4caf50;
+      margin-bottom: 10px;
+      border-radius: 2px;
+    }
+    
+    .card-design-10 .priority-indicator.High { background: #f44336; }
+    
+    .card-design-10 .card-title {
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 8px;
+    }
+    
+    .card-design-10 .card-text {
+      font-size: 0.75rem;
+      color: rgba(0, 0, 0, 0.6);
+      margin-bottom: 12px;
+    }
+    
+    .card-design-10 .card-footer {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.7rem;
+      color: rgba(0, 0, 0, 0.5);
+      padding-top: 10px;
+      border-top: 1px solid rgba(0, 0, 0, 0.05);
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1 class="my-4 text-center">Kanban Card Design Options</h1>
+    <p class="text-center mb-5">10 different card designs for your kanban board</p>
+    
+    <div class="design-container">
+      <!-- Design 1: Modern with Color Accent -->
+      <div class="design-option">
+        <h2>Design 1: Modern with Color Accent</h2>
+        <div class="card card-design-1">
+          <div class="card-header">
+            <span>TASK-123</span>
+            <span class="priority High">High</span>
+          </div>
+          <div class="card-body">
+            <h5 class="card-title">Implement Login Form</h5>
+            <p class="card-text">Create user authentication form with validation and error handling.</p>
+            <div class="card-meta">
+              <span>Sprint 4</span>
+              <span>v2.0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Design 2: Material Design Inspired -->
+      <div class="design-option">
+        <h2>Design 2: Material Design Inspired</h2>
+        <div class="card card-design-2">
+          <div class="priority-marker High"></div>
+          <div class="card-body">
+            <h5 class="card-title">Implement Login Form</h5>
+            <p class="card-text">Create user authentication form with validation and error handling.</p>
+            <div class="card-meta">
+              <span>Sprint 4</span>
+              <span>TASK-123</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Design 3: Clean & Minimalist -->
+      <div class="design-option">
+        <h2>Design 3: Clean & Minimalist</h2>
+        <div class="card card-design-3">
+          <div class="card-tags">
+            <span class="tag priority">High</span>
+            <span class="tag iteration">Sprint 4</span>
+          </div>
+          <h5 class="card-title">Implement Login Form</h5>
+          <p class="card-text">Create user authentication form with validation and error handling.</p>
+          <div class="card-footer">
+            <span>#123</span>
+            <span>v2.0</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Design 4: Rounded & Playful -->
+      <div class="design-option">
+        <h2>Design 4: Rounded & Playful</h2>
+        <div class="card card-design-4">
+          <span class="card-badge">High Priority</span>
+          <h5 class="card-title">Implement Login Form</h5>
+          <p class="card-text">Create user authentication form with validation and error handling.</p>
+          <div class="card-meta">
+            <span>Sprint 4</span>
+            <span>#123</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Design 5: Corporate & Structured -->
+      <div class="design-option">
+        <h2>Design 5: Corporate & Structured</h2>
+        <div class="card card-design-5">
+          <div class="card-header">
+            <span class="card-id">TASK-123</span>
+            <span class="status">High</span>
+          </div>
+          <div class="card-body">
+            <h5 class="card-title">Implement Login Form</h5>
+            <p class="card-text">Create user authentication form with validation and error handling.</p>
+            <div class="card-meta">
+              <span class="meta-item"><i class="fas fa-calendar"></i> Sprint 4</span>
+              <span class="meta-item"><i class="fas fa-tag"></i> v2.0</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Design 6: Modern Side Accent -->
+      <div class="design-option">
+        <h2>Design 6: Modern Side Accent</h2>
+        <div class="card card-design-6">
+          <div class="priority-bar High"></div>
+          <div class="card-body">
+            <h5 class="card-title">Implement Login Form</h5>
+            <p class="card-text">Create user authentication form with validation and error handling.</p>
+            <div class="card-meta">
+              <span>Sprint 4</span>
+              <span>#123</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Design 7: Compact & Efficient -->
+      <div class="design-option">
+        <h2>Design 7: Compact & Efficient</h2>
+        <div class="card card-design-7">
+          <div class="card-header">
+            <h5 class="card-title">Implement Login Form</h5>
+            <div class="priority High"></div>
+          </div>
+          <div class="card-body">
+            <p class="card-text">Create user authentication form with validation and error handling.</p>
+            <div class="card-tags">
+              <span class="tag">Sprint 4</span>
+              <span class="tag">v2.0</span>
+              <span class="tag">#123</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Design 8: Bold & Vibrant -->
+      <div class="design-option">
+        <h2>Design 8: Bold & Vibrant</h2>
+        <div class="card card-design-8">
+          <div class="card-header High">
+            <h5 class="card-title">Implement Login Form</h5>
+          </div>
+          <div class="card-body">
+            <p class="card-text">Create user authentication form with validation and error handling.</p>
+            <div class="card-meta">
+              <span>Sprint 4</span>
+              <span>#123</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Design 9: Neumorphic Style -->
+      <div class="design-option">
+        <h2>Design 9: Neumorphic Style</h2>
+        <div class="card card-design-9">
+          <h5 class="card-title">Implement Login Form</h5>
+          <div class="card-tags">
+            <span class="tag">High</span>
+            <span class="tag">Sprint 4</span>
+          </div>
+          <p class="card-text">Create user authentication form with validation and error handling.</p>
+          <div class="card-meta">
+            <span>#123</span>
+            <span>v2.0</span>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Design 10: Glass Morphism -->
+      <div class="design-option">
+        <h2>Design 10: Glass Morphism</h2>
+        <div class="card card-design-10">
+          <div class="priority-indicator High"></div>
+          <h5 class="card-title">Implement Login Form</h5>
+          <p class="card-text">Create user authentication form with validation and error handling.</p>
+          <div class="card-footer">
+            <span>Sprint 4</span>
+            <span>#123</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

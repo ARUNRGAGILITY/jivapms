@@ -17,7 +17,10 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.2.1/themes/default/style.min.css" />
   
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
-  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0-beta3/css/all.min.css" rel="stylesheet">
+ <!-- Using Font Awesome 6 with CDN -->
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+
   <style>
 
   .placeholder_column {
@@ -100,7 +103,7 @@
   border-radius: 8px;
   padding: 12px;
   margin: 10px;
-  font-size: 0.8rem;
+  font-size: 0.65rem;
   color: #333;
   cursor: move;
   box-shadow: 0 3px 6px rgba(0,0,0,0.1);
@@ -110,7 +113,174 @@
   position: relative;
   overflow: hidden;
 }
+/* Improved Card Styling without footer buttons */
+.card {
+  background-color: white;
+  border-radius: 8px;
+  padding: 0;
+  margin: 10px;
+  font-size: 0.65rem;
+  color: #333;
+  cursor: move;
+  box-shadow: 0 3px 6px rgba(0,0,0,0.1);
+  transition: all 0.2s ease;
+  border-left: 4px solid #4a6cf7;
+  position: relative;
+  overflow: hidden;
+  min-height: auto;
+}
+.card_action {
+    font-size: 12px;
+    font-weight: bold;
+  }
+  .card_action.edit {
+    font-size: 13px;
+  }
+  .card_action.delete {
+    font-size: 10px;
+  }
+.card:hover {
+  box-shadow: 0 5px 12px rgba(0,0,0,0.15);
+  transform: translateY(-2px);
+}
 
+/* Priority Colors */
+.card.Critical { border-left-color: #e53935; }
+.card.High { border-left-color: #ff9800; }
+.card.Medium { border-left-color: #ffeb3b; }
+.card.Low { border-left-color: #4caf50; }
+.card.Normal { border-left-color: #2196f3; }
+
+/* Card Header */
+.card_header {
+  padding: 8px 10px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  justify-content: space-between;
+  font-size: 0.7rem;
+}
+
+.card_header_left {
+  display: flex;
+  gap: 6px;
+}
+
+.card_header_right {
+  display: flex;
+  gap: 6px;
+}
+
+.card_tag {
+  background-color: #e3f2fd;
+  color: #1976d2;
+  padding: 2px 6px;
+  border-radius: 10px;
+  font-size: 0.65rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 80px;
+}
+
+.card_tag.priority-Critical { background-color: #ffcdd2; color: #c62828; }
+.card_tag.priority-High { background-color: #ffe0b2; color: #e65100; }
+.card_tag.priority-Medium { background-color: #fff9c4; color: #f57f17; }
+.card_tag.priority-Low { background-color: #c8e6c9; color: #2e7d32; }
+.card_tag.priority-Normal { background-color: #bbdefb; color: #0d47a1; }
+
+.card_tag.size-Small { background-color: #e8f5e9; color: #2e7d32; }
+.card_tag.size-Medium { background-color: #e3f2fd; color: #0d47a1; }
+.card_tag.size-Large { background-color: #fff3e0; color: #e65100; }
+.card_tag.size-XLarge { background-color: #ffebee; color: #c62828; }
+
+.card_tag.release { background-color: #e8eaf6; color: #3949ab; }
+.card_tag.iteration { background-color: #f3e5f5; color: #7b1fa2; }
+
+/* Card Content */
+.card_content {
+  padding: 10px;
+  position: relative;
+}
+
+.card_title {
+  font-weight: 600;
+  margin-bottom: 6px;
+  font-size: 0.85rem;
+  padding-right: 30px; /* Space for the hover actions */
+}
+
+.card_description {
+  font-size: 0.75rem;
+  color: #666;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Card Actions */
+.card_actions {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  display: flex;
+  gap: 5px;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+
+.card:hover .card_actions {
+  opacity: 1;
+}
+
+.card_action {
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #f0f0f0;
+  border-radius: 50%;
+  color: #555;
+  border: none;
+  cursor: pointer;
+  font-size: 0.7rem;
+  transition: all 0.2s ease;
+}
+
+.card_action:hover {
+  background-color: #e0e0e0;
+  color: #1976d2;
+}
+
+.card_action.edit:hover {
+  background-color: #bbdefb;
+  color: #0d47a1;
+}
+
+.card_action.link:hover {
+  background-color: #c8e6c9;
+  color: #2e7d32;
+}
+
+.card_action.delete:hover {
+  background-color: #ffcdd2;
+  color: #c62828;
+}
+
+/* Card ID Badge */
+.card_id_badge {
+  position: absolute;
+  bottom: 8px;
+  right: 8px;
+  font-size: 0.65rem;
+  color: #999;
+  background-color: #f5f5f5;
+  padding: 1px 5px;
+  border-radius: 8px;
+}
 .card:hover {
   box-shadow: 0 5px 12px rgba(0,0,0,0.15);
   transform: translateY(-2px);
@@ -257,14 +427,72 @@
   
   </style>
   
+<style>
+  /* Design 5: Corporate & Structured */
+  .card-design-5 {
+      border: none;
+      border-radius: 0;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+      background: white;
+    }
+    
+    .card-design-5 .card-header {
+      background: #f8f9fa;
+      padding: 10px 15px;
+      border-bottom: 1px solid #e0e0e0;
+      display: flex;
+      justify-content: space-between;
+    }
+    
+    .card-design-5 .card-id {
+      font-size: 0.75rem;
+      color: #555;
+      font-weight: 600;
+    }
+    
+    .card-design-5 .status {
+      font-size: 0.7rem;
+      color: white;
+      background: #2196f3;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+    
+    .card-design-5 .card-title {
+      font-weight: 600;
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+    }
+    
+    .card-design-5 .card-body {
+      padding: 12px 15px;
+    }
+    
+    .card-design-5 .card-text {
+      font-size: 0.8rem;
+      color: #555;
+      margin-bottom: 15px;
+    }
+    
+    .card-design-5 .card-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      font-size: 0.7rem;
+      color: #666;
+    }
+    
+    .card-design-5 .meta-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    
+</style>
+
 <!-- CSS Styles for the Modal -->
 <style>
-  .modal-lg {
-    height: 80vh;
-  }
-  
   .modal-content {
-    height: 100%;
     display: flex;
     flex-direction: column;
   }
@@ -293,6 +521,7 @@
     border-radius: 4px;
     min-height: 150px;
     border: 1px solid #ced4da;
+    padding: 10px;
   }
   
   /* Priority Tag Colors */
@@ -301,6 +530,11 @@
     padding: 2px 6px;
     border-radius: 4px;
     font-size: 0.8rem;
+  }
+  
+  .priority-Critical {
+    background-color: #ffcdd2;
+    color: #d32f2f;
   }
   
   .priority-High {
@@ -322,7 +556,7 @@
     background-color: #e3f2fd;
     color: #1976d2;
   }
-  </style>
+</style>
 </head>
 <body>
   
@@ -613,7 +847,29 @@
               data-id="0" id="backlog" data-wip-limit="100" data-column-name="Backlog" data-state-id="0"
               >
                 {% for item in backlog_items %}
-                  <div class="card {{item.priority}} mb-2" id="{{item.id}}" draggable="true">{{item.name}}</div>
+                <div class="card {{item.priority}} mb-2" id="{{item.id}}" draggable="true"
+                data-release="{{item.release|default:'v1.0'}}" 
+                data-iteration="{{item.iteration|default:'Sprint 1'}}"
+                data-priority="{{item.priority|default:'Normal'}}" 
+                data-size="{{item.size|default:'Medium'}}">
+             
+                <div class="design-option">
+                  <div class="card card-design-5">
+                    <div class="card-header">
+                      <span class="card-id">{{project}}-{{item.id}}</span>
+                      <span class="status">{{item.priority|get_first_letter_caps}}</span>
+                    </div>
+                    <div class="card-body">
+                      <h5 class="card-title">{{item.name|display_if_not_none}}</h5>
+                      <p class="card-text">{{item.description|display_if_not_none}}</p>
+                      <div class="card-meta">
+                        <span class="meta-item"><i class="fas fa-calendar"></i>{{item.iteration|display_if_not_none}}</span>
+                        <span class="meta-item"><i class="fas fa-tag"></i>{{item.release|display_if_not_none}}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                </div>  
                 {% endfor %}
               </td>
 
@@ -631,7 +887,35 @@
                   >                
                     {% for item in state_items|get_item:state.id %}
                       {% if item.substate == substate_choice %}
-                      <div class="card {{item.backlog.priority}} mb-2" id="{{item.id}}" draggable="true">{{item|display_if_not_none}}</div>
+                      <div class="card {{item.backlog.priority}} mb-2" id="{{item.id}}" draggable="true"
+                          data-release="{{item.backlog.release|default:'v1.0'}}" 
+                          data-iteration="{{item.backlog.iteration|default:'Sprint 1'}}"
+                          data-priority="{{item.backlog.priority|default:'Normal'}}" 
+                          data-size="{{item.backlog.size|default:'Medium'}}">
+                        
+                        <!-- Card Header with Tags -->
+                        <div class="card_header">
+                          <div class="card_header_left">
+                            <span class="card_tag release">{{item.backlog.release|default:'v1.0'}}</span>
+                            <span class="card_tag iteration">{{item.backlog.iteration|default:'Sprint 1'}}</span>
+                          </div>
+                          <div class="card_header_right">
+                            <span class="card_tag priority-{{item.backlog.priority|default:'Normal'}}">{{item.backlog.priority|default:'Normal'}}</span>
+                            <span class="card_tag size-{{item.backlog.size|default:'Medium'}}">{{item.backlog.size|default:'Medium'}}</span>
+                          </div>
+                        </div>
+                        
+                        <!-- Card Content -->
+                        <div class="card_content">
+                          <div class="card_title">{{item|display_if_not_none}}</div>
+                          <div class="card_description">{{item.description|default:''}}</div>
+                        </div>
+                        
+                        <!-- Card Footer with Action Buttons -->
+                        <div class="card_footer">
+                         
+                        </div>
+                      </div>
                       {% endif %}
                     {% endfor %}
                   </td>
@@ -644,7 +928,35 @@
                 data-apply-wip-limit="{{ state.apply_wip_limit|yesno:'true,false' }}"
                 >
                   {% for item in state_items|get_item:state.id %}
-                    <div class="card {{item.backlog.priority}} mb-2" id="{{item.id}}" draggable="true">{{item|display_if_not_none}}</div>
+                          <div class="card {{item.backlog.priority}} mb-2" id="{{item.id}}" draggable="true"
+                          data-release="{{item.backlog.release|default:'v1.0'}}" 
+                          data-iteration="{{item.backlog.iteration|default:'Sprint 1'}}"
+                          data-priority="{{item.backlog.priority|default:'Normal'}}" 
+                          data-size="{{item.backlog.size|default:'Medium'}}">
+                      
+                      <!-- Card Header with Tags -->
+                      <div class="card_header">
+                        <div class="card_header_left">
+                          <span class="card_tag release">{{item.backlog.release|default:'v1.0'}}</span>
+                          <span class="card_tag iteration">{{item.backlog.iteration|default:'Sprint 1'}}</span>
+                        </div>
+                        <div class="card_header_right">
+                          <span class="card_tag priority-{{item.backlog.priority|default:'Normal'}}">{{item.backlog.priority|default:'Normal'}}</span>
+                          <span class="card_tag size-{{item.backlog.size|default:'Medium'}}">{{item.backlog.size|default:'Medium'}}</span>
+                        </div>
+                      </div>
+                      
+                      <!-- Card Content -->
+                      <div class="card_content">
+                        <div class="card_title">{{item|display_if_not_none}}</div>
+                        <div class="card_description">{{item.description|default:''}}</div>
+                      </div>
+                      
+                      <!-- Card Footer with Action Buttons -->
+                      <div class="card_footer">
+                      
+                      </div>
+                    </div>
                   {% endfor %}
                 </td>
                 {% endif %}
@@ -662,6 +974,138 @@
 
 
 
+<!-- Card Detail Modal -->
+<div class="modal fade" id="cardDetailModal" tabindex="-1" aria-labelledby="cardDetailModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg" style="max-width: 60vw;">
+    <div class="modal-content" style="height: 50vh;">
+      <!-- Modal Header with title and close button -->
+      <div class="modal-header">
+        <h5 class="modal-title" id="cardDetailModalLabel">Card Details</h5>
+        <div class="d-flex align-items-center">
+          <!-- View/Edit Toggle Button -->
+          <div class="form-check form-switch me-3">
+            <input class="form-check-input" type="checkbox" id="editModeToggle">
+            <label class="form-check-label" for="editModeToggle">Edit Mode</label>
+          </div>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+      </div>
+      
+      <!-- Modal Body - View Mode -->
+      <div class="modal-body" id="viewModeContent">
+        <div class="row">
+          <div class="col-md-8">
+            <!-- Card description -->
+            <div class="card-description-panel mb-3">
+              <h6 class="info-header">Description</h6>
+              <div class="card-description-display p-2" id="cardDescriptionDisplay">
+                This is a sample description for the card. It outlines what needs to be done, acceptance criteria, and other relevant details. The description can contain multiple paragraphs and can be formatted as needed.
+              </div>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <!-- Card details -->
+            <div class="card-info-panel">
+              <h6 class="info-header">Details</h6>
+              <div class="row mb-2">
+                <div class="col-5 text-muted">ID:</div>
+                <div class="col-7" id="cardIdDisplay">12345</div>
+              </div>
+              <div class="row mb-2">
+                <div class="col-5 text-muted">Priority:</div>
+                <div class="col-7" id="cardPriorityDisplay">
+                  <span class="priority-tag priority-High">High</span>
+                </div>
+              </div>
+              <div class="row mb-2">
+                <div class="col-5 text-muted">Size:</div>
+                <div class="col-7" id="cardSizeDisplay">Medium</div>
+              </div>
+              <div class="row mb-2">
+                <div class="col-5 text-muted">Release:</div>
+                <div class="col-7" id="cardReleaseDisplay">v2.1</div>
+              </div>
+              <div class="row mb-2">
+                <div class="col-5 text-muted">Iteration:</div>
+                <div class="col-7" id="cardIterationDisplay">Sprint 4</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Modal Body - Edit Mode -->
+      <div class="modal-body" id="editModeContent" style="display: none;">
+        <div class="row">
+          <div class="col-md-8">
+            <!-- Title field -->
+            <div class="mb-3">
+              <label for="cardTitleEdit" class="form-label">Title</label>
+              <input type="text" class="form-control" id="cardTitleEdit" value="Sample Card Title">
+            </div>
+            
+            <!-- Description field -->
+            <div class="mb-3">
+              <label for="cardDescriptionEdit" class="form-label">Description</label>
+              <textarea class="form-control" id="cardDescriptionEdit" rows="6">This is a sample description for the card. It outlines what needs to be done, acceptance criteria, and other relevant details. The description can contain multiple paragraphs and can be formatted as needed.</textarea>
+            </div>
+          </div>
+          <div class="col-md-4">
+            <!-- Priority field -->
+            <div class="mb-3">
+              <label for="cardPriorityEdit" class="form-label">Priority</label>
+              <select class="form-select" id="cardPriorityEdit">
+                <option value="Low">Low</option>
+                <option value="Normal">Normal</option>
+                <option value="Medium">Medium</option>
+                <option value="High" selected>High</option>
+                <option value="Critical">Critical</option>
+              </select>
+            </div>
+            
+            <!-- Size field -->
+            <div class="mb-3">
+              <label for="cardSizeEdit" class="form-label">Size</label>
+              <select class="form-select" id="cardSizeEdit">
+                <option value="Small">Small</option>
+                <option value="Medium" selected>Medium</option>
+                <option value="Large">Large</option>
+                <option value="X-Large">X-Large</option>
+              </select>
+            </div>
+            
+            <!-- Release field -->
+            <div class="mb-3">
+              <label for="cardReleaseEdit" class="form-label">Release</label>
+              <input type="text" class="form-control" id="cardReleaseEdit" value="v2.1">
+            </div>
+            
+            <!-- Iteration field -->
+            <div class="mb-3">
+              <label for="cardIterationEdit" class="form-label">Iteration</label>
+              <input type="text" class="form-control" id="cardIterationEdit" value="Sprint 4">
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Modal Footer with action buttons -->
+      <div class="modal-footer">
+        <!-- View Mode Buttons -->
+        <div id="viewModeButtons">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+          <button type="button" class="btn btn-primary">Add Comment</button>
+        </div>
+        
+        <!-- Edit Mode Buttons -->
+        <div id="editModeButtons" style="display: none;">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" class="btn btn-success" id="saveCardChanges">Save Changes</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
 
 
 <!-- End: Design Kanban Board -->
@@ -1211,5 +1655,438 @@ function updateCardState(cardId, fromStateId, toStateId, destPositions, destColu
   
 </script>
 
+
+
+
+<script>
+ // Card modal functionality
+document.addEventListener('DOMContentLoaded', function() {
+  // Initialize modal and setup event handlers
+  initCardModal();
+  addCardDoubleClickHandlers();
+});
+
+// Global variables
+let cardDetailModal = null;
+let currentCardId = null;
+
+// Initialize the modal functionality
+function initCardModal() {
+  const modalElement = document.getElementById('cardDetailModal');
+  if (!modalElement) {
+    console.error('Modal element not found');
+    return;
+  }
+
+  // Initialize the Bootstrap modal
+  cardDetailModal = new bootstrap.Modal(modalElement);
+
+  // Add event listener for the edit mode toggle
+  const editModeToggle = document.getElementById('editModeToggle');
+  if (editModeToggle) {
+    editModeToggle.addEventListener('change', function() {
+      toggleEditMode(this.checked);
+    });
+  }
+
+  // Add event listener for the save button
+  const saveButton = document.getElementById('saveCardChanges');
+  if (saveButton) {
+    saveButton.addEventListener('click', function() {
+      saveCardChanges();
+    });
+  }
+}
+
+// Toggle between view and edit modes
+function toggleEditMode(isEditMode) {
+  document.getElementById('viewModeContent').style.display = isEditMode ? 'none' : 'block';
+  document.getElementById('editModeContent').style.display = isEditMode ? 'block' : 'none';
+  document.getElementById('viewModeButtons').style.display = isEditMode ? 'none' : 'block';
+  document.getElementById('editModeButtons').style.display = isEditMode ? 'block' : 'none';
+  
+  if (isEditMode) {
+    // Copy data from view mode to edit mode
+    document.getElementById('cardTitleEdit').value = document.getElementById('cardDetailModalLabel').textContent;
+    document.getElementById('cardDescriptionEdit').value = document.getElementById('cardDescriptionDisplay').textContent.trim();
+    
+    // Copy priority
+    const priorityText = document.querySelector('#cardPriorityDisplay .priority-tag').textContent;
+    selectOptionByValue('cardPriorityEdit', priorityText);
+    
+    // Copy size
+    const sizeText = document.getElementById('cardSizeDisplay').textContent;
+    selectOptionByValue('cardSizeEdit', sizeText);
+    
+    // Copy release and iteration
+    document.getElementById('cardReleaseEdit').value = document.getElementById('cardReleaseDisplay').textContent;
+    document.getElementById('cardIterationEdit').value = document.getElementById('cardIterationDisplay').textContent;
+  }
+}
+
+// Helper to select an option in a select element by value
+function selectOptionByValue(selectId, value) {
+  const select = document.getElementById(selectId);
+  if (!select) return;
+  
+  for (let i = 0; i < select.options.length; i++) {
+    if (select.options[i].value === value) {
+      select.options[i].selected = true;
+      break;
+    }
+  }
+}
+
+// Add double-click handlers to all cards
+function addCardDoubleClickHandlers() {
+  const cards = document.querySelectorAll('.card');
+  
+  cards.forEach(card => {
+    // Check if the card already has the double-click handler
+    if (!card._hasDoubleClickHandler) {
+      card.addEventListener('dblclick', handleCardDoubleClick);
+      card._hasDoubleClickHandler = true;
+    }
+  });
+  
+  // Set up observer for new cards
+  setupCardObserver();
+}
+
+// Handle double-click on a card
+function handleCardDoubleClick(e) {
+  e.preventDefault();
+  e.stopPropagation();
+  
+  const card = this;
+  const cardId = card.id;
+  
+  // Simply open the modal - all data extraction happens in the openCardModal function
+  openCardModal(cardId);
+}
+
+// Observe for new cards being added to the kanban board
+function setupCardObserver() {
+  // Create a MutationObserver to watch for new cards
+  const observer = new MutationObserver(function(mutations) {
+    mutations.forEach(function(mutation) {
+      if (mutation.addedNodes.length) {
+        mutation.addedNodes.forEach(function(node) {
+          // Check if the added node is a card and doesn't have a handler yet
+          if (node.classList && node.classList.contains('card') && !node._hasDoubleClickHandler) {
+            node.addEventListener('dblclick', handleCardDoubleClick);
+            node._hasDoubleClickHandler = true;
+          }
+        });
+      }
+    });
+  });
+  
+  // Start observing the kanban columns for new cards
+  const kanbanColumns = document.querySelectorAll('.kanban_column');
+  kanbanColumns.forEach(column => {
+    observer.observe(column, { childList: true });
+  });
+}
+
+// Open the card modal with data extracted directly from the card element
+function openCardModal(id) {
+  if (!cardDetailModal) {
+    console.error("Modal not initialized");
+    return;
+  }
+  
+  // Store the current card ID
+  currentCardId = id;
+  
+  // Extract all data directly from the card element
+  fetchCardDetails(id);
+  
+  // Reset to view mode
+  document.getElementById('editModeToggle').checked = false;
+  document.getElementById('viewModeContent').style.display = 'block';
+  document.getElementById('editModeContent').style.display = 'none';
+  document.getElementById('viewModeButtons').style.display = 'block';
+  document.getElementById('editModeButtons').style.display = 'none';
+  
+  // Show the modal
+  cardDetailModal.show();
+}
+
+// Fetch card details directly from the card element
+function fetchCardDetails(cardId) {
+  // Find the card element in the DOM
+  const cardElement = document.getElementById(cardId);
+  if (!cardElement) {
+    console.error('Card element not found:', cardId);
+    return;
+  }
+  
+  // Extract data from the card's data attributes and content
+  const title = cardElement.querySelector('.card_title')?.textContent.trim() || '';
+  const description = cardElement.querySelector('.card_description')?.textContent.trim() || '';
+  
+  // Get priority from data attribute or CSS class
+  let priority = cardElement.dataset.priority || '';
+  if (!priority) {
+    if (cardElement.classList.contains('Critical')) priority = 'Critical';
+    else if (cardElement.classList.contains('High')) priority = 'High';
+    else if (cardElement.classList.contains('Medium')) priority = 'Medium';
+    else if (cardElement.classList.contains('Low')) priority = 'Low';
+    else priority = 'Normal';
+  }
+  
+  const size = cardElement.dataset.size || 'Medium';
+  const release = cardElement.dataset.release || '';
+  const iteration = cardElement.dataset.iteration || '';
+  
+  // Update the modal with the extracted data
+  document.getElementById('cardIdDisplay').textContent = cardId;
+  document.getElementById('cardDetailModalLabel').textContent = title;
+  document.getElementById('cardDescriptionDisplay').textContent = description || 'No description available.';
+  document.getElementById('cardPriorityDisplay').innerHTML = `<span class="priority-tag priority-${priority}">${priority}</span>`;
+  document.getElementById('cardSizeDisplay').textContent = size;
+  document.getElementById('cardReleaseDisplay').textContent = release;
+  document.getElementById('cardIterationDisplay').textContent = iteration;
+  
+  // Return the data for potential additional use
+  return {
+    title: title,
+    description: description,
+    priority: priority,
+    size: size,
+    release: release,
+    iteration: iteration
+  };
+}
+
+// Save changes to the card
+function saveCardChanges() {
+  if (!currentCardId) {
+    console.error('No card ID set');
+    return;
+  }
+  
+  // Get the updated values from the form
+  const title = document.getElementById('cardTitleEdit').value;
+  const description = document.getElementById('cardDescriptionEdit').value;
+  const priority = document.getElementById('cardPriorityEdit').value;
+  const size = document.getElementById('cardSizeEdit').value;
+  const release = document.getElementById('cardReleaseEdit').value;
+  const iteration = document.getElementById('cardIterationEdit').value;
+  
+  // Update the view mode content in the modal
+  document.getElementById('cardDetailModalLabel').textContent = title;
+  document.getElementById('cardDescriptionDisplay').textContent = description;
+  document.getElementById('cardPriorityDisplay').innerHTML = `<span class="priority-tag priority-${priority}">${priority}</span>`;
+  document.getElementById('cardSizeDisplay').textContent = size;
+  document.getElementById('cardReleaseDisplay').textContent = release;
+  document.getElementById('cardIterationDisplay').textContent = iteration;
+  
+  // Update the card in the DOM
+  updateCardInDOM(currentCardId, title, description, priority, size, release, iteration);
+  
+  // Save to server using your existing API functions
+  saveCardToServer(currentCardId, {
+    title: title,
+    description: description,
+    priority: priority,
+    size: size,
+    release: release,
+    iteration: iteration
+  });
+  
+  // Switch back to view mode
+  document.getElementById('editModeToggle').checked = false;
+  toggleEditMode(false);
+  
+  // Show success notification
+  showNotification('Card updated successfully');
+}
+
+// Update the card in the DOM with the new data
+function updateCardInDOM(cardId, title, description, priority, size, release, iteration) {
+  const card = document.getElementById(cardId);
+  if (!card) return;
+  
+  // Update card content
+  const titleElement = card.querySelector('.card_title');
+  if (titleElement) {
+    titleElement.textContent = title;
+  } else {
+    // If there's no title element, update the entire card text
+    card.textContent = title;
+  }
+  
+  // Update description if it exists
+  const descriptionElement = card.querySelector('.card_description');
+  if (descriptionElement) {
+    descriptionElement.textContent = description;
+  }
+  
+  // Update priority class
+  ['Critical', 'High', 'Medium', 'Low', 'Normal'].forEach(p => {
+    card.classList.remove(p);
+  });
+  card.classList.add(priority);
+  
+  // Update data attributes
+  card.dataset.priority = priority;
+  card.dataset.size = size;
+  card.dataset.release = release;
+  card.dataset.iteration = iteration;
+  
+  // If card has priority tag, update it
+  if (card.querySelector('.card-tag.priority')) {
+    card.querySelector('.card-tag.priority').textContent = priority;
+  }
+}
+
+// Save card data to server
+function saveCardToServer(cardId, data) {
+  // Create FormData for the title
+  const titleFormData = new FormData();
+  titleFormData.append("id", cardId);
+  titleFormData.append("model_name", "Backlog");
+  titleFormData.append("app_name", "app_organization");
+  titleFormData.append("field_name", "name");
+  titleFormData.append("new_value", data.title);
+  
+  // Create FormData for the description
+  const descFormData = new FormData();
+  descFormData.append("id", cardId);
+  descFormData.append("model_name", "Backlog");
+  descFormData.append("app_name", "app_organization");
+  descFormData.append("field_name", "description");
+  descFormData.append("new_value", data.description);
+  
+  // Create FormData for the priority
+  const priorityFormData = new FormData();
+  priorityFormData.append("id", cardId);
+  priorityFormData.append("model_name", "Backlog");
+  priorityFormData.append("app_name", "app_organization");
+  priorityFormData.append("field_name", "priority");
+  priorityFormData.append("new_value", data.priority);
+  
+  // Create FormData for size
+  const sizeFormData = new FormData();
+  sizeFormData.append("id", cardId);
+  sizeFormData.append("model_name", "Backlog");
+  sizeFormData.append("app_name", "app_organization");
+  sizeFormData.append("field_name", "size");
+  sizeFormData.append("new_value", data.size);
+  
+  // Create FormData for release
+  const releaseFormData = new FormData();
+  releaseFormData.append("id", cardId);
+  releaseFormData.append("model_name", "Backlog");
+  releaseFormData.append("app_name", "app_organization");
+  releaseFormData.append("field_name", "release");
+  releaseFormData.append("new_value", data.release);
+  
+  // Create FormData for iteration
+  const iterationFormData = new FormData();
+  iterationFormData.append("id", cardId);
+  iterationFormData.append("model_name", "Backlog");
+  iterationFormData.append("app_name", "app_organization");
+  iterationFormData.append("field_name", "iteration");
+  iterationFormData.append("new_value", data.iteration);
+  
+  // Chain promises to update each field
+  return fetch("/common/common_ajax/ajax_update_app_model_field_value/", {
+    method: "POST",
+    headers: {
+      "X-CSRFToken": '{{ csrf_token }}'
+    },
+    body: titleFormData
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.error) {
+      console.error("Error updating title:", data.error);
+    }
+    
+    // Update description
+    return fetch("/common/common_ajax/ajax_update_app_model_field_value/", {
+      method: "POST",
+      headers: {
+        "X-CSRFToken": '{{ csrf_token }}'
+      },
+      body: descFormData
+    });
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.error) {
+      console.error("Error updating description:", data.error);
+    }
+    
+    // Update priority
+    return fetch("/common/common_ajax/ajax_update_app_model_field_value/", {
+      method: "POST",
+      headers: {
+        "X-CSRFToken": '{{ csrf_token }}'
+      },
+      body: priorityFormData
+    });
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.error) {
+      console.error("Error updating priority:", data.error);
+    }
+    
+    // Update size
+    return fetch("/common/common_ajax/ajax_update_app_model_field_value/", {
+      method: "POST",
+      headers: {
+        "X-CSRFToken": '{{ csrf_token }}'
+      },
+      body: sizeFormData
+    });
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.error) {
+      console.error("Error updating size:", data.error);
+    }
+    
+    // Update release
+    return fetch("/common/common_ajax/ajax_update_app_model_field_value/", {
+      method: "POST",
+      headers: {
+        "X-CSRFToken": '{{ csrf_token }}'
+      },
+      body: releaseFormData
+    });
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.error) {
+      console.error("Error updating release:", data.error);
+    }
+    
+    // Update iteration
+    return fetch("/common/common_ajax/ajax_update_app_model_field_value/", {
+      method: "POST",
+      headers: {
+        "X-CSRFToken": '{{ csrf_token }}'
+      },
+      body: iterationFormData
+    });
+  })
+  .then(response => response.json())
+  .then(data => {
+    if (data.error) {
+      console.error("Error updating iteration:", data.error);
+    }
+    
+    console.log("All card fields updated successfully");
+  })
+  .catch(error => {
+    console.error("Error updating card:", error);
+  });
+}
+</script>
 </body>
 </html>

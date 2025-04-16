@@ -1,0 +1,129 @@
+{% extends 'app_common/common_files/base_template.html' %}
+{% load static %}
+
+{% block content %}
+{% include 'app_common/common_files/navbar.html' %}
+{% include 'app_jivapms/mod_web/common_files/css.html' %}
+
+    <div class="content-wrapper">
+        <button class="toggle-btn" onclick="toggleSidebar()">
+            <i class="bi bi-list"></i>
+        </button>
+        <div class="sidebar" id="sidebar">
+            <!-- Scrollable menu section -->
+            <div class="sidebar-menu">
+                <a href="#" class="nav-link active" onclick="displayContent('listSiteContent', 'Site Administration')">
+                    <i class="bi bi-grid"></i>
+                    <span>Organization Administration</span>
+                </a>
+                <a href="#" class="nav-link active" onclick="displayContent('dashboardContent', 'Dashboard')">
+                    <i class="bi bi-collection"></i>
+                    <span>Dashboard</span>
+                </a>
+                {% if org_admin_org_id %}
+                <a href="{% url 'org_admin_dashboard' org_admin_org_id %}" class="nav-link active">
+                    <i class="bi bi-speedometer2"></i>
+                    <span>Advanced Dashboard</span>
+                </a>
+                {% endif %}
+                <a href="{% url 'list_organizations' %}" class="nav-link active">
+                    <i class="bi bi-calendar"></i>
+                    <span>Organizations</span>
+                </a>
+            </div>
+
+            <!-- Sticky settings section -->
+            <div class="settings">
+                <a href="#" class="nav-link" onclick="displayContent('settingsContent', 'Settings')">
+                    <i class="bi bi-gear"></i>
+                    <span>Settings</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="contentbar" id="contentbar">
+            <!-- <div id="loading">Loading...</div> -->
+            <div id="content">
+                <!-- Welcome Super Admin dashboard -->
+                <div id="listSiteContent" style="display: none;">
+                    <h1>Welcome Organization Admin: {{user.username}}</h1>
+                    <p>This is the main dashboard for this Jiva PMS site and installation, providing access to setup and configure the Organization.</p>
+                    
+                    <div class="row">
+                        <div class="col-md-4">
+                            <b>Configure this Organization</b>
+                        </div>
+                        <div class="col-md-4">
+                            <b>Value Stream Management</b>
+                        </div>
+                        <div class="col-md-4">
+                            <b>Create/Manage Project Admins</b>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <b>Review/Analyze Reports</b>
+                        </div>
+                        <div class="col-md-4">
+                            <b>Organization Management</b>
+                        </div>
+                        <div class="col-md-4">
+                            <b>Organization Admin Blogs</b>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="settingsContent" style="display: none;">
+                    <h1>Settings</h1>
+                    <p>Configure and adjust Site settings and preferences.</p>
+                </div>
+                <div id="dashboardContent" style="display: none;">
+                    <h1>OrgAdmin Dashboard</h1>
+                    <p>Information about the Organization.</p>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle-fill me-2"></i>
+                                <strong>New:</strong> Check out our improved <a href="{% url 'org_admin_dashboard' org_admin_org_id|default:'1' %}" class="alert-link">Organization Admin Dashboard</a> with advanced metrics and management tools!
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="row">
+                        <!-- Pie Chart for Organizations Overview -->
+                        <div class="col-md-4">
+                            <canvas id="organizationsChart" style="max-width: 400px;"></canvas>
+                        </div>
+
+                        <!-- Pie Chart for Projects Overview -->
+                        <div class="col-md-4">
+                            <canvas id="projectsChart" style="max-width: 400px;"></canvas>
+                        </div>
+
+                        <!-- Line Chart for Users Growth -->
+                        <div class="col-md-4">
+                            <canvas id="usersChart" style="max-width: 400px;"></canvas>
+                        </div>
+                    </div>
+                </div>      
+                
+                <div id="aboutContent" style="display: none;">
+                    <h1>About the Project</h1>
+                    <p>Information about the project's goals, team, and background.</p>
+                   
+                </div>               
+                <div id="profileContent" style="display: none;">
+                    <h1>User Profile</h1>
+                    <p>Manage your profile information and settings.</p>
+                </div>
+                <div id="logoutContent" style="display: none;">
+                    <h1>Logout</h1>
+                    <p>You have been logged out.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+{% include 'app_jivapms/mod_web/common_files/script.html' %}   
+<!-- End: Content -->
+{% endblock content %}

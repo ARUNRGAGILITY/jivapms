@@ -1,0 +1,200 @@
+
+{% extends 'app_common/common_files/base_template.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load custom_tags %}
+{% load app_web_my_filters %}
+{% load markdown_extras  %}
+{% load mptt_tags %}
+{% block content %}
+{% include 'app_common/common_files/navbar.html' %}
+{% include 'app_jivapms/mod_web/common_files/css.html' %}
+
+<!-- Begin: Content -->
+<div class="content-wrapper">
+    {% include 'app_scrum/mod_project/breadcrumb_projects.html' %}
+    
+    {% include 'app_organization/mod_project/sidebar_menu.html' %}
+    <form method="post">
+    {% csrf_token %}
+    <div class="contentbar mb-5" id="contentbar">
+        <div class="container-fluid">
+            <div class="row">
+                <div class="col col-md-12">           
+                    <!-- display -->
+                    
+                    <div class="row">
+                        <div class="col col-md-12">
+                            <div class="container-fluid-width">
+                                <div class="row pb-2">
+                                    <div class="col col-md-8">
+                                        <b class="h3">
+                                        <a href="{% url 'list_organizations' %}" style="text-decoration: none;">
+                                            {{organization}}
+                                        </a>
+                                        </b>
+                                        &nbsp;&nbsp;
+                                        Project List
+                                    </div>
+                                    <div class="col col-md-4 text-end">
+                                        <span class="display_count">{{objects_count}} project(s)</span>
+                                        &nbsp;&nbsp;
+                                        <a href="{% url 'create_project' organization_id  %}" 
+                                        class="btn btn-sm btn-success"><b>+ Create Project</b></a>
+                                        
+                                        &nbsp;&nbsp;
+                                        <a href="{% url 'list_organizations' %}" class="btn btn-primary">
+                                            <i class="bi bi-arrow-left"></i>
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                            <form action="" method="POST">
+                            {% csrf_token %}
+                            <table class="table table-bordered sortable_table">
+                                <thead>
+                                    <tr>
+                                        <th width="2%"><i class="bi bi-grip-vertical"></i></th>
+                                        <th width="2%">
+                                            <input type="checkbox" name="select_all" id="select_all" onclick='checkUncheck(this)'>
+                                        </th>
+                                        <th width="2%">#</th>
+                                        <th>Project</th>
+                                        <th width="20%">Description</th>
+                                        <th width="10%">Configure</th>
+                                        <th width="50%">                                    
+                                            Actions
+                                            &nbsp;&nbsp;
+                                            <select name="pagination" id="paginationselect">
+                                                <option value="none" {% if selected_pagination == 'none' %}selected{% endif %}>-Page-</option>
+                                                {% for option in pagination_options %}
+                                                    <option value="{{ option }}" {% if show_all|lower == option|lower|stringformat:"s" %}selected{% endif %}>
+                                                        {{ option|capfirst }}
+                                                    </option>
+                                                {% endfor %}
+                                            </select>
+                                            
+                                            &nbsp;&nbsp;
+                                            <b>Bulk:</b>&nbsp;&nbsp; 
+                                            <select name="bulk_operations" id="bulk_operations"  onchange="this.form.submit()">
+                                                <option value="none" {% if 'none' in selected_bulk_operations %}selected{% endif %}>-- Ops --</option>
+                                                <option value="bulk_restore" {% if 'bulk_restore' in selected_bulk_operations %}selected{% endif %}>Restore</option>
+                                                <option value="bulk_erase" {% if 'bulk_erase' in selected_bulk_operations %}selected{% endif %}>Erase</option>
+                                            </select>                                                         
+                                        </th>
+                                    </tr>
+                                </thead>
+
+                                <tbody  id="sortable" class="sortable-tbody">
+                                    {% for tobject in page_obj %}
+                                    <tr id="{{tobject.id}}_{{ forloop.counter }}" class="sortable-row display_tr">
+                                        <td class="drag-handle">
+                                            <i class="bi bi-grip-vertical"></i>
+                                        </td>
+                                        <td width="2%">
+                                            <input type="checkbox" name="selected_item" id="selected_item_ids" value="{{tobject.id}}">
+                                        </td>
+                                        <td>{{forloop.counter}}</td>
+                                        <td width="20%"><strong>{{tobject.name}}</strong></td>
+                                        <td width="">{% if tobject.description != None %}{{tobject.description}}{% endif %}</td>
+                                        <td width="20%">
+                                        
+                                        </td>
+                                        <td width="50%">
+                                            <a href="{% url 'view_project' organization_id  tobject.id  %}"
+                                            class="btn btn-sm btn-primary"><i class="bi bi-eye"></i></a>
+                                            &nbsp;&nbsp;
+                                            <a href="{% url 'edit_project' organization_id  tobject.id %}"
+                                            class="btn btn-sm btn-warning"><i class="bi bi-pencil-square"></i></a>
+                                            &nbsp;&nbsp;
+                                            <a href="{% url 'permanent_deletion_project' organization_id  tobject.id %}"
+                                            class="btn btn-sm btn-danger"><i class="bi bi-x-square"></i></a>
+                                            &nbsp;&nbsp;
+                                            <a href="{% url 'restore_project' organization_id  tobject.id %}"
+                                            class="btn btn-sm btn-success"><i class="bi bi-x-square"></i></a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                                    <tr>
+                                        <td colspan="7">
+                                            {% include 'app_common/common_files/pagination.html' %}
+                                        </td>
+                                    </tr>                        
+                            </table>
+                        <!-- end display -->
+                </div>
+            </div>        
+        </div>
+    </div>
+</div>
+</form>
+<script>
+// Select all / checkbox
+function checkUncheck(checkBox) {
+    get = document.getElementsByName('selected_item');
+    for(var i=0; i<get.length; i++) {
+        get[i].checked = checkBox.checked;
+    }
+}
+</script>
+
+<script>
+    // pagination select
+document.addEventListener("DOMContentLoaded", function () {
+  const redirectSelect = document.getElementById("paginationselect");
+  redirectSelect.addEventListener("change", function () {
+    const selectedValue = redirectSelect.value;
+    
+    // Redirect the user based on the selected value
+    if (selectedValue === "5") {
+      window.location.href = "{% url 'list_projects' organization_id %}?page=1&all=5";
+    } else if (selectedValue === "10") {
+      window.location.href = "{% url 'list_projects' organization_id %}?page=1&all=10";
+    } else if (selectedValue === "15") {
+      window.location.href = "{% url 'list_projects' organization_id %}?page=1&all=15";
+    } else if (selectedValue === "25") {
+      window.location.href = "{% url 'list_projects' organization_id  %}?page=1&all=25";
+    } else if (selectedValue === "50") {
+      window.location.href = "{% url 'list_projects' organization_id %}?page=1&all=50";
+    } else if (selectedValue === "100") {
+      window.location.href = "{% url 'list_projects' organization_id %}?page=1&all=100";
+    } else if (selectedValue === "all") {
+      window.location.href = "{% url 'list_projects' organization_id %}?page=1&all=all";
+    } 
+    // Add more conditions for other options as needed
+  });
+});
+</script>
+
+<script>
+    $(".sortable_table").find("tbody").sortable({
+      items: "> tr",
+      handle: ".drag-handle",
+      appendTo: "parent",
+      cancel: "[contenteditable]",
+      update: function(event, ui) {
+              var serialOrder = $('#sortable').sortable('serialize');
+              var arrayOrder = $('#sortable').sortable('toArray');
+              //alert(arrayOrder);
+              $.ajax({
+                url: '/common/common_ajax/ajax_update_model_list_sorted/',
+                type: 'POST',
+                data : {
+                  'csrfmiddlewaretoken': "{{ csrf_token }}",
+                  'model_name': 'Project',
+                  'app_name': 'app_scrum',
+                  'sorted_list_data': JSON.stringify(arrayOrder),
+                  
+                },
+                dataType: 'json',
+                success: function(data) {
+                  console.log(data);
+                }
+              })
+            }
+    });
+    </script>
+
+<!-- End: Content -->
+{% endblock content %}

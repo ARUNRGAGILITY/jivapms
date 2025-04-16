@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block extra_css %}
+<style>
+    .navbar {
+        background-color: #0d6efd; /* Bootstrap primary blue */
+    }
+    
+    .navbar-brand img {
+        height: 40px;
+    }
+    
+    .navbar .navbar-nav .nav-link {
+        color: rgba(255, 255, 255, 0.85);
+    }
+    
+    .navbar .navbar-nav .nav-link:hover {
+        color: white;
+    }
+    
+    .navbar .dropdown-menu {
+        border-radius: 0.25rem;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+    
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-right: 8px;
+    }
+    
+    .dropdown-item i {
+        width: 20px;
+        margin-right: 8px;
+        text-align: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-dark sticky-top mb-4">
+    <div class="container">
+        <!-- Left side logo -->
+        <a class="navbar-brand" href="/">
+            <img src="/static/images/logo.png" alt="Company Logo">
+        </a>
+        
+        <!-- Mobile toggle button -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" 
+                aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <!-- Navbar content -->
+        <div class="collapse navbar-collapse" id="navbarContent">
+            <!-- Main navigation links (on the right) -->
+            <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link active" aria-current="page" href="/">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/dashboard">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/projects">Projects</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/reports">Reports</a>
+                </li>
+                
+                <!-- User dropdown menu -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" 
+                       role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <img src="/static/images/user-avatar.jpg" alt="User" class="user-avatar">
+                        <span>{{ user.name }}</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <li><a class="dropdown-item" href="/profile"><i class="bi bi-person"></i> Profile</a></li>
+                        <li><a class="dropdown-item" href="/change-password"><i class="bi bi-key"></i> Change Password</a></li>
+                        <li><a class="dropdown-item" href="/my-roles"><i class="bi bi-person-badge"></i> My Roles</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/logout"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<!-- Page Content Container -->
+<div class="container">
+    {% block page_content %}
+    <!-- Your page-specific content goes here -->
+    {% endblock %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Any additional JavaScript for the navbar can go here
+    $(document).ready(function() {
+        // Example: Highlight active menu item based on current URL
+        const currentPath = window.location.pathname;
+        $('.navbar-nav .nav-link').each(function() {
+            const linkPath = $(this).attr('href');
+            if (linkPath !== '/' && currentPath.startsWith(linkPath)) {
+                $(this).addClass('active').attr('aria-current', 'page');
+                $(this).closest('.nav-item').siblings().find('.nav-link').removeClass('active').removeAttr('aria-current');
+            } else if (linkPath === '/' && currentPath === '/') {
+                $(this).addClass('active').attr('aria-current', 'page');
+            }
+        });
+    });
+</script>
+{% endblock %}

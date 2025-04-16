@@ -25,7 +25,9 @@
                 <li class="nav-item">
                     <a class="nav-link {% if page == 'index' %}active{% endif %} " href="/">Home</a>
                 </li>
-               
+                <li class="nav-item">
+                    <a class="nav-link " href="{% url 'todo_app:my_todos_list' %}">My To Dos</a>
+                </li>
                 {% if role_id and  org_id %}
                 <li class="nav-item ms-2 me-2">
                     <a class="nav-link {% if page == 'index' %}active{% endif %} " 
@@ -61,8 +63,11 @@
                     </a>
                     <ul class="dropdown-menu" aria-labelledby="navbarDropdown">
                         <li><a class="dropdown-item" href="{% url 'view_my_role' %}">My Role(s)</a></li>
+                        {% if user.is_authenticated and org_admin_org_id %}
+                            <li><a class="dropdown-item" href="{% url 'org_admin_dashboard' org_admin_org_id %}">Org Admin Dashboard</a></li>
+                        {% endif %}
                         <li><a class="dropdown-item" href="{% url 'change_password' %}">Change Password</a></li>
-                        <li><a class="dropdown-item" href="{% url 'display_profile' %}">Profile</a></li>
+                        <li><a class="dropdown-item" href="{% url 'todo_app:account_profile' %}">Profile</a></li>
                         <li><a class="dropdown-item" href="{% url 'logout' %}">Logout</a></li>
                     </ul>
                 </li>

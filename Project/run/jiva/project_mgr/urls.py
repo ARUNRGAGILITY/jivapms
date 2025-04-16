@@ -17,6 +17,10 @@ urlpatterns = [
     # organization
     path('org/', include('app_organization.mod_app.urls_app')),
     
+    # organization blogs
+    path('org_blog/', include('app_org_blog.mod_app.urls_app')),
+    path('scrum/', include('app_scrum.mod_app.urls_app')),
+
     # Analytics
     path('infos/', include('app_analytics.mod_app.urls_app')),
     
@@ -27,6 +31,11 @@ urlpatterns = [
     # system
     #path('system/', include('app_system.mod_app.urls_app')),
     path('user/', include('app_user.urls')),
+
+    # for the modern UIUX
+    path('usermgmt/', include('app_usermgmt.urls')),
+    path('todos/', include('app_todos.urls')),
+
     # administration
     path('admin/', admin.site.urls),    
 ]

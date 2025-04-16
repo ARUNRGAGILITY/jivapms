@@ -28,7 +28,17 @@
                                My Role(s) :: {{user.username}}</h2>
                         </div>
                         <div class="col col-md-4 text-end">
-                            
+                            {% if user.is_authenticated %}
+                                {% for member_info in user_roles_data %}
+                                    {% for role in member_info.roles %}
+                                        {% if role.role_name == 'Org Admin' %}
+                                            <a href="{% url 'org_admin_dashboard' role.org_id %}" class="btn btn-primary">
+                                                <i class="bi bi-speedometer2"></i> Org Admin Dashboard
+                                            </a>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endfor %}
+                            {% endif %}
                         </div>
                     </div>
                 </div>

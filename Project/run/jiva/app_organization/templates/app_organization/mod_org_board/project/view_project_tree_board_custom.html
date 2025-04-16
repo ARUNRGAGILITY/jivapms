@@ -1564,18 +1564,7 @@ function refreshKanbanBoard() {
 
 // Handle swimlane filter change
 function setupSwimLaneFilter() {
-    document.getElementById('parentFilter').addEventListener('change', function () {
-        let selectedValue = this.value;
-        let url = new URL(window.location.href);
-
-        if (url.searchParams.has('swimlane_id')) {
-            url.searchParams.set('swimlane_id', selectedValue);
-        } else {
-            url.searchParams.append('swimlane_id', selectedValue);
-        }
-
-        window.location.href = url.toString();
-    });
+   
 }
 
 // Make elements editable

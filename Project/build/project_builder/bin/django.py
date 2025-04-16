@@ -136,6 +136,7 @@ def create_mod(project_name, app_name, mod_name, verbose):
     
     create_empty_file(os.path.join(mod_dir, "__init__.py"))
     create_empty_file(os.path.join(mod_dir, f"urls_{mod_name}.py"))
+    fill_empty_urls_file(os.path.join(mod_dir, f"urls_{mod_name}.py"))
     create_empty_file(os.path.join(mod_dir, f"models_{mod_name}.py"))
     create_empty_file(os.path.join(mod_dir, f"views_{mod_name}.py"))
     create_empty_file(os.path.join(mod_dir, f"forms_{mod_name}.py"))
@@ -146,7 +147,12 @@ def create_mod(project_name, app_name, mod_name, verbose):
     generate_urls(app_dir, "urls_app")
     
 
-
+def fill_empty_urls_file(urls_file_path):    
+    with open(urls_file_path, 'w') as urls_file:
+        urls_file.write("from django.urls import include, path\n\n")
+        urls_file.write("urlpatterns = [\n")
+        urls_file.write("]\n")
+    print(f"Created empty URLs file: {urls_file_path}")
     
 #
 # UPDATE APP URLS_APP after module finalizations

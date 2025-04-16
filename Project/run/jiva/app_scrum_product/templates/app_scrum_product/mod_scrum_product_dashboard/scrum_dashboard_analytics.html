@@ -1,0 +1,903 @@
+{% extends 'app_common/common_files/base_template.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load custom_tags %}
+
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    /* Custom styles for Analytics Dashboard */
+    :root {
+        --primary-color: #3498db;
+        --secondary-color: #2ecc71;
+        --warning-color: #f39c12;
+        --danger-color: #e74c3c;
+        --dark-color: #2c3e50;
+        --light-color: #ecf0f1;
+        --violet-color: #9b59b6;
+        --turquoise-color: #1abc9c;
+    }
+    
+    .analytics-header {
+        background: linear-gradient(135deg, #9b59b6, #8e44ad);
+        color: white;
+        padding: 25px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .analytics-title {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    
+    .analytics-subtitle {
+        opacity: 0.9;
+    }
+    
+    .analytics-card {
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        background-color: white;
+        transition: transform 0.2s, box-shadow 0.2s;
+        height: 100%;
+    }
+    
+    .analytics-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .card-header {
+        background-color: white;
+        border-bottom: 1px solid #eee;
+        padding: 15px 20px;
+        font-weight: 600;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+    }
+    
+    .card-header h5 {
+        margin: 0;
+        font-size: 1.1rem;
+    }
+    
+    .card-body {
+        padding: 20px;
+    }
+    
+    .metric-card {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+    }
+    
+    .metric-title {
+        font-weight: 600;
+        color: #6c757d;
+        font-size: 14px;
+        margin-bottom: 5px;
+    }
+    
+    .metric-value {
+        font-size: 24px;
+        font-weight: 700;
+        color: #343a40;
+    }
+    
+    .metric-change {
+        font-size: 13px;
+        padding: 3px 8px;
+        border-radius: 12px;
+        margin-left: 8px;
+    }
+    
+    .metric-change.positive {
+        background-color: rgba(46, 204, 113, 0.2);
+        color: #27ae60;
+    }
+    
+    .metric-change.negative {
+        background-color: rgba(231, 76, 60, 0.2);
+        color: #c0392b;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 250px;
+        width: 100%;
+    }
+    
+    .filter-bar {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .nav-tabs {
+        border-bottom: 1px solid #dee2e6;
+        margin-bottom: 20px;
+    }
+    
+    .nav-tabs .nav-link {
+        border: none;
+        border-bottom: 3px solid transparent;
+        border-radius: 0;
+        font-weight: 500;
+        color: #6c757d;
+        padding: 10px 15px;
+        margin-right: 10px;
+    }
+    
+    .nav-tabs .nav-link:hover {
+        border-color: transparent;
+        color: #9b59b6;
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: #9b59b6;
+        border-color: #9b59b6;
+        background-color: transparent;
+    }
+    
+    .metric-info-icon {
+        color: #6c757d;
+        cursor: pointer;
+    }
+    
+    .badge-metric {
+        font-size: 12px;
+        padding: 4px 8px;
+        border-radius: 12px;
+        background-color: #f1f3f5;
+        color: #495057;
+        margin-right: 5px;
+    }
+    
+    /* Media queries for responsiveness */
+    @media (max-width: 768px) {
+        .chart-container {
+            height: 200px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% include 'app_common/common_files/navbar.html' %}
+
+<div class="content-wrapper">
+    <div class="container-fluid">
+        <!-- Analytics Header -->
+        <div class="analytics-header">
+            <div class="row">
+                <div class="col-md-8">
+                    <h1 class="analytics-title">Scrum Analytics Dashboard</h1>
+                    <p class="analytics-subtitle">Detailed metrics and insights for all scrum products</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="{% url 'scrum_products_dashboard' %}" class="btn btn-outline-light">
+                        <i class="bi bi-arrow-left"></i> Back to Dashboard
+                    </a>
+                    <div class="dropdown d-inline-block ms-2">
+                        <button class="btn btn-light dropdown-toggle" type="button" id="exportDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-download"></i> Export
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="exportDropdown">
+                            <li><a class="dropdown-item" href="#">PDF Report</a></li>
+                            <li><a class="dropdown-item" href="#">Excel Data</a></li>
+                            <li><a class="dropdown-item" href="#">Schedule Reports</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Filter Bar -->
+        <div class="filter-bar">
+            <div class="row">
+                <div class="col-md-3 mb-2">
+                    <label for="dateRangeFilter" class="form-label">Date Range</label>
+                    <select class="form-select form-select-sm" id="dateRangeFilter">
+                        <option value="last_30_days" selected>Last 30 days</option>
+                        <option value="last_quarter">Last Quarter</option>
+                        <option value="last_6_months">Last 6 months</option>
+                        <option value="year_to_date">Year to date</option>
+                        <option value="custom">Custom range</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label for="productFilter" class="form-label">Product</label>
+                    <select class="form-select form-select-sm" id="productFilter">
+                        <option value="all" selected>All Products</option>
+                        <option value="customer_portal">Customer Portal</option>
+                        <option value="mobile_app">Mobile App</option>
+                        <option value="api_gateway">API Gateway</option>
+                        <option value="admin_dashboard">Admin Dashboard</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label for="teamFilter" class="form-label">Team</label>
+                    <select class="form-select form-select-sm" id="teamFilter">
+                        <option value="all" selected>All Teams</option>
+                        <option value="team_a">Team Alpha</option>
+                        <option value="team_b">Team Beta</option>
+                        <option value="team_c">Team Gamma</option>
+                    </select>
+                </div>
+                <div class="col-md-3 mb-2">
+                    <label for="metricFilter" class="form-label">Metrics View</label>
+                    <select class="form-select form-select-sm" id="metricFilter">
+                        <option value="all" selected>All Metrics</option>
+                        <option value="velocity">Velocity Metrics</option>
+                        <option value="quality">Quality Metrics</option>
+                        <option value="productivity">Productivity Metrics</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Key Metrics Section -->
+        <div class="row mb-4">
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="metric-card">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-speedometer2 me-2" style="font-size: 20px; color: var(--primary-color);"></i>
+                        <div class="metric-title">Avg. Sprint Velocity</div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div class="metric-value">53</div>
+                        <div class="metric-change positive">+8%</div>
+                    </div>
+                    <div class="small text-muted mt-1">Points per sprint</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="metric-card">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-check2-all me-2" style="font-size: 20px; color: var(--secondary-color);"></i>
+                        <div class="metric-title">Story Completion Rate</div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div class="metric-value">87%</div>
+                        <div class="metric-change positive">+5%</div>
+                    </div>
+                    <div class="small text-muted mt-1">Current quarter</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="metric-card">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-bug me-2" style="font-size: 20px; color: var(--danger-color);"></i>
+                        <div class="metric-title">Defect Density</div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div class="metric-value">2.3</div>
+                        <div class="metric-change negative">+0.5</div>
+                    </div>
+                    <div class="small text-muted mt-1">Defects per 100 story points</div>
+                </div>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-3">
+                <div class="metric-card">
+                    <div class="d-flex align-items-center mb-2">
+                        <i class="bi bi-calendar-check me-2" style="font-size: 20px; color: var(--warning-color);"></i>
+                        <div class="metric-title">On-Time Delivery</div>
+                    </div>
+                    <div class="d-flex align-items-center">
+                        <div class="metric-value">92%</div>
+                        <div class="metric-change positive">+3%</div>
+                    </div>
+                    <div class="small text-muted mt-1">Last 5 releases</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Analytics Content -->
+        <div class="row">
+            <!-- Velocity Chart -->
+            <div class="col-lg-6 mb-4">
+                <div class="analytics-card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-speedometer2 me-2"></i> Sprint Velocity Trends</h5>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="velocityDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                Options
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="velocityDropdown">
+                                <li><a class="dropdown-item" href="#">Show Forecast</a></li>
+                                <li><a class="dropdown-item" href="#">Show Trendline</a></li>
+                                <li><a class="dropdown-item" href="#">Download Data</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="velocityChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Story Completion Rate -->
+            <div class="col-lg-6 mb-4">
+                <div class="analytics-card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-check2-square me-2"></i> Story Completion Rate</h5>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="completionDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                Options
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="completionDropdown">
+                                <li><a class="dropdown-item" href="#">Show Target</a></li>
+                                <li><a class="dropdown-item" href="#">By Sprint</a></li>
+                                <li><a class="dropdown-item" href="#">Download Data</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="completionRateChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Defect Trends -->
+            <div class="col-lg-6 mb-4">
+                <div class="analytics-card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-bug me-2"></i> Defect Trends</h5>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="defectsDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                Options
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="defectsDropdown">
+                                <li><a class="dropdown-item" href="#">By Severity</a></li>
+                                <li><a class="dropdown-item" href="#">By Component</a></li>
+                                <li><a class="dropdown-item" href="#">Download Data</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="defectTrendsChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Resource Allocation -->
+            <div class="col-lg-6 mb-4">
+                <div class="analytics-card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-diagram-3 me-2"></i> Resource Allocation</h5>
+                        <div class="dropdown">
+                            <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="resourceDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                                Options
+                            </button>
+                            <ul class="dropdown-menu" aria-labelledby="resourceDropdown">
+                                <li><a class="dropdown-item" href="#">By Role</a></li>
+                                <li><a class="dropdown-item" href="#">By Team</a></li>
+                                <li><a class="dropdown-item" href="#">Download Data</a></li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="resourceAllocationChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Additional Metrics -->
+        <div class="analytics-card mb-4">
+            <div class="card-header">
+                <h5><i class="bi bi-clipboard-data me-2"></i> Additional Metrics</h5>
+            </div>
+            <div class="card-body">
+                <ul class="nav nav-tabs" id="metricsTab" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="efficiency-tab" data-bs-toggle="tab" data-bs-target="#efficiency" type="button" role="tab" aria-controls="efficiency" aria-selected="true">
+                            Efficiency
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="quality-tab" data-bs-toggle="tab" data-bs-target="#quality" type="button" role="tab" aria-controls="quality" aria-selected="false">
+                            Quality
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="flow-tab" data-bs-toggle="tab" data-bs-target="#flow" type="button" role="tab" aria-controls="flow" aria-selected="false">
+                            Flow
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="predictability-tab" data-bs-toggle="tab" data-bs-target="#predictability" type="button" role="tab" aria-controls="predictability" aria-selected="false">
+                            Predictability
+                        </button>
+                    </li>
+                </ul>
+                
+                <div class="tab-content p-3" id="metricsTabContent">
+                    <!-- Efficiency Tab -->
+                    <div class="tab-pane fade show active" id="efficiency" role="tabpanel" aria-labelledby="efficiency-tab">
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <div class="metric-card h-100">
+                                    <div class="d-flex justify-content-between">
+                                        <div class="metric-title">Cycle Time</div>
+                                        <i class="bi bi-info-circle metric-info-icon" data-bs-toggle="tooltip" title="Average time from start to completion of a story"></i>
+                                    </div>
+                                    <div class="metric-value">5.3 days</div>
+                                    <div class="small text-muted mt-1">Target: <5 days</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="metric-card h-100">
+                                    <div class="d-flex justify-content-between">
+                                        <div class="metric-title">Lead Time</div>
+                                        <i class="bi bi-info-circle metric-info-icon" data-bs-toggle="tooltip" title="Time from ticket creation to deployment"></i>
+                                    </div>
+                                    <div class="metric-value">8.7 days</div>
+                                    <div class="small text-muted mt-1">Target: <10 days</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="metric-card h-100">
+                                    <div class="d-flex justify-content-between">
+                                        <div class="metric-title">Work in Progress</div>
+                                        <i class="bi bi-info-circle metric-info-icon" data-bs-toggle="tooltip" title="Average number of stories in progress"></i>
+                                    </div>
+                                    <div class="metric-value">4.2</div>
+                                    <div class="small text-muted mt-1">Target: <5 per developer</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="metric-card h-100">
+                                    <div class="d-flex justify-content-between">
+                                        <div class="metric-title">Sprint Focus</div>
+                                        <i class="bi bi-info-circle metric-info-icon" data-bs-toggle="tooltip" title="Percentage of sprint time spent on planned work"></i>
+                                    </div>
+                                    <div class="metric-value">78%</div>
+                                    <div class="small text-muted mt-1">Target: >80%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Quality Tab -->
+                    <div class="tab-pane fade" id="quality" role="tabpanel" aria-labelledby="quality-tab">
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <div class="metric-card h-100">
+                                    <div class="d-flex justify-content-between">
+                                        <div class="metric-title">Code Coverage</div>
+                                        <i class="bi bi-info-circle metric-info-icon" data-bs-toggle="tooltip" title="Percentage of code covered by tests"></i>
+                                    </div>
+                                    <div class="metric-value">83%</div>
+                                    <div class="small text-muted mt-1">Target: >80%</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="metric-card h-100">
+                                    <div class="d-flex justify-content-between">
+                                        <div class="metric-title">Defect Leakage</div>
+                                        <i class="bi bi-info-circle metric-info-icon" data-bs-toggle="tooltip" title="Defects found in production vs. total defects"></i>
+                                    </div>
+                                    <div class="metric-value">8%</div>
+                                    <div class="small text-muted mt-1">Target: <10%</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="metric-card h-100">
+                                    <div class="d-flex justify-content-between">
+                                        <div class="metric-title">Technical Debt Ratio</div>
+                                        <i class="bi bi-info-circle metric-info-icon" data-bs-toggle="tooltip" title="Time spent on refactoring vs. new features"></i>
+                                    </div>
+                                    <div class="metric-value">12%</div>
+                                    <div class="small text-muted mt-1">Target: <15%</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="metric-card h-100">
+                                    <div class="d-flex justify-content-between">
+                                        <div class="metric-title">Defect Resolution Time</div>
+                                        <i class="bi bi-info-circle metric-info-icon" data-bs-toggle="tooltip" title="Average time to fix a defect"></i>
+                                    </div>
+                                    <div class="metric-value">2.3 days</div>
+                                    <div class="small text-muted mt-1">Target: <3 days</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Flow Tab -->
+                    <div class="tab-pane fade" id="flow" role="tabpanel" aria-labelledby="flow-tab">
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <div class="metric-card h-100">
+                                    <div class="d-flex justify-content-between">
+                                        <div class="metric-title">Flow Efficiency</div>
+                                        <i class="bi bi-info-circle metric-info-icon" data-bs-toggle="tooltip" title="Active time vs. waiting time"></i>
+                                    </div>
+                                    <div class="metric-value">36%</div>
+                                    <div class="small text-muted mt-1">Target: >40%</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="metric-card h-100">
+                                    <div class="d-flex justify-content-between">
+                                        <div class="metric-title">Throughput</div>
+                                        <i class="bi bi-info-circle metric-info-icon" data-bs-toggle="tooltip" title="Stories completed per week"></i>
+                                    </div>
+                                    <div class="metric-value">12.5</div>
+                                    <div class="small text-muted mt-1">Target: >10</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="metric-card h-100">
+                                    <div class="d-flex justify-content-between">
+                                        <div class="metric-title">Story Aging</div>
+                                        <i class="bi bi-info-circle metric-info-icon" data-bs-toggle="tooltip" title="Average age of stories in backlog"></i>
+                                    </div>
+                                    <div class="metric-value">32 days</div>
+                                    <div class="small text-muted mt-1">Target: <45 days</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="metric-card h-100">
+                                    <div class="d-flex justify-content-between">
+                                        <div class="metric-title">Blocker Resolution Time</div>
+                                        <i class="bi bi-info-circle metric-info-icon" data-bs-toggle="tooltip" title="Average time to resolve blockers"></i>
+                                    </div>
+                                    <div class="metric-value">1.2 days</div>
+                                    <div class="small text-muted mt-1">Target: <1 day</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Predictability Tab -->
+                    <div class="tab-pane fade" id="predictability" role="tabpanel" aria-labelledby="predictability-tab">
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <div class="metric-card h-100">
+                                    <div class="d-flex justify-content-between">
+                                        <div class="metric-title">Commitment Reliability</div>
+                                        <i class="bi bi-info-circle metric-info-icon" data-bs-toggle="tooltip" title="Delivered vs committed story points"></i>
+                                    </div>
+                                    <div class="metric-value">94%</div>
+                                    <div class="small text-muted mt-1">Target: >90%</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="metric-card h-100">
+                                    <div class="d-flex justify-content-between">
+                                        <div class="metric-title">Estimation Accuracy</div>
+                                        <i class="bi bi-info-circle metric-info-icon" data-bs-toggle="tooltip" title="Actual vs estimated effort"></i>
+                                    </div>
+                                    <div class="metric-value">86%</div>
+                                    <div class="small text-muted mt-1">Target: >85%</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="metric-card h-100">
+                                    <div class="d-flex justify-content-between">
+                                        <div class="metric-title">Sprint Deviation</div>
+                                        <i class="bi bi-info-circle metric-info-icon" data-bs-toggle="tooltip" title="Changes during sprint as % of sprint"></i>
+                                    </div>
+                                    <div class="metric-value">12%</div>
+                                    <div class="small text-muted mt-1">Target: <15%</div>
+                                </div>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <div class="metric-card h-100">
+                                    <div class="d-flex justify-content-between">
+                                        <div class="metric-title">Release Predictability</div>
+                                        <i class="bi bi-info-circle metric-info-icon" data-bs-toggle="tooltip" title="On-time releases vs total releases"></i>
+                                    </div>
+                                    <div class="metric-value">92%</div>
+                                    <div class="small text-muted mt-1">Target: >90%</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Metrics Glossary -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="analytics-card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-book me-2"></i> Metrics Glossary</h5>
+                        <button class="btn btn-sm btn-outline-primary" type="button" data-bs-toggle="collapse" data-bs-target="#glossaryCollapse" aria-expanded="false" aria-controls="glossaryCollapse">
+                            Toggle Glossary
+                        </button>
+                    </div>
+                    <div class="collapse" id="glossaryCollapse">
+                        <div class="card-body">
+                            <div class="row">
+                                <div class="col-md-4 mb-3">
+                                    <h6>Velocity & Throughput</h6>
+                                    <div class="mb-3">
+                                        <span class="badge-metric">Velocity</span>
+                                        <small class="text-muted">Story points completed per sprint</small>
+                                    </div>
+                                    <div class="mb-3">
+                                        <span class="badge-metric">Throughput</span>
+                                        <small class="text-muted">Number of stories completed per time period</small>
+                                    </div>
+                                    <div class="mb-3">
+                                        <span class="badge-metric">Cycle Time</span>
+                                        <small class="text-muted">Time from work start to completion</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <h6>Quality Metrics</h6>
+                                    <div class="mb-3">
+                                        <span class="badge-metric">Defect Density</span>
+                                        <small class="text-muted">Defects per unit of work</small>
+                                    </div>
+                                    <div class="mb-3">
+                                        <span class="badge-metric">Defect Leakage</span>
+                                        <small class="text-muted">Bugs found in production vs total</small>
+                                    </div>
+                                    <div class="mb-3">
+                                        <span class="badge-metric">Technical Debt</span>
+                                        <small class="text-muted">Time spent on refactoring vs new features</small>
+                                    </div>
+                                </div>
+                                <div class="col-md-4 mb-3">
+                                    <h6>Predictability Metrics</h6>
+                                    <div class="mb-3">
+                                        <span class="badge-metric">Commitment Reliability</span>
+                                        <small class="text-muted">Delivered vs committed story points</small>
+                                    </div>
+                                    <div class="mb-3">
+                                        <span class="badge-metric">Estimation Accuracy</span>
+                                        <small class="text-muted">Actual vs estimated effort</small>
+                                    </div>
+                                    <div class="mb-3">
+                                        <span class="badge-metric">Release Predictability</span>
+                                        <small class="text-muted">On-time releases vs total releases</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Chart colors
+    const chartColors = [
+        'rgba(52, 152, 219, 0.7)',  // Blue
+        'rgba(46, 204, 113, 0.7)',  // Green
+        'rgba(243, 156, 18, 0.7)',  // Orange
+        'rgba(231, 76, 60, 0.7)',   // Red
+        'rgba(155, 89, 182, 0.7)',  // Purple
+        'rgba(26, 188, 156, 0.7)'   // Turquoise
+    ];
+    
+    // Sprint Velocity Chart
+    const velocityCtx = document.getElementById('velocityChart').getContext('2d');
+    new Chart(velocityCtx, {
+        type: 'line',
+        data: {
+            labels: {{ sprint_velocity_data.labels|safe }},
+            datasets: [
+                {% for dataset in sprint_velocity_data.datasets %}
+                {
+                    label: '{{ dataset.label }}',
+                    data: {{ dataset.data|safe }},
+                    backgroundColor: chartColors[{{ forloop.counter0 }}].replace('0.7', '0.1'),
+                    borderColor: chartColors[{{ forloop.counter0 }}],
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: false
+                }{% if not forloop.last %},{% endif %}
+                {% endfor %}
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Story Points'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Month'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top'
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
+            }
+        }
+    });
+    
+    // Story Completion Rate Chart
+    const completionRateCtx = document.getElementById('completionRateChart').getContext('2d');
+    new Chart(completionRateCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ story_completion_rate.labels|safe }},
+            datasets: [
+                {
+                    label: 'Planned',
+                    data: {{ story_completion_rate.planned|safe }},
+                    backgroundColor: chartColors[0],
+                    borderColor: chartColors[0].replace('0.7', '1'),
+                    borderWidth: 1
+                },
+                {
+                    label: 'Completed',
+                    data: {{ story_completion_rate.completed|safe }},
+                    backgroundColor: chartColors[1],
+                    borderColor: chartColors[1].replace('0.7', '1'),
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Story Points'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Product'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top'
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
+            }
+        }
+    });
+    
+    // Defect Trends Chart
+    const defectTrendsCtx = document.getElementById('defectTrendsChart').getContext('2d');
+    new Chart(defectTrendsCtx, {
+        type: 'line',
+        data: {
+            labels: {{ defect_trends.labels|safe }},
+            datasets: [
+                {
+                    label: 'Defects Found',
+                    data: {{ defect_trends.found|safe }},
+                    backgroundColor: chartColors[3].replace('0.7', '0.1'),
+                    borderColor: chartColors[3],
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'Defects Resolved',
+                    data: {{ defect_trends.resolved|safe }},
+                    backgroundColor: chartColors[1].replace('0.7', '0.1'),
+                    borderColor: chartColors[1],
+                    borderWidth: 2,
+                    tension: 0.4,
+                    fill: true
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Number of Defects'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Month'
+                    }
+                }
+            },
+            plugins: {
+                legend: {
+                    position: 'top'
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
+            }
+        }
+    });
+    
+    // Resource Allocation Chart
+    const resourceAllocationCtx = document.getElementById('resourceAllocationChart').getContext('2d');
+    new Chart(resourceAllocationCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ resource_allocation.labels|safe }},
+            datasets: [{
+                data: {{ resource_allocation.data|safe }},
+                backgroundColor: chartColors,
+                borderColor: chartColors.map(color => color.replace('0.7', '1')),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right',
+                    labels: {
+                        padding: 20
+                    }
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.raw || 0;
+                            return label + ': ' + value + '%';
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    });
+});
+</script>
+{% endblock %}

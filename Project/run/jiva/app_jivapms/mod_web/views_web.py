@@ -86,6 +86,20 @@ def index(request):
     if user.is_authenticated:
         logger.debug(f"User authenticated: {user.id}")
         this_member = Member.objects.filter(user=user, active=True).first()
+        
+        # Find org_admin role for navbar
+        org_admin_org_id = None
+        members_for_admin = Member.objects.prefetch_related('member_roles__role', 'member_roles__org').filter(user=user)
+        for member in members_for_admin:
+            for role in member.member_roles.filter(active=True):
+                if role.role and role.role.name == 'Org Admin' and role.org:
+                    org_admin_org_id = role.org.id
+                    break
+            if org_admin_org_id:
+                break
+                
+        context['org_admin_org_id'] = org_admin_org_id
+                
         if user.is_superuser:
             context['role'] = COMMON_ROLE_CONFIG["SUPER_USER"]["name"]
             super_user_stats(request)
@@ -168,7 +182,17 @@ def get_template_for_role(context):
         COMMON_ROLE_CONFIG["PROJECT_ADMIN"]["name"]: "project_admin/project_admin_homepage.html",
     }
     
+    # If we're rendering the org_admin homepage template and the org_id 
+    # has not been set in the context, try to find it from the user's roles
     role = context.get('role')
+    if role == COMMON_ROLE_CONFIG["ORG_ADMIN"]["name"] and not context.get('org_id') and context.get('roles'):
+        # Try to find the organization ID from the org admin role
+        for role_obj in context.get('roles', []):
+            if role_obj.role and role_obj.role.name == COMMON_ROLE_CONFIG["ORG_ADMIN"]["name"] and role_obj.org:
+                context['org_id'] = role_obj.org.id
+                context['org_admin_org_id'] = role_obj.org.id
+                break
+    
     if role in role_to_template_map:
         return f"{app_name}/{module_dirname}/{role_to_template_map[role]}"
     else:
@@ -207,6 +231,14 @@ def role_homepage(request, role_name):
     org = None
     role_org = None
     lc_role_name = 'no_page'
+    
+    # Find org_admin role for navbar
+    org_admin_org_id = None
+    for role in roles:
+        if role.role and role.role.name == 'Org Admin' and role.org:
+            org_admin_org_id = role.org.id
+            break
+            
     context = {}
     context = {
         'parent_page': 'home',
@@ -224,6 +256,7 @@ def role_homepage(request, role_name):
         'project_details': [],
         'organizations': organizations,
         'check': 'check',
+        'org_admin_org_id': org_admin_org_id,
     }
     if request.GET.get('org_id'):
         org_id = request.GET.get('org_id')

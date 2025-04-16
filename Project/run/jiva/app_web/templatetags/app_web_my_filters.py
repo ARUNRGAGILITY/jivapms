@@ -234,3 +234,27 @@ def check_user_roles(user):
 @register.filter
 def slugify(value):
     return re.sub(r'[\s_]+', '-', value.strip().lower())
+    
+    
+@register.filter(name='get_dict_item')
+def get_dict_item(dictionary, key):
+    """
+    Gets a value from a dictionary using a string key.
+    
+    Usage: {{ my_dict|get_dict_item:"My Key" }}
+    """
+    if not dictionary:
+        return 0
+    return dictionary.get(key, 0)
+    
+    
+@register.filter(name='get_dict_item')
+def get_dict_item(dictionary, key):
+    """
+    Gets a value from a dictionary using a string key.
+    
+    Usage: {{ my_dict|get_dict_item:"My Key" }}
+    """
+    if not dictionary:
+        return 0
+    return dictionary.get(key, 0)

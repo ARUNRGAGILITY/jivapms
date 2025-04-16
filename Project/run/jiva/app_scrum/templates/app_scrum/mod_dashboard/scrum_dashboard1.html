@@ -1,0 +1,719 @@
+{% extends 'app_common/common_files/base_template.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load custom_tags %}
+
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    /* Custom styles for Dashboard */
+    :root {
+        --primary-color: #3498db;
+        --secondary-color: #2ecc71;
+        --warning-color: #f39c12;
+        --danger-color: #e74c3c;
+        --dark-color: #2c3e50;
+        --light-color: #ecf0f1;
+        --violet-color: #9b59b6;
+        --turquoise-color: #1abc9c;
+    }
+    
+    .dashboard-header {
+        background: linear-gradient(135deg, #3498db, #2980b9);
+        color: white;
+        padding: 25px;
+        border-radius: 10px;
+        margin-bottom: 20px;
+    }
+    
+    .dashboard-title {
+        font-size: 28px;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    
+    .dashboard-subtitle {
+        opacity: 0.9;
+    }
+    
+    .dashboard-card {
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        background-color: white;
+        transition: transform 0.2s, box-shadow 0.2s;
+        height: 100%;
+    }
+    
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .card-header {
+        background-color: white;
+        border-bottom: 1px solid #eee;
+        padding: 15px 20px;
+        font-weight: 600;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-top-left-radius: 10px;
+        border-top-right-radius: 10px;
+    }
+    
+    .card-header h5 {
+        margin: 0;
+        font-size: 1.1rem;
+    }
+    
+    .card-body {
+        padding: 20px;
+    }
+    
+    .stat-card {
+        padding: 20px;
+        border-radius: 10px;
+        color: white;
+        height: 100%;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        transition: transform 0.2s;
+    }
+    
+    .stat-card:hover {
+        transform: scale(1.03);
+    }
+    
+    .stat-card.blue {
+        background: linear-gradient(135deg, #3498db, #2980b9);
+    }
+    
+    .stat-card.green {
+        background: linear-gradient(135deg, #2ecc71, #27ae60);
+    }
+    
+    .stat-card.orange {
+        background: linear-gradient(135deg, #f39c12, #d35400);
+    }
+    
+    .stat-card.red {
+        background: linear-gradient(135deg, #e74c3c, #c0392b);
+    }
+    
+    .stat-card.purple {
+        background: linear-gradient(135deg, #9b59b6, #8e44ad);
+    }
+    
+    .stat-card.turquoise {
+        background: linear-gradient(135deg, #1abc9c, #16a085);
+    }
+    
+    .stat-value {
+        font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    
+    .stat-title {
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        opacity: 0.9;
+    }
+    
+    .progress {
+        height: 8px;
+        margin-top: 10px;
+        margin-bottom: 5px;
+        border-radius: 4px;
+    }
+    
+    .delivery-card {
+        border: 1px solid #eee;
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 15px;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .delivery-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .delivery-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 10px;
+    }
+    
+    .delivery-title {
+        font-weight: 600;
+        font-size: 16px;
+        margin: 0;
+    }
+    
+    .event-item {
+        display: flex;
+        padding: 12px 0;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .event-item:last-child {
+        border-bottom: none;
+    }
+    
+    .event-date {
+        background-color: #f8f9fa;
+        padding: 8px;
+        border-radius: 6px;
+        min-width: 60px;
+        text-align: center;
+        margin-right: 15px;
+    }
+    
+    .event-day {
+        font-weight: 700;
+        font-size: 18px;
+        line-height: 1;
+    }
+    
+    .event-month {
+        font-size: 12px;
+        text-transform: uppercase;
+        color: #6c757d;
+    }
+    
+    .event-content {
+        flex-grow: 1;
+    }
+    
+    .event-title {
+        font-weight: 600;
+        margin-bottom: 2px;
+    }
+    
+    .event-meta {
+        font-size: 13px;
+        color: #6c757d;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 250px;
+        width: 100%;
+    }
+    
+    .team-member {
+        display: flex;
+        align-items: center;
+        padding: 12px 0;
+        border-bottom: 1px solid #eee;
+    }
+    
+    .team-member:last-child {
+        border-bottom: none;
+    }
+    
+    .member-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #3498db;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        margin-right: 15px;
+    }
+    
+    .member-info {
+        flex-grow: 1;
+    }
+    
+    .member-name {
+        font-weight: 600;
+        margin-bottom: 2px;
+    }
+    
+    .member-role {
+        color: #6c757d;
+        font-size: 12px;
+    }
+    
+    .member-product {
+        font-size: 12px;
+        padding: 3px 8px;
+        border-radius: 12px;
+        background-color: #f1f3f5;
+        color: #495057;
+    }
+    
+    .nav-tabs {
+        border-bottom: 1px solid #dee2e6;
+        margin-bottom: 20px;
+    }
+    
+    .nav-tabs .nav-link {
+        border: none;
+        border-bottom: 3px solid transparent;
+        border-radius: 0;
+        font-weight: 500;
+        color: #6c757d;
+        padding: 10px 15px;
+        margin-right: 10px;
+    }
+    
+    .nav-tabs .nav-link:hover {
+        border-color: transparent;
+        color: #3498db;
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: #3498db;
+        border-color: #3498db;
+        background-color: transparent;
+    }
+    
+    .badge-status {
+        padding: 5px 10px;
+        border-radius: 20px;
+        font-size: 12px;
+    }
+    
+    .delivery-type-icon {
+        font-size: 28px;
+        margin-bottom: 10px;
+    }
+    
+    .delivery-type-card {
+        text-align: center;
+        padding: 20px;
+        border-radius: 10px;
+        background-color: white;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        transition: transform 0.2s, box-shadow 0.2s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        height: 100%;
+    }
+    
+    .delivery-type-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+    
+    .backlog-item {
+        padding: 12px 15px;
+        border-radius: 5px;
+        margin-bottom: 10px;
+        border-left: 4px solid #3498db;
+        background-color: #f8f9fa;
+        transition: transform 0.1s;
+    }
+    
+    .backlog-item:hover {
+        transform: translateX(5px);
+    }
+    
+    .backlog-item.bug {
+        border-left-color: #e74c3c;
+    }
+    
+    .backlog-item.story {
+        border-left-color: #3498db;
+    }
+    
+    .backlog-item.task {
+        border-left-color: #f39c12;
+    }
+    
+    .backlog-item.epic {
+        border-left-color: #9b59b6;
+    }
+    
+    .backlog-header {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 5px;
+    }
+    
+    .backlog-title {
+        font-weight: 600;
+        font-size: 14px;
+        margin: 0;
+    }
+    
+    .backlog-meta {
+        display: flex;
+        justify-content: space-between;
+        font-size: 12px;
+        color: #6c757d;
+    }
+    
+    /* Media queries for responsiveness */
+    @media (max-width: 768px) {
+        .stat-card {
+            margin-bottom: 15px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% include 'app_common/common_files/navbar.html' %}
+
+<div class="content-wrapper">
+    <div class="container-fluid">
+        <!-- Dashboard Header -->
+        <div class="dashboard-header">
+            <div class="row">
+                <div class="col-md-8">
+                    <h1 class="dashboard-title">Scrum Platform Dashboard</h1>
+                    <p class="dashboard-subtitle">Overview of all delivery methods and agile metrics</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="btn-group">
+                        <button type="button" class="btn btn-light dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="bi bi-plus-lg"></i> Create New
+                        </button>
+                        <ul class="dropdown-menu">
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-kanban me-2"></i> Project</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-box me-2"></i> Product</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-gear me-2"></i> Solution</a></li>
+                            <li><a class="dropdown-item" href="#"><i class="bi bi-people me-2"></i> Consulting Engagement</a></li>
+                        </ul>
+                    </div>
+                    <a href="#" class="btn btn-outline-light ms-2">
+                        <i class="bi bi-gear"></i> Settings
+                    </a>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Delivery Type Stats -->
+        <div class="row mb-4">
+            <div class="col-lg-3 col-md-6 mb-3">
+                <a href="{% url 'project_dashboard' %}" class="text-decoration-none">
+                    <div class="delivery-type-card">
+                        <i class="bi bi-kanban delivery-type-icon text-primary"></i>
+                        <div class="stat-value text-dark">{{ delivery_types.projects }}</div>
+                        <div class="stat-title text-muted">Projects</div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-3">
+                <a href="{% url 'product_dashboard' %}" class="text-decoration-none">
+                    <div class="delivery-type-card">
+                        <i class="bi bi-box delivery-type-icon text-success"></i>
+                        <div class="stat-value text-dark">{{ delivery_types.products }}</div>
+                        <div class="stat-title text-muted">Products</div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-3">
+                <a href="{% url 'solution_dashboard' %}" class="text-decoration-none">
+                    <div class="delivery-type-card">
+                        <i class="bi bi-gear delivery-type-icon text-warning"></i>
+                        <div class="stat-value text-dark">{{ delivery_types.solutions }}</div>
+                        <div class="stat-title text-muted">Solutions</div>
+                    </div>
+                </a>
+            </div>
+            <div class="col-lg-3 col-md-6 mb-3">
+                <a href="{% url 'consulting_dashboard' %}" class="text-decoration-none">
+                    <div class="delivery-type-card">
+                        <i class="bi bi-people delivery-type-icon text-danger"></i>
+                        <div class="stat-value text-dark">{{ delivery_types.consulting }}</div>
+                        <div class="stat-title text-muted">Consulting</div>
+                    </div>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Stats Cards -->
+        <div class="row mb-4">
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="stat-card blue">
+                    <i class="bi bi-check-circle-fill d-block mb-2" style="font-size: 32px;"></i>
+                    <div class="stat-value">{{ active_sprints|length }}</div>
+                    <div class="stat-title">Active Sprints</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="stat-card green">
+                    <i class="bi bi-kanban d-block mb-2" style="font-size: 32px;"></i>
+                    <div class="stat-value">{{ backlog_status.to_do }}</div>
+                    <div class="stat-title">Backlog Items</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="stat-card orange">
+                    <i class="bi bi-hourglass-split d-block mb-2" style="font-size: 32px;"></i>
+                    <div class="stat-value">{{ backlog_status.in_progress }}</div>
+                    <div class="stat-title">In Progress</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="stat-card red">
+                    <i class="bi bi-check-all d-block mb-2" style="font-size: 32px;"></i>
+                    <div class="stat-value">{{ backlog_status.done }}</div>
+                    <div class="stat-title">Completed</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Main Dashboard Content -->
+        <div class="row">
+            <!-- Left Column -->
+            <div class="col-lg-8">
+                <!-- Projects Section -->
+                <div class="dashboard-card mb-4">
+                    <div class="card-header">
+                        <h5><i class="bi bi-kanban me-2"></i> Active Projects</h5>
+                        <a href="{% url 'project_dashboard' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                    </div>
+                    <div class="card-body">
+                        {% for project in projects %}
+                        <div class="delivery-card">
+                            <div class="delivery-header">
+                                <h6 class="delivery-title">{{ project.name }}</h6>
+                                <span class="badge {% if project.status == 'In Progress' %}bg-success{% elif project.status == 'Planning' %}bg-warning{% else %}bg-secondary{% endif %} badge-status">
+                                    {{ project.status }}
+                                </span>
+                            </div>
+                            <p class="small text-muted mb-2">{{ project.description }}</p>
+                            <div class="d-flex justify-content-between align-items-center small mb-2">
+                                <span class="fw-bold">Progress:</span>
+                                <span class="fw-bold">{{ project.progress }}%</span>
+                            </div>
+                            <div class="progress mb-2">
+                                <div class="progress-bar bg-success" role="progressbar" 
+                                     style="width: {{ project.progress }}%;" 
+                                     aria-valuenow="{{ project.progress }}" 
+                                     aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center small">
+                                <span class="text-muted">Owner: {{ project.owner }}</span>
+                                <a href="#" class="btn btn-sm btn-outline-primary">
+                                    View Details
+                                </a>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-4">
+                            <p class="text-muted mb-3">No active projects found</p>
+                            <a href="#" class="btn btn-primary">Create Project</a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Products Section -->
+                <div class="dashboard-card mb-4">
+                    <div class="card-header">
+                        <h5><i class="bi bi-box me-2"></i> Active Products</h5>
+                        <a href="{% url 'product_dashboard' %}" class="btn btn-sm btn-outline-primary">View All</a>
+                    </div>
+                    <div class="card-body">
+                        {% for product in products %}
+                        <div class="delivery-card">
+                            <div class="delivery-header">
+                                <h6 class="delivery-title">{{ product.name }}</h6>
+                                <span class="badge {% if product.status == 'Active' %}bg-success{% elif product.status == 'Development' %}bg-warning{% else %}bg-secondary{% endif %} badge-status">
+                                    {{ product.status }}
+                                </span>
+                            </div>
+                            <p class="small text-muted mb-2">{{ product.description }}</p>
+                            <div class="d-flex justify-content-between align-items-center small mb-2">
+                                <span class="fw-bold">Progress:</span>
+                                <span class="fw-bold">{{ product.progress }}%</span>
+                            </div>
+                            <div class="progress mb-2">
+                                <div class="progress-bar bg-success" role="progressbar" 
+                                     style="width: {{ product.progress }}%;" 
+                                     aria-valuenow="{{ product.progress }}" 
+                                     aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center small">
+                                <span class="text-muted">Owner: {{ product.owner }}</span>
+                                <a href="#" class="btn btn-sm btn-outline-primary">
+                                    View Details
+                                </a>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-4">
+                            <p class="text-muted mb-3">No active products found</p>
+                            <a href="#" class="btn btn-primary">Create Product</a>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Recent Activity -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-lightning-charge me-2"></i> Recent Activity</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="activity-timeline">
+                            <div class="activity-item d-flex mb-3 pb-3 border-bottom">
+                                <div class="activity-icon me-3 bg-success rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                    <i class="bi bi-check-lg text-white"></i>
+                                </div>
+                                <div>
+                                    <p class="mb-1"><strong>Sprint 24</strong> completed for Customer Portal</p>
+                                    <span class="text-muted small">Today at 10:30 AM</span>
+                                </div>
+                            </div>
+                            <div class="activity-item d-flex mb-3 pb-3 border-bottom">
+                                <div class="activity-icon me-3 bg-primary rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                    <i class="bi bi-lightning-charge text-white"></i>
+                                </div>
+                                <div>
+                                    <p class="mb-1"><strong>Sprint 8</strong> started for Payment Gateway</p>
+                                    <span class="text-muted small">Yesterday at 2:15 PM</span>
+                                </div>
+                            </div>
+                            <div class="activity-item d-flex mb-3 pb-3 border-bottom">
+                                <div class="activity-icon me-3 bg-warning rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                    <i class="bi bi-person-plus text-white"></i>
+                                </div>
+                                <div>
+                                    <p class="mb-1"><strong>Alice Williams</strong> assigned as Product Owner for Analytics Dashboard</p>
+                                    <span class="text-muted small">April 5, 2025</span>
+                                </div>
+                            </div>
+                            <div class="activity-item d-flex mb-3 pb-3">
+                                <div class="activity-icon me-3 bg-danger rounded-circle d-flex align-items-center justify-content-center" style="width: 40px; height: 40px;">
+                                    <i class="bi bi-bug text-white"></i>
+                                </div>
+                                <div>
+                                    <p class="mb-1"><strong>Critical bug</strong> reported in Payment Gateway</p>
+                                    <span class="text-muted small">April 3, 2025</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Column -->
+            <div class="col-lg-4">
+                <!-- Active Sprints Section -->
+                <div class="dashboard-card mb-4">
+                    <div class="card-header">
+                        <h5><i class="bi bi-lightning-charge me-2"></i> Active Sprints</h5>
+                        <a href="#" class="btn btn-sm btn-outline-primary">View All</a>
+                    </div>
+                    <div class="card-body">
+                        {% for sprint in active_sprints %}
+                        <div class="mb-3 pb-3 {% if not forloop.last %}border-bottom{% endif %}">
+                            <div class="d-flex justify-content-between mb-1">
+                                <strong>{{ sprint.name }}</strong>
+                                <span class="badge bg-info">{{ sprint.product }}</span>
+                            </div>
+                            <div class="small text-muted mb-2">
+                                {{ sprint.start_date }} - {{ sprint.end_date }}
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-success" role="progressbar" 
+                                     style="width: {{ sprint.progress }}%;" 
+                                     aria-valuenow="{{ sprint.progress }}" 
+                                     aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <div class="d-flex justify-content-between small mt-2">
+                                <span>Progress: {{ sprint.progress }}%</span>
+                                <a href="#" class="text-primary">Details</a>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-4">
+                            <p class="text-muted mb-0">No active sprints found</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Recent Backlog Items -->
+                <div class="dashboard-card mb-4">
+                    <div class="card-header">
+                        <h5><i class="bi bi-list-check me-2"></i> Recent Backlog Items</h5>
+                        <a href="#" class="btn btn-sm btn-outline-primary">View All</a>
+                    </div>
+                    <div class="card-body">
+                        {% for item in recent_backlogs %}
+                        <div class="backlog-item {% if item.type == 'Bug' %}bug{% elif item.type == 'Story' %}story{% elif item.type == 'Task' %}task{% else %}epic{% endif %}">
+                            <div class="backlog-header">
+                                <h6 class="backlog-title">{{ item.title }}</h6>
+                                <span class="badge {% if item.priority == 'High' %}bg-danger{% elif item.priority == 'Medium' %}bg-warning{% else %}bg-info{% endif %}">
+                                    {{ item.priority }}
+                                </span>
+                            </div>
+                            <div class="backlog-meta">
+                                <span>{{ item.type }}</span>
+                                <span>{{ item.product }}</span>
+                                <span>{{ item.status }}</span>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-4">
+                            <p class="text-muted mb-0">No backlog items found</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+                
+                <!-- Teams Overview -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-people me-2"></i> Teams Overview</h5>
+                        <a href="#" class="btn btn-sm btn-outline-primary">View All</a>
+                    </div>
+                    <div class="card-body">
+                        {% for team in teams %}
+                        <div class="delivery-card">
+                            <div class="delivery-header">
+                                <h6 class="delivery-title">{{ team.name }}</h6>
+                                <span class="badge bg-primary badge-status">
+                                    {{ team.members }} Members
+                                </span>
+                            </div>
+                            <div class="d-flex justify-content-between align-items-center small mb-2">
+                                <span class="text-muted">Focus: {{ team.focus }}</span>
+                                <span class="fw-bold">Velocity: {{ team.velocity }}</span>
+                            </div>
+                            <div class="progress">
+                                <div class="progress-bar bg-info" role="progressbar" 
+                                     style="width: {% widthratio team.velocity 40 100 %}%;" 
+                                     aria-valuenow="{% widthratio team.velocity 40 100 %}" 
+                                     aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                        </div>
+                        {% empty %}
+                        <div class="text-center py-4">
+                            <p class="text-muted mb-0">No teams found</p>
+                        </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Charts could be added here if needed
+});
+</script>
+{% endblock %}

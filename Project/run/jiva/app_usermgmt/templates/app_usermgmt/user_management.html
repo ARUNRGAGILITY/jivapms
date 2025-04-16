@@ -1,0 +1,217 @@
+{% extends 'app_usermgmt/base.html' %}
+
+{% block title %}User Management{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="text-center mb-4">User Management</h1>
+
+    <!-- Add User Button -->
+    <div class="mb-4 text-end">
+        <a href="{% url 'export_users' %}" class="btn btn-info ms-2">
+            <i class="fas fa-file-export"></i> Export Users
+        </a>
+        <a href="{% url 'add_user' %}" class="btn btn-primary">
+            <i class="fas fa-user-plus"></i> Add User
+        </a>
+    </div>
+
+    <!-- User Table -->
+    <div class="card">
+        <div class="card-header bg-secondary text-white">
+            <h4>User List</h4>
+        </div>
+        <div class="card-body">
+             <!-- Search Form -->
+             <form method="get" action="{% url 'user_management' %}" class="mb-3">
+                <!-- Add this to your form in the user management template -->
+                <div class="mb-3">
+                    <button type="button" id="exportSelectedBtn" class="btn btn-outline-info" disabled>
+                        <i class="fas fa-file-export"></i> Export Selected (0)
+                    </button>
+                </div>
+                <div class="input-group">
+                    <input type="text" name="search" class="form-control" placeholder="Search by username or email..." value="{{ search_query }}">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-search"></i> Search
+                    </button>
+                    {% if search_query %}
+                    <a href="{% url 'user_management' %}" class="btn btn-secondary">
+                        <i class="fas fa-times"></i> Clear
+                    </a>
+                    {% endif %}
+                </div>
+            </form>
+            <table class="table table-striped">
+                <thead>
+                    <tr>
+                        <th>
+                            <input type="checkbox" id="selectAll">
+                        </th>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>SuperUser</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>
+                            <input class="form-check-input user-checkbox" type="checkbox" id="user_{{ user.id }}" name="user_ids" value="{{ user.id }}">
+                        </td>
+                        <td>{{ user.id }}</td>
+                        <td>{{ user.username }}</td>
+                        <td>{{ user.email }}</td>
+                        <td><span class="badge bg-{{ user.is_superuser|yesno:'danger,' }}">
+                            {{ user.is_superuser|yesno:"Superuser," }}
+                        </span></td>
+                        <td>
+                            <a href="{% url 'modify_user' user.id %}" class="btn btn-warning btn-sm">
+                                <i class="fas fa-edit"></i> Modify
+                            </a>
+                            <!-- Delete Button with Modal Trigger -->
+                            <button type="button" class="btn btn-danger btn-sm" data-bs-toggle="modal" data-bs-target="#deleteModal{{ user.id }}">
+                                <i class="fas fa-trash-alt"></i> Delete
+                            </button>
+                        </td>
+                    </tr>
+
+                    <!-- Delete Confirmation Modal -->
+                    <div class="modal fade" id="deleteModal{{ user.id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ user.id }}" aria-hidden="true">
+                        <div class="modal-dialog">
+                            <div class="modal-content">
+                                <div class="modal-header">
+                                    <h5 class="modal-title" id="deleteModalLabel{{ user.id }}">Confirm Delete</h5>
+                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                </div>
+                                <div class="modal-body">
+                                    Are you sure you want to delete the user <strong>{{ user.username }}</strong>?
+                                </div>
+                                <div class="modal-footer">
+                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                                    <form action="{% url 'delete_user' user.id %}" method="post" style="display: inline;">
+                                        {% csrf_token %}
+                                        <button type="submit" class="btn btn-danger">Delete</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Pagination -->
+    {% include 'app_usermgmt/paginator.html' %}
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+    // Select All Checkbox functionality
+    const selectAllCheckbox = document.getElementById('selectAll');
+    if (selectAllCheckbox) {
+        selectAllCheckbox.addEventListener('click', function() {
+            const checkboxes = document.querySelectorAll('.user-checkbox');
+            checkboxes.forEach(checkbox => {
+                checkbox.checked = this.checked;
+            });
+            
+            updateExportButton();
+        });
+    }
+    
+    // Update "Select All" checkbox state when individual checkboxes change
+    function updateSelectAllCheckbox() {
+        const allCheckboxes = document.querySelectorAll('.user-checkbox');
+        const selectAllCheckbox = document.getElementById('selectAll');
+        
+        if (allCheckboxes.length > 0 && selectAllCheckbox) {
+            // If all checkboxes are checked, set "Select All" to checked
+            const allChecked = Array.from(allCheckboxes).every(checkbox => checkbox.checked);
+            // If no checkboxes are checked, set "Select All" to unchecked
+            const noneChecked = Array.from(allCheckboxes).every(checkbox => !checkbox.checked);
+            
+            if (allChecked) {
+                selectAllCheckbox.checked = true;
+                selectAllCheckbox.indeterminate = false;
+            } else if (noneChecked) {
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = false;
+            } else {
+                // If some are checked, set "Select All" to indeterminate state
+                selectAllCheckbox.checked = false;
+                selectAllCheckbox.indeterminate = true;
+            }
+        }
+    }
+    
+    // Update export button state
+    function updateExportButton() {
+        const selectedCount = document.querySelectorAll('.user-checkbox:checked').length;
+        const exportBtn = document.getElementById('exportSelectedBtn');
+        
+        if (exportBtn) {
+            exportBtn.innerHTML = `<i class="fas fa-file-export"></i> Export Selected (${selectedCount})`;
+            
+            if (selectedCount === 0) {
+                exportBtn.disabled = true;
+            } else {
+                exportBtn.disabled = false;
+            }
+        }
+    }
+    
+    // Handle checkbox change events
+    document.querySelectorAll('.user-checkbox').forEach(checkbox => {
+        checkbox.addEventListener('change', function() {
+            updateSelectAllCheckbox();
+            updateExportButton();
+        });
+    });
+    
+    // Handle export selected button click
+    const exportBtn = document.getElementById('exportSelectedBtn');
+    if (exportBtn) {
+        exportBtn.addEventListener('click', function() {
+            const selectedIds = Array.from(
+                document.querySelectorAll('.user-checkbox:checked')
+            ).map(checkbox => checkbox.value);
+            
+            if (selectedIds.length > 0) {
+                // Create a form to submit the selected IDs
+                const form = document.createElement('form');
+                form.method = 'POST';
+                form.action = "{% url 'export_selected_users' %}";
+                
+                // Add CSRF token
+                const csrfInput = document.createElement('input');
+                csrfInput.type = 'hidden';
+                csrfInput.name = 'csrfmiddlewaretoken';
+                csrfInput.value = document.querySelector('[name=csrfmiddlewaretoken]').value;
+                form.appendChild(csrfInput);
+                
+                // Add selected IDs
+                selectedIds.forEach(id => {
+                    const input = document.createElement('input');
+                    input.type = 'hidden';
+                    input.name = 'user_ids';
+                    input.value = id;
+                    form.appendChild(input);
+                });
+                
+                document.body.appendChild(form);
+                form.submit();
+                document.body.removeChild(form);
+            }
+        });
+    }
+    
+    // Initialize on page load
+    updateSelectAllCheckbox();
+    updateExportButton();
+});
+</script>
+{% endblock %}

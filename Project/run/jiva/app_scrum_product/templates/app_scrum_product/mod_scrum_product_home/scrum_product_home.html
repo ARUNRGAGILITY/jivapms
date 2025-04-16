@@ -1,0 +1,646 @@
+{% extends 'app_common/common_files/base_template.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load custom_tags %}
+
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    /* Custom styles for Scrum Home */
+    :root {
+        --primary-color: #3498db;
+        --secondary-color: #2ecc71;
+        --warning-color: #f39c12;
+        --danger-color: #e74c3c;
+        --dark-color: #2c3e50;
+        --light-color: #ecf0f1;
+    }
+    
+    .dashboard-card {
+        border-radius: 10px;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        background-color: white;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .card-header {
+        background-color: white;
+        border-bottom: 1px solid #eee;
+        padding: 15px 20px;
+        font-weight: 600;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+    
+    .card-header h5 {
+        margin: 0;
+        font-size: 1.1rem;
+    }
+    
+    .card-body {
+        padding: 20px;
+    }
+    
+    .stat-card {
+        padding: 20px;
+        border-radius: 10px;
+        background-color: var(--light-color);
+        color: var(--dark-color);
+        height: 100%;
+        text-align: center;
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        transition: transform 0.2s;
+    }
+    
+    .stat-card:hover {
+        transform: scale(1.03);
+    }
+    
+    .stat-card.blue {
+        background: linear-gradient(135deg, #3498db, #2980b9);
+        color: white;
+    }
+    
+    .stat-card.green {
+        background: linear-gradient(135deg, #2ecc71, #27ae60);
+        color: white;
+    }
+    
+    .stat-card.orange {
+        background: linear-gradient(135deg, #f39c12, #d35400);
+        color: white;
+    }
+    
+    .stat-card.red {
+        background: linear-gradient(135deg, #e74c3c, #c0392b);
+        color: white;
+    }
+    
+    .stat-value {
+        font-size: 32px;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+    
+    .stat-title {
+        font-size: 14px;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        opacity: 0.9;
+    }
+    
+    .progress {
+        height: 8px;
+        margin-top: 10px;
+        margin-bottom: 5px;
+        border-radius: 4px;
+    }
+    
+    .table td, .table th {
+        vertical-align: middle;
+    }
+    
+    .team-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background-color: #3498db;
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 600;
+        margin-right: 10px;
+    }
+    
+    .badge-status {
+        padding: 5px 10px;
+        border-radius: 20px;
+    }
+    
+    .chart-container {
+        position: relative;
+        height: 250px;
+        width: 100%;
+    }
+    
+    .quick-links {
+        list-style: none;
+        padding: 0;
+    }
+    
+    .quick-links li {
+        margin-bottom: 12px;
+    }
+    
+    .quick-links a {
+        display: flex;
+        align-items: center;
+        padding: 8px 12px;
+        border-radius: 5px;
+        transition: background-color 0.2s;
+        text-decoration: none;
+        color: var(--dark-color);
+    }
+    
+    .quick-links a:hover {
+        background-color: rgba(52, 152, 219, 0.1);
+    }
+    
+    .quick-links i {
+        margin-right: 10px;
+        color: var(--primary-color);
+    }
+    
+    .sprint-summary {
+        display: flex;
+        justify-content: space-between;
+        margin-bottom: 15px;
+    }
+    
+    .sprint-summary div:first-child {
+        font-weight: 600;
+    }
+    
+    /* Media queries for responsiveness */
+    @media (max-width: 768px) {
+        .stat-card {
+            margin-bottom: 15px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% include 'app_common/common_files/navbar.html' %}
+
+<div class="content-wrapper">
+    <!-- Header Section -->
+    <div class="container-fluid my-4">
+        <div class="row">
+            <div class="col-md-8">
+                <h1 class="mb-0">Scrum Product Dashboard</h1>
+                <p class="text-muted">Welcome to your agile product management center</p>
+            </div>
+            <div class="col-md-4 text-end">
+                <a href="#" class="btn btn-primary me-2">
+                    <i class="bi bi-plus-lg"></i> New Product
+                </a>
+                <a href="{% url 'scrum_products_dashboard' %}" class="btn btn-outline-secondary me-2">
+                    <i class="bi bi-grid"></i> All Products
+                </a>
+                <a href="#" class="btn btn-outline-secondary">
+                    <i class="bi bi-gear"></i> Settings
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stats Overview Section -->
+    <div class="container-fluid mb-4">
+        <div class="row">
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="stat-card blue">
+                    <div class="stat-value">{{ active_products|length }}</div>
+                    <div class="stat-title">Active Products</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="stat-card green">
+                    <div class="stat-value">{{ active_sprints|length }}</div>
+                    <div class="stat-title">Active Sprints</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="stat-card orange">
+                    <div class="stat-value">{{ upcoming_releases|length }}</div>
+                    <div class="stat-title">Upcoming Releases</div>
+                </div>
+            </div>
+            <div class="col-md-3 col-sm-6 mb-3">
+                <div class="stat-card red">
+                    <div class="stat-value">{{ team_members|length }}</div>
+                    <div class="stat-title">Team Members</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Main Dashboard Content -->
+    <div class="container-fluid">
+        <div class="row">
+            <!-- Left Column -->
+            <div class="col-lg-8">
+                <!-- Active Products Section -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-kanban me-2"></i> Active Products</h5>
+                        <a href="#" class="btn btn-sm btn-outline-primary">View All</a>
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Product</th>
+                                        <th>Description</th>
+                                        <th>Progress</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for product in active_products %}
+                                    <tr>
+                                        <td>
+                                            <strong>{% if product.name %}{{ product.name }}{% else %}{{ product.name }}{% endif %}</strong>
+                                        </td>
+                                        <td>{% if product.description %}{{ product.description }}{% else %}{{ product.description }}{% endif %}</td>
+                                        <td style="width: 20%;">
+                                            <div class="d-flex align-items-center">
+                                                <div class="progress flex-grow-1 me-2">
+                                                    <div class="progress-bar bg-success" role="progressbar" 
+                                                         style="width: {% if product.progress %}{{ product.progress }}{% else %}{{ product.progress }}{% endif %}%;" 
+                                                         aria-valuenow="{% if product.progress %}{{ product.progress }}{% else %}{{ product.progress }}{% endif %}" 
+                                                         aria-valuemin="0" aria-valuemax="100"></div>
+                                                </div>
+                                                <span>{% if product.progress %}{{ product.progress }}{% else %}{{ product.progress }}{% endif %}%</span>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <a href="{% url 'scrum_product_home_overview_detail' product_id=product.id %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="#" class="btn btn-sm btn-outline-secondary">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="4" class="text-center py-3">No active products found</td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Sprints & Releases Section -->
+                <div class="row">
+                    <!-- Active Sprints -->
+                    <div class="col-md-6 mb-4">
+                        <div class="dashboard-card h-100">
+                            <div class="card-header">
+                                <h5><i class="bi bi-lightning-charge me-2"></i> Active Sprints</h5>
+                                <a href="#" class="btn btn-sm btn-outline-primary">View All</a>
+                            </div>
+                            <div class="card-body">
+                                {% for sprint in active_sprints %}
+                                <div class="mb-3 pb-3 border-bottom">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <strong>{% if sprint.name %}{{ sprint.name }}{% else %}{{ sprint.name }}{% endif %}</strong>
+                                        <span class="badge bg-primary">{% if sprint.product %}{{ sprint.product }}{% else %}{{ sprint.product }}{% endif %}</span>
+                                    </div>
+                                    <div class="small text-muted mb-2">
+                                        {% if sprint.start_date %}{{ sprint.start_date }}{% else %}{{ sprint.start_date }}{% endif %} - 
+                                        {% if sprint.end_date %}{{ sprint.end_date }}{% else %}{{ sprint.end_date }}{% endif %}
+                                    </div>
+                                    <div class="progress">
+                                        <div class="progress-bar bg-success" role="progressbar" 
+                                             style="width: {% if sprint.progress %}{{ sprint.progress }}{% else %}{{ sprint.progress }}{% endif %}%;" 
+                                             aria-valuenow="{% if sprint.progress %}{{ sprint.progress }}{% else %}{{ sprint.progress }}{% endif %}" 
+                                             aria-valuemin="0" aria-valuemax="100"></div>
+                                    </div>
+                                </div>
+                                {% empty %}
+                                <div class="text-center py-4">
+                                    <p class="text-muted mb-0">No active sprints found</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Upcoming Releases -->
+                    <div class="col-md-6 mb-4">
+                        <div class="dashboard-card h-100">
+                            <div class="card-header">
+                                <h5><i class="bi bi-tag me-2"></i> Upcoming Releases</h5>
+                                <a href="#" class="btn btn-sm btn-outline-primary">View All</a>
+                            </div>
+                            <div class="card-body">
+                                {% for release in upcoming_releases %}
+                                <div class="mb-3 pb-3 border-bottom">
+                                    <div class="d-flex justify-content-between mb-1">
+                                        <strong>{% if release.name %}{{ release.name }}{% else %}{{ release.name }}{% endif %}</strong>
+                                        <span class="badge bg-info">{% if release.product %}{{ release.product }}{% else %}{{ release.product }}{% endif %}</span>
+                                    </div>
+                                    <div class="d-flex justify-content-between small mb-2">
+                                        <span class="text-muted">Release: {% if release.release_date %}{{ release.release_date }}{% else %}{{ release.release_date }}{% endif %}</span>
+                                        <span class="badge {% if release.status == 'Planned' %}bg-warning{% else %}bg-primary{% endif %}">
+                                            {% if release.status %}{{ release.status }}{% else %}{{ release.status }}{% endif %}
+                                        </span>
+                                    </div>
+                                </div>
+                                {% empty %}
+                                <div class="text-center py-4">
+                                    <p class="text-muted mb-0">No upcoming releases found</p>
+                                </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Charts Section -->
+                <div class="row">
+                    <!-- Sprint Burndown Chart -->
+                    <div class="col-md-6 mb-4">
+                        <div class="dashboard-card h-100">
+                            <div class="card-header">
+                                <h5><i class="bi bi-graph-down me-2"></i> Current Sprint Burndown</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="sprintBurndownChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Velocity Chart -->
+                    <div class="col-md-6 mb-4">
+                        <div class="dashboard-card h-100">
+                            <div class="card-header">
+                                <h5><i class="bi bi-speedometer2 me-2"></i> Team Velocity</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="chart-container">
+                                    <canvas id="velocityChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Right Column -->
+            <div class="col-lg-4">
+                <!-- Quick Access Section -->
+                <div class="dashboard-card mb-4">
+                    <div class="card-header">
+                        <h5><i class="bi bi-lightning me-2"></i> Quick Actions</h5>
+                    </div>
+                    <div class="card-body">
+                        <ul class="quick-links">
+                            <li>
+                                <a href="{% url 'scrum_products_dashboard' %}">
+                                    <i class="bi bi-boxes"></i>
+                                    All Products
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'scrum_product_home' %}">
+                                    <i class="bi bi-plus-square"></i>
+                                    Create New Product
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#">
+                                    <i class="bi bi-lightning-charge"></i>
+                                    Plan New Sprint
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#">
+                                    <i class="bi bi-tag"></i>
+                                    Plan Release
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#">
+                                    <i class="bi bi-people"></i>
+                                    Manage Teams
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#">
+                                    <i class="bi bi-kanban"></i>
+                                    View Kanban Board
+                                </a>
+                            </li>
+                            <li>
+                                <a href="#">
+                                    <i class="bi bi-calendar-event"></i>
+                                    Schedule Events
+                                </a>
+                            </li>
+                            <li>
+                                <a href="{% url 'scrum_dashboard_analytics' %}">
+                                    <i class="bi bi-bar-chart"></i>
+                                    Reports & Metrics
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Team Members Section -->
+                <div class="dashboard-card mb-4">
+                    <div class="card-header">
+                        <h5><i class="bi bi-people me-2"></i> Team Members</h5>
+                        <a href="#" class="btn btn-sm btn-outline-primary">View All</a>
+                    </div>
+                    <div class="card-body p-0">
+                        <ul class="list-group list-group-flush">
+                            {% for member in team_members %}
+                            <li class="list-group-item d-flex align-items-center py-3">
+                                <div class="team-avatar">
+                                    {{ member.name|slice:":1" }}
+                                </div>
+                                <div class="flex-grow-1">
+                                    <h6 class="mb-0">{{ member.name }}</h6>
+                                    <small class="text-muted">{{ member.role }}</small>
+                                </div>
+                                <span class="badge bg-light text-dark">{{ member.product }}</span>
+                            </li>
+                            {% empty %}
+                            <li class="list-group-item text-center py-4">
+                                <p class="text-muted mb-0">No team members found</p>
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+                
+                <!-- Product Progress Section -->
+                <div class="dashboard-card">
+                    <div class="card-header">
+                        <h5><i class="bi bi-graph-up me-2"></i> Product Progress</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="chart-container">
+                            <canvas id="productProgressChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Sprint Burndown Chart
+    const sprintBurndownCtx = document.getElementById('sprintBurndownChart').getContext('2d');
+    const sprintBurndownChart = new Chart(sprintBurndownCtx, {
+        type: 'line',
+        data: {
+            labels: {{ sprint_burndown_data.labels|safe }},
+            datasets: [
+                {
+                    label: 'Ideal Burndown',
+                    data: {{ sprint_burndown_data.ideal|safe }},
+                    borderColor: 'rgba(54, 162, 235, 0.5)',
+                    borderDash: [5, 5],
+                    fill: false,
+                    pointRadius: 0
+                },
+                {
+                    label: 'Actual Burndown',
+                    data: {{ sprint_burndown_data.actual|safe }},
+                    borderColor: 'rgba(255, 99, 132, 1)',
+                    backgroundColor: 'rgba(255, 99, 132, 0.1)',
+                    fill: true,
+                    tension: 0.4
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    reverse: false,
+                    title: {
+                        display: true,
+                        text: 'Remaining Points'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Sprint Day'
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
+            }
+        }
+    });
+    
+    // Velocity Chart
+    const velocityCtx = document.getElementById('velocityChart').getContext('2d');
+    const velocityChart = new Chart(velocityCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ velocity_data.labels|safe }},
+            datasets: [
+                {
+                    label: 'Committed',
+                    data: {{ velocity_data.commitment|safe }},
+                    backgroundColor: 'rgba(54, 162, 235, 0.7)',
+                    borderColor: 'rgba(54, 162, 235, 1)',
+                    borderWidth: 1
+                },
+                {
+                    label: 'Completed',
+                    data: {{ velocity_data.completed|safe }},
+                    backgroundColor: 'rgba(75, 192, 192, 0.7)',
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 1
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    title: {
+                        display: true,
+                        text: 'Story Points'
+                    }
+                },
+                x: {
+                    title: {
+                        display: true,
+                        text: 'Sprint'
+                    }
+                }
+            },
+            plugins: {
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
+            }
+        }
+    });
+    
+    // Product Progress Chart
+    const productProgressCtx = document.getElementById('productProgressChart').getContext('2d');
+    const productProgressChart = new Chart(productProgressCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ product_progress_data.labels|safe }},
+            datasets: [{
+                data: {{ product_progress_data.data|safe }},
+                backgroundColor: [
+                    'rgba(54, 162, 235, 0.7)',
+                    'rgba(75, 192, 192, 0.7)',
+                    'rgba(255, 206, 86, 0.7)',
+                    'rgba(255, 99, 132, 0.7)',
+                    'rgba(153, 102, 255, 0.7)'
+                ],
+                borderColor: [
+                    'rgba(54, 162, 235, 1)',
+                    'rgba(75, 192, 192, 1)',
+                    'rgba(255, 206, 86, 1)',
+                    'rgba(255, 99, 132, 1)',
+                    'rgba(153, 102, 255, 1)'
+                ],
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'bottom'
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}

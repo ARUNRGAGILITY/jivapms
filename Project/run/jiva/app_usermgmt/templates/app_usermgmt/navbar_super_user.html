@@ -1,0 +1,46 @@
+<!-- Superuser Enhanced Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+        <!-- Brand/Logo on the left -->
+        <a class="navbar-brand" href="{% url 'user_management' %}">
+            <i class="fas fa-shield-alt me-2"></i>User Admin
+        </a>
+
+        <!-- Toggle button for mobile -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <!-- Navbar links -->
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav">
+                <!-- Regular user management links -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="userMgmtDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-users me-1"></i>User Management
+                    </a>
+                    <ul class="dropdown-menu" aria-labelledby="userMgmtDropdown">
+                        <li><a class="dropdown-item" href="{% url 'add_user' %}">Add User</a></li>
+                        <li><a class="dropdown-item" href="{% url 'user_management' %}">List Users</a></li>
+                        <li><a class="dropdown-item" href="{% url 'bulk_add_users_from_csv' %}">Bulk Add Users</a></li>
+                        <li><a class="dropdown-item" href="{% url 'bulk_modify_users' %}">Bulk Modify Users</a></li>
+                        <li><a class="dropdown-item" href="{% url 'bulk_delete_users' %}">Bulk Delete Users</a></li>
+                        <li><a class="dropdown-item" href="{% url 'bulk_undelete_users' %}">Bulk Undelete Users</a></li>
+                    </ul>
+                </li>
+
+            </ul>
+
+            <!-- Right-aligned menu items -->
+            <ul class="navbar-nav ms-auto">
+                {% if user.is_authenticated %}
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="userDropdown" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-user-circle me-1"></i>{{ user.username }}
+                    </a>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+    </div>
+</nav>

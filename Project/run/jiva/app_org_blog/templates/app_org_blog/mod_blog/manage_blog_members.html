@@ -1,0 +1,225 @@
+{% extends 'app_common/common_files/base_template.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load custom_tags %}
+{% load app_web_my_filters %}
+
+{% block head_extra %}
+<style>
+    .content-card {
+        background-color: #fff;
+        border-radius: 10px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        padding: 25px;
+        margin-bottom: 25px;
+    }
+    
+    .member-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 15px;
+        padding: 15px;
+        border-radius: 8px;
+        border: 1px solid #f0f0f0;
+        transition: all 0.2s ease;
+    }
+    
+    .member-item:hover {
+        border-color: #d0d0d0;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+    }
+    
+    .member-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background-color: #e9ecef;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 15px;
+        flex-shrink: 0;
+    }
+    
+    .member-avatar i {
+        color: #6c757d;
+        font-size: 24px;
+    }
+    
+    .member-info {
+        flex-grow: 1;
+    }
+    
+    .member-name {
+        font-weight: 600;
+        font-size: 16px;
+        margin-bottom: 3px;
+    }
+    
+    .member-details {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        font-size: 14px;
+        color: #6c757d;
+    }
+    
+    .member-detail {
+        display: flex;
+        align-items: center;
+    }
+    
+    .member-detail i {
+        margin-right: 5px;
+    }
+    
+    .role-badge {
+        display: inline-block;
+        padding: 3px 8px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 500;
+    }
+    
+    .role-admin {
+        background-color: #f8d7da;
+        color: #842029;
+    }
+    
+    .role-writer {
+        background-color: #d1e7dd;
+        color: #0f5132;
+    }
+    
+    .role-editor {
+        background-color: #cff4fc;
+        color: #055160;
+    }
+    
+    .role-viewer {
+        background-color: #e2e3e5;
+        color: #41464b;
+    }
+    
+    .actions {
+        display: flex;
+        gap: 5px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% include 'app_common/common_files/navbar.html' %}
+
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-md-9">
+            <h1 class="display-5 fw-bold">Manage Blog Team</h1>
+            <p class="text-muted">
+                Organization: {{ organization.name }}
+                {% if blog %}
+                <span class="mx-2">|</span> Blog: {{ blog.title|default:blog.name }}
+                {% endif %}
+            </p>
+        </div>
+        <div class="col-md-3 text-md-end">
+            <a href="{% url 'blog_dashboard' organization_id=organization_id %}" class="btn btn-outline-primary">
+                <i class="bi bi-speedometer2"></i> Dashboard
+            </a>
+        </div>
+    </div>
+
+    <!-- Add Member Form -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="content-card">
+                <h4 class="mb-4"><i class="bi bi-person-plus"></i> Add Team Member</h4>
+                <form method="post">
+                    {% csrf_token %}
+                    <div class="row">
+                        {% if not blog %}
+                        <div class="col-md-4">
+                            <div class="form-group mb-3">
+                                <label for="blog_id" class="form-label">Select Blog</label>
+                                <select name="blog_id" id="blog_id" class="form-control" required>
+                                    <option value="">-- Select Blog --</option>
+                                    {% for blog_item in blogs %}
+                                    <option value="{{ blog_item.id }}">{{ blog_item.title|default:blog_item.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        {% endif %}
+                        <div class="col-md-{% if blog %}4{% else %}4{% endif %}">
+                            <div class="form-group mb-3">
+                                <label for="id_member" class="form-label">Select Member</label>
+                                {{ form.member }}
+                            </div>
+                        </div>
+                        <div class="col-md-{% if blog %}4{% else %}4{% endif %}">
+                            <div class="form-group mb-3">
+                                <label for="id_role" class="form-label">Role</label>
+                                {{ form.role }}
+                            </div>
+                        </div>
+                        <div class="col-md-{% if blog %}4{% else %}4{% endif %} d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-plus-circle"></i> Add Member
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Team Members List -->
+    <div class="row">
+        <div class="col-12">
+            <div class="content-card">
+                <h4 class="mb-4"><i class="bi bi-people"></i> Current Team Members</h4>
+                
+                {% if blog_members %}
+                    {% for member in blog_members %}
+                    <div class="member-item">
+                        <div class="member-avatar">
+                            <i class="bi bi-person-circle"></i>
+                        </div>
+                        <div class="member-info">
+                            <div class="member-name">{{ member.member.user.username }}</div>
+                            <div class="member-details">
+                                <div class="member-detail">
+                                    <i class="bi bi-journal-text"></i>
+                                    {% if not blog %}{{ member.blog.title|default:member.blog.name }}{% endif %}
+                                </div>
+                                <div class="member-detail">
+                                    <span class="role-badge role-{{ member.role }}">{{ member.get_role_display }}</span>
+                                </div>
+                                <div class="member-detail">
+                                    <i class="bi bi-calendar"></i> Added {{ member.created_at|date:"M d, Y" }}
+                                </div>
+                            </div>
+                        </div>
+                        <div class="actions">
+                            <form method="post" action="{% url 'remove_blog_member' organization_id=organization_id member_id=member.id %}">
+                                {% csrf_token %}
+                                {% if blog %}<input type="hidden" name="return_to_blog" value="1">{% endif %}
+                                <button type="submit" class="btn btn-outline-danger" onclick="return confirm('Are you sure you want to remove this member?')">
+                                    <i class="bi bi-person-x"></i> Remove
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                    {% endfor %}
+                {% else %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-people fs-1 text-muted"></i>
+                        <p class="my-3">No team members added yet.</p>
+                        <p class="text-muted">Use the form above to add members to your blog team.</p>
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

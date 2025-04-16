@@ -1,0 +1,477 @@
+{% extends 'app_common/common_files/jiva/jiva_base_template.html' %}
+{% load static %}
+{% load app_web_my_filters %}
+
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .dashboard-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        padding: 20px;
+        margin-bottom: 20px;
+        transition: transform 0.3s;
+    }
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+    }
+    .stat-card {
+        padding: 15px;
+        border-radius: 8px;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        height: 130px;
+    }
+    .stat-number {
+        font-size: 32px;
+        font-weight: bold;
+        margin: 10px 0;
+    }
+    .stat-title {
+        font-size: 16px;
+        text-transform: uppercase;
+    }
+    .bg-primary-gradient {
+        background: linear-gradient(45deg, #4a6fdc, #6c8df5);
+    }
+    .bg-success-gradient {
+        background: linear-gradient(45deg, #2e9b4f, #38c964);
+    }
+    .bg-warning-gradient {
+        background: linear-gradient(45deg, #f2994a, #f5bc62);
+    }
+    .bg-info-gradient {
+        background: linear-gradient(45deg, #3daec9, #57c6e0);
+    }
+    .chart-container {
+        position: relative;
+        margin: auto;
+        height: 250px;
+    }
+    .table-container {
+        height: 320px;
+        overflow-y: auto;
+    }
+    .section-title {
+        font-size: 20px;
+        margin-bottom: 15px;
+        color: #333;
+        font-weight: 600;
+        padding-bottom: 5px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+    .activity-item {
+        padding: 10px 15px;
+        border-bottom: 1px solid #f0f0f0;
+        display: flex;
+        align-items: center;
+    }
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+    .activity-icon {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 12px;
+        flex-shrink: 0;
+    }
+    .activity-icon.project {
+        background-color: rgba(52, 152, 219, 0.2);
+        color: #3498db;
+    }
+    .activity-icon.member {
+        background-color: rgba(46, 204, 113, 0.2);
+        color: #2ecc71;
+    }
+    .activity-content {
+        flex-grow: 1;
+    }
+    .activity-title {
+        font-weight: 500;
+        margin-bottom: 0;
+    }
+    .activity-date {
+        font-size: 12px;
+        color: #888;
+    }
+    .badge-role {
+        font-size: 11px;
+        padding: 4px 8px;
+        border-radius: 12px;
+    }
+    .quick-action-btn {
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+        background: #f9f9f9;
+        text-align: center;
+        transition: all 0.3s;
+    }
+    .quick-action-btn:hover {
+        background: #f0f0f0;
+        border-color: #d0d0d0;
+    }
+    .quick-action-btn i {
+        font-size: 24px;
+        margin-bottom: 8px;
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% include 'app_common/common_files/jiva/jiva_navbar.html' %}
+
+<div class="content-wrapper">
+    {% include 'app_organization/mod_project/sidebar_menu.html' %}
+
+    <div class="contentbar" id="contentbar">
+        <div class="container-fluid py-4">
+            <!-- Header Section -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="dashboard-card">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h1 class="mb-0"><i class="bi bi-building me-2"></i>{{ organization.name }} Dashboard</h1>
+                                <p class="text-muted mb-0">Welcome to your organization's administration dashboard</p>
+                            </div>
+                            <a href="{% url 'index' %}" class="btn btn-outline-primary">
+                                <i class="bi bi-house"></i> Home
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Key Stats Cards -->
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="stat-card bg-primary-gradient">
+                        <div class="stat-number">{{ total_projects }}</div>
+                        <div class="stat-title">Projects</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card bg-success-gradient">
+                        <div class="stat-number">{{ total_members }}</div>
+                        <div class="stat-title">Members</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="stat-card bg-warning-gradient">
+                        <div class="stat-number">{{ time_stats.projects_last_month }}</div>
+                        <div class="stat-title">New Projects (30d)</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Actions Section -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="dashboard-card">
+                        <h3 class="section-title">Quick Actions</h3>
+                        <div class="row">
+                            <div class="col-md-3 col-sm-6 mb-3">
+                                <a href="{% url 'list_projects' organization.id %}" class="quick-action-btn d-block text-decoration-none">
+                                    <i class="bi bi-kanban text-primary"></i>
+                                    <span>Manage Projects</span>
+                                </a>
+                            </div>
+                            <div class="col-md-3 col-sm-6 mb-3">
+                                <a href="#" class="quick-action-btn d-block text-decoration-none">
+                                    <i class="bi bi-people text-success"></i>
+                                    <span>Manage Members</span>
+                                </a>
+                            </div>
+                            <div class="col-md-3 col-sm-6 mb-3">
+                                <a href="#" class="quick-action-btn d-block text-decoration-none">
+                                    <i class="bi bi-bar-chart text-info"></i>
+                                    <span>View Reports</span>
+                                </a>
+                            </div>
+                            <div class="col-md-3 col-sm-6 mb-3">
+                                <a href="#" class="quick-action-btn d-block text-decoration-none">
+                                    <i class="bi bi-gear text-secondary"></i>
+                                    <span>Organization Settings</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Charts Section -->
+            <div class="row mb-4">
+                <!-- Members by Role -->
+                <div class="col-md-6">
+                    <div class="dashboard-card">
+                        <h3 class="section-title">Members by Role</h3>
+                        <div class="chart-container">
+                            <canvas id="roleDistributionChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Project States -->
+                <div class="col-md-6">
+                    <div class="dashboard-card">
+                        <h3 class="section-title">Project State Distribution</h3>
+                        <div class="chart-container">
+                            <canvas id="projectStatesChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <!-- Project Members -->
+                <div class="col-md-12">
+                    <div class="dashboard-card">
+                        <h3 class="section-title">Members Per Project</h3>
+                        <div class="chart-container">
+                            <canvas id="projectMembersChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Activity & Projects Section -->
+            <div class="row">
+                <!-- Recent Projects -->
+                <div class="col-md-6">
+                    <div class="dashboard-card">
+                        <h3 class="section-title">Recent Projects</h3>
+                        <div class="table-container">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Project Name</th>
+                                        <th>Created</th>
+                                        <th>Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for project in recent_projects %}
+                                    <tr>
+                                        <td>
+                                            <strong>{{ project.name }}</strong>
+                                        </td>
+                                        <td>{{ project.created_at|date:"M d, Y" }}</td>
+                                        <td>
+                                            <a href="#" class="btn btn-sm btn-outline-primary">View</a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Recent Activity -->
+                <div class="col-md-6">
+                    <div class="dashboard-card">
+                        <h3 class="section-title">Recent Activity</h3>
+                        <div class="activity-container table-container">
+                            {% for activity in recent_activities %}
+                            <div class="activity-item">
+                                {% if activity.type == 'project_created' %}
+                                <div class="activity-icon project">
+                                    <i class="bi bi-folder-plus"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <p class="activity-title">New project: {{ activity.name }}</p>
+                                    <p class="activity-date">{{ activity.date|date:"M d, Y H:i" }} by {{ activity.creator }}</p>
+                                </div>
+                                {% elif activity.type == 'member_added' %}
+                                <div class="activity-icon member">
+                                    <i class="bi bi-person-plus"></i>
+                                </div>
+                                <div class="activity-content">
+                                    <p class="activity-title">New member: {{ activity.name }}</p>
+                                    <p class="activity-date">{{ activity.date|date:"M d, Y H:i" }} as {{ activity.role }}</p>
+                                </div>
+                                {% endif %}
+                            </div>
+                            {% empty %}
+                            <div class="text-center py-4">
+                                <p class="text-muted">No recent activity</p>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Organization Members -->
+            <div class="row mt-4">
+                <div class="col-12">
+                    <div class="dashboard-card">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h3 class="section-title mb-0">Organization Members</h3>
+                            <a href="#" class="btn btn-sm btn-primary">
+                                <i class="bi bi-person-plus"></i> Add Member
+                            </a>
+                        </div>
+                        <div class="table-container">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>Member</th>
+                                        <th>Role</th>
+                                        <th>Joined</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for member_role in member_roles %}
+                                    <tr>
+                                        <td>{{ member_role.member.name }}</td>
+                                        <td>
+                                            <span class="badge bg-{% if member_role.role.name == 'Org Admin' %}danger{% elif member_role.role.name == 'Project Admin' %}warning{% else %}info{% endif %} rounded-pill">
+                                                {{ member_role.role.name }}
+                                            </span>
+                                        </td>
+                                        <td>{{ member_role.created_at|date:"M d, Y" }}</td>
+                                        <td>
+                                            <a href="#" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                            <a href="#" class="btn btn-sm btn-outline-danger ms-1">
+                                                <i class="bi bi-person-x"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Charts JavaScript -->
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Chart colors
+    const colors = [
+        'rgba(54, 162, 235, 0.8)',
+        'rgba(255, 99, 132, 0.8)',
+        'rgba(75, 192, 192, 0.8)',
+        'rgba(255, 159, 64, 0.8)',
+        'rgba(153, 102, 255, 0.8)',
+        'rgba(255, 205, 86, 0.8)',
+        'rgba(201, 203, 207, 0.8)',
+        'rgba(255, 99, 132, 0.8)',
+    ];
+    
+    // Role Distribution Chart
+    const roleDistributionCtx = document.getElementById('roleDistributionChart').getContext('2d');
+    new Chart(roleDistributionCtx, {
+        type: 'pie',
+        data: {
+            labels: {{ chart_data.role_names|safe }},
+            datasets: [{
+                data: {{ chart_data.role_counts|safe }},
+                backgroundColor: colors,
+                borderColor: colors.map(c => c.replace('0.8', '1')),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right'
+                },
+                title: {
+                    display: true,
+                    text: 'Member Role Distribution'
+                }
+            }
+        }
+    });
+
+    // Project States Chart
+    const projectStatesCtx = document.getElementById('projectStatesChart').getContext('2d');
+    new Chart(projectStatesCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ chart_data.project_states|safe }},
+            datasets: [{
+                data: {{ chart_data.project_state_counts|safe }},
+                backgroundColor: colors,
+                borderColor: colors.map(c => c.replace('0.8', '1')),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right'
+                },
+                title: {
+                    display: true,
+                    text: 'Project States'
+                }
+            }
+        }
+    });
+
+    // Project Members Chart
+    const projectMembersCtx = document.getElementById('projectMembersChart').getContext('2d');
+    new Chart(projectMembersCtx, {
+        type: 'bar',
+        data: {
+            labels: {{ chart_data.project_names|safe }},
+            datasets: [{
+                label: 'Members',
+                data: {{ chart_data.project_member_counts|safe }},
+                backgroundColor: colors.map(c => c.replace('0.8', '0.6')),
+                borderColor: colors.map(c => c.replace('0.8', '1')),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                title: {
+                    display: true,
+                    text: 'Number of Members per Project'
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    }
+                }
+            }
+        }
+    });
+});
+</script>
+
+<!-- End: Content -->
+{% endblock content %}

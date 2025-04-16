@@ -1,0 +1,1372 @@
+{% extends 'app_common/common_files/base_template.html' %}
+{% load static %}
+{% load custom_tags %}
+{% load app_web_my_filters %}
+{% load markdown_extras %}
+
+{% block head_extra %}
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&family=Roboto:wght@300;400;500;700&display=swap" rel="stylesheet">
+
+<!-- Font Awesome -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+<style>
+    /* Modern Blog Detail Styles */
+    :root {
+        --primary-color: #3a86ff;
+        --primary-dark: #2667cc;
+        --primary-light: #5b9eff;
+        --secondary-color: #ff006e;
+        --secondary-dark: #cc0057;
+        --secondary-light: #ff3b8d;
+        --accent-color: #8338ec;
+        --text-color: #2b2d42;
+        --text-light: #64748b;
+        --text-muted: #94a3b8;
+        --bg-light: #f8f9fa;
+        --bg-white: #ffffff;
+        --bg-accent: #e0ecff;
+        --shadow-sm: 0 2px 8px rgba(0,0,0,0.05);
+        --shadow-md: 0 4px 16px rgba(0,0,0,0.08);
+        --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+        --border-radius-sm: 8px;
+        --border-radius-md: 12px;
+        --border-radius-lg: 16px;
+        --border-radius-xl: 24px;
+        --border-radius-full: 9999px;
+    }
+    
+    /* Base Styles */
+    body, html {
+        font-family: 'Roboto', sans-serif;
+        color: var(--text-color);
+    }
+    
+    h1, h2, h3, h4, h5, h6, .h1, .h2, .h3, .h4, .h5, .h6 {
+        font-family: 'Poppins', sans-serif;
+        font-weight: 700;
+    }
+    
+    /* Blog Header */
+    .blog-header {
+        padding: 100px 0 60px;
+        background: linear-gradient(135deg, #3a86ff, #8338ec);
+        margin-bottom: 0;
+        position: relative;
+        overflow: hidden;
+        color: white;
+    }
+    
+    .blog-header::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        background-image: 
+            radial-gradient(circle at 20% 80%, rgba(255, 255, 255, 0.08) 0%, transparent 25%),
+            radial-gradient(circle at 80% 20%, rgba(255, 255, 255, 0.08) 0%, transparent 25%);
+    }
+    
+    /* Blog Tabs - Now at the top */
+    .blog-tabs {
+        background-color: white;
+        border-radius: var(--border-radius-lg) var(--border-radius-lg) 0 0;
+        padding: 0;
+        margin-top: -30px;
+        position: relative;
+        z-index: 10;
+        box-shadow: var(--shadow-md);
+    }
+    
+    .blog-tabs .nav-tabs {
+        border: none;
+        padding: 0 20px;
+    }
+    
+    .blog-tabs .nav-item {
+        margin-right: 5px;
+    }
+    
+    .blog-tabs .nav-link {
+        font-family: 'Poppins', sans-serif;
+        font-weight: 600;
+        font-size: 15px;
+        padding: 15px 20px;
+        border: none;
+        color: var(--text-light);
+        border-radius: 0;
+        border-bottom: 3px solid transparent;
+        transition: all 0.2s ease;
+    }
+    
+    .blog-tabs .nav-link:hover {
+        color: var(--primary-color);
+        background-color: var(--bg-light);
+    }
+    
+    .blog-tabs .nav-link.active {
+        color: var(--primary-color);
+        background-color: transparent;
+        border-bottom: 3px solid var(--primary-color);
+    }
+    
+    .blog-tabs .nav-link i {
+        margin-right: 8px;
+    }
+    
+    /* Blog Content Container */
+    .blog-content-container {
+        position: relative;
+        padding-bottom: 60px;
+    }
+    
+    .tab-content {
+        padding-top: 20px;
+    }
+    
+    /* Featured Image */
+    .blog-featured-image-wrapper {
+        margin-bottom: 40px;
+        position: relative;
+        border-radius: var(--border-radius-lg);
+        overflow: hidden;
+        box-shadow: var(--shadow-lg);
+        aspect-ratio: 16 / 9;
+    }
+    
+    .blog-featured-image {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+    
+    .blog-featured-image:hover {
+        transform: scale(1.02);
+    }
+    
+    /* Blog Title */
+    .blog-title {
+        font-size: clamp(2rem, 5vw, 3.5rem);
+        font-weight: 800;
+        margin-bottom: 24px;
+        line-height: 1.2;
+        color: white;
+        letter-spacing: -0.02em;
+    }
+    
+    /* Blog Meta */
+    .blog-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 30px;
+        color: rgba(255, 255, 255, 0.85);
+        font-size: 15px;
+        align-items: center;
+    }
+    
+    .blog-meta-item {
+        display: flex;
+        align-items: center;
+        padding: 5px 15px;
+        background-color: rgba(255, 255, 255, 0.15);
+        backdrop-filter: blur(5px);
+        border-radius: var(--border-radius-full);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    .blog-meta-item i {
+        margin-right: 8px;
+    }
+    
+    /* Category Badge */
+    .category-badge {
+        display: inline-block;
+        padding: 8px 18px;
+        border-radius: var(--border-radius-full);
+        font-size: 14px;
+        font-weight: 600;
+        background-color: var(--accent-color);
+        color: white;
+        margin-bottom: 16px;
+        box-shadow: var(--shadow-sm);
+        letter-spacing: 0.5px;
+        text-transform: uppercase;
+        border: 1px solid rgba(255, 255, 255, 0.2);
+    }
+    
+    /* Blog Content */
+    .main-content-card {
+        background-color: var(--bg-white);
+        border-radius: 0 0 var(--border-radius-lg) var(--border-radius-lg);
+        box-shadow: var(--shadow-md);
+        padding: 40px;
+        margin-bottom: 40px;
+    }
+    
+    @media (max-width: 768px) {
+        .main-content-card {
+            padding: 25px;
+        }
+    }
+    
+    .blog-content {
+        font-size: 1.125rem;
+        line-height: 1.8;
+        color: var(--text-color);
+    }
+    
+    .blog-content p {
+        margin-bottom: 1.5em;
+    }
+    
+    .blog-content img {
+        max-width: 100%;
+        height: auto;
+        margin: 30px 0;
+        border-radius: var(--border-radius-md);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .blog-content h2 {
+        font-size: 1.75rem;
+        margin-top: 50px;
+        margin-bottom: 24px;
+        font-weight: 700;
+        color: var(--text-color);
+    }
+    
+    .blog-content h3 {
+        font-size: 1.5rem;
+        margin-top: 40px;
+        margin-bottom: 20px;
+        font-weight: 600;
+        color: var(--text-color);
+    }
+    
+    .blog-content blockquote {
+        border-left: 5px solid var(--primary-color);
+        padding: 20px 30px;
+        margin: 40px 0;
+        font-style: italic;
+        color: var(--text-light);
+        background-color: var(--bg-light);
+        border-radius: 0 var(--border-radius-md) var(--border-radius-md) 0;
+    }
+    
+    .blog-content code {
+        background-color: var(--bg-light);
+        padding: 3px 6px;
+        border-radius: 4px;
+        font-family: monospace;
+        font-size: 0.9em;
+        color: var(--accent-color);
+    }
+    
+    .blog-content pre {
+        background-color: #2b2d42;
+        color: #f8f9fa;
+        padding: 20px;
+        border-radius: var(--border-radius-md);
+        overflow-x: auto;
+        margin: 30px 0;
+        font-family: monospace;
+        line-height: 1.5;
+        font-size: 0.9em;
+    }
+    
+    /* Tags */
+    .tag-list {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        margin: 30px 0;
+    }
+    
+    .tag {
+        display: inline-flex;
+        align-items: center;
+        padding: 6px 14px;
+        border-radius: var(--border-radius-full);
+        font-size: 13px;
+        background-color: var(--bg-light);
+        color: var(--primary-color);
+        font-weight: 500;
+        transition: all 0.2s ease;
+    }
+    
+    .tag:before {
+        content: '#';
+        margin-right: 4px;
+        opacity: 0.7;
+    }
+    
+    .tag:hover {
+        background-color: var(--bg-accent);
+        transform: translateY(-2px);
+        box-shadow: var(--shadow-sm);
+    }
+    
+    /* Editor Actions */
+    .editor-actions {
+        margin-top: 40px;
+        padding-top: 30px;
+        border-top: 1px solid rgba(0,0,0,0.1);
+    }
+    
+    /* Sidebar */
+    .sidebar-card {
+        background-color: var(--bg-white);
+        border-radius: var(--border-radius-lg);
+        box-shadow: var(--shadow-md);
+        padding: 30px;
+        margin-bottom: 30px;
+        transition: all 0.3s ease;
+    }
+    
+    .sidebar-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-lg);
+    }
+    
+    .sidebar-title {
+        font-size: 1.25rem;
+        font-weight: 700;
+        margin-bottom: 25px;
+        padding-bottom: 15px;
+        border-bottom: 2px solid var(--bg-light);
+        color: var(--text-color);
+        display: flex;
+        align-items: center;
+    }
+    
+    .sidebar-title i {
+        margin-right: 10px;
+        color: var(--primary-color);
+    }
+    
+    /* Author Card */
+    .blog-author {
+        display: flex;
+        align-items: center;
+        margin-bottom: 25px;
+        padding-bottom: 20px;
+        border-bottom: 1px solid var(--bg-light);
+    }
+    
+    .blog-author-avatar {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background-color: var(--bg-accent);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 20px;
+        box-shadow: var(--shadow-sm);
+        border: 3px solid white;
+        overflow: hidden;
+    }
+    
+    .blog-author-avatar i {
+        font-size: 32px;
+        color: var(--primary-color);
+    }
+    
+    .blog-author-info {
+        flex: 1;
+    }
+    
+    .blog-author-name {
+        font-size: 20px;
+        font-weight: 700;
+        margin-bottom: 5px;
+        color: var(--text-color);
+    }
+    
+    .blog-author-title {
+        font-size: 14px;
+        color: var(--text-light);
+        font-weight: 500;
+        display: inline-flex;
+        align-items: center;
+        background-color: var(--bg-light);
+        padding: 3px 10px;
+        border-radius: 30px;
+        margin-bottom: 8px;
+    }
+    
+    .blog-author-title i {
+        font-size: 12px;
+        margin-right: 5px;
+        color: var(--primary-color);
+    }
+    
+    .blog-author-desc {
+        margin-top: 10px;
+        font-size: 14px;
+        line-height: 1.6;
+        color: var(--text-light);
+    }
+    
+    /* Recent/Related Posts - New Card Style */
+    .recent-posts-container {
+        display: grid;
+        grid-template-columns: repeat(1, 1fr);
+        gap: 20px;
+    }
+    
+    .recent-post-card {
+        display: flex;
+        background: white;
+        border-radius: var(--border-radius-md);
+        overflow: hidden;
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+        border: 1px solid rgba(0,0,0,0.05);
+        height: 100%;
+    }
+    
+    .recent-post-card:hover {
+        transform: translateY(-5px);
+        box-shadow: var(--shadow-md);
+    }
+    
+    .recent-post-img {
+        width: 100px;
+        flex-shrink: 0;
+        background-color: var(--bg-accent);
+        overflow: hidden;
+    }
+    
+    .recent-post-img img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        transition: transform 0.5s ease;
+    }
+    
+    .recent-post-card:hover .recent-post-img img {
+        transform: scale(1.1);
+    }
+    
+    .recent-post-placeholder {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        width: 100%;
+        height: 100%;
+        background-color: var(--bg-accent);
+        color: var(--primary-color);
+    }
+    
+    .recent-post-placeholder i {
+        font-size: 24px;
+    }
+    
+    .recent-post-content {
+        padding: 15px;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        flex: 1;
+    }
+    
+    .recent-post-title {
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 10px;
+        line-height: 1.4;
+        color: var(--text-color);
+    }
+    
+    .recent-post-title a {
+        color: inherit;
+        text-decoration: none;
+    }
+    
+    .recent-post-title a:hover {
+        color: var(--primary-color);
+    }
+    
+    .recent-post-meta {
+        font-size: 13px;
+        color: var(--text-muted);
+        display: flex;
+        align-items: center;
+    }
+    
+    .recent-post-meta i {
+        margin-right: 5px;
+        font-size: 12px;
+        color: var(--primary-color);
+    }
+    
+    /* Action Buttons */
+    .action-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 10px 20px;
+        font-weight: 600;
+        border-radius: var(--border-radius-md);
+        transition: all 0.2s ease;
+        text-decoration: none;
+        border: none;
+        cursor: pointer;
+    }
+    
+    .action-btn i {
+        margin-right: 8px;
+    }
+    
+    .action-btn-primary {
+        background-color: var(--primary-color);
+        color: white;
+    }
+    
+    .action-btn-primary:hover {
+        background-color: var(--primary-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(58, 134, 255, 0.3);
+    }
+    
+    .action-btn-outline {
+        background-color: transparent;
+        color: var(--primary-color);
+        border: 2px solid var(--primary-color);
+    }
+    
+    .action-btn-outline:hover {
+        background-color: var(--bg-accent);
+        transform: translateY(-2px);
+    }
+    
+    .action-btn-secondary {
+        background-color: var(--secondary-color);
+        color: white;
+    }
+    
+    .action-btn-secondary:hover {
+        background-color: var(--secondary-dark);
+        transform: translateY(-2px);
+        box-shadow: 0 4px 10px rgba(255, 0, 110, 0.3);
+    }
+    
+    /* Comments Section */
+    .comments-section {
+        margin-top: 40px;
+        background-color: var(--bg-white);
+        border-radius: var(--border-radius-lg);
+        box-shadow: var(--shadow-md);
+        padding: 40px;
+    }
+    
+    .section-header {
+        margin-bottom: 30px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .section-title {
+        font-size: 1.5rem;
+        font-weight: 700;
+        color: var(--text-color);
+        display: flex;
+        align-items: center;
+    }
+    
+    .section-title i {
+        margin-right: 12px;
+        color: var(--primary-color);
+    }
+    
+    .comment-count {
+        background-color: var(--bg-accent);
+        color: var(--primary-color);
+        font-weight: 600;
+        padding: 3px 12px;
+        border-radius: 30px;
+        font-size: 14px;
+    }
+    
+    .comment {
+        display: flex;
+        margin-bottom: 30px;
+        position: relative;
+    }
+    
+    .comment:last-child {
+        margin-bottom: 0;
+    }
+    
+    .comment-avatar {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        background-color: var(--bg-accent);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-right: 20px;
+        flex-shrink: 0;
+        box-shadow: var(--shadow-sm);
+    }
+    
+    .comment-avatar i {
+        color: var(--primary-color);
+    }
+    
+    .comment-content {
+        flex-grow: 1;
+        background-color: var(--bg-light);
+        padding: 20px;
+        border-radius: var(--border-radius-md);
+        position: relative;
+    }
+    
+    .comment-content::before {
+        content: '';
+        position: absolute;
+        left: -10px;
+        top: 20px;
+        width: 0;
+        height: 0;
+        border-top: 10px solid transparent;
+        border-bottom: 10px solid transparent;
+        border-right: 10px solid var(--bg-light);
+    }
+    
+    .comment-author {
+        font-weight: 700;
+        margin-bottom: 5px;
+        color: var(--text-color);
+    }
+    
+    .comment-date {
+        font-size: 13px;
+        color: var(--text-light);
+        margin-bottom: 12px;
+    }
+    
+    .comment-text {
+        margin-bottom: 15px;
+        color: var(--text-color);
+    }
+    
+    .comment-reply {
+        display: inline-flex;
+        align-items: center;
+        color: var(--primary-color);
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+    
+    .comment-reply i {
+        font-size: 14px;
+        margin-right: 5px;
+    }
+    
+    .comment-reply:hover {
+        opacity: 0.8;
+        transform: translateX(3px);
+    }
+    
+    .comment-form {
+        margin-top: 40px;
+        background-color: var(--bg-light);
+        padding: 25px;
+        border-radius: var(--border-radius-md);
+    }
+    
+    .comment-form textarea {
+        border: 1px solid rgba(0,0,0,0.1);
+        border-radius: var(--border-radius-md);
+        padding: 15px;
+        font-size: 16px;
+        transition: all 0.2s ease;
+    }
+    
+    .comment-form textarea:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 3px rgba(58, 134, 255, 0.15);
+    }
+    
+    .comment-form button {
+        background-color: var(--primary-color);
+        border: none;
+        padding: 10px 20px;
+        border-radius: var(--border-radius-md);
+        color: white;
+        font-weight: 600;
+        transition: all 0.2s ease;
+    }
+    
+    .comment-form button:hover {
+        background-color: var(--primary-dark);
+        transform: translateY(-2px);
+    }
+    
+    .reply-form {
+        margin-left: 70px;
+        margin-bottom: 30px;
+        display: none;
+        background-color: var(--bg-light);
+        padding: 20px;
+        border-radius: var(--border-radius-md);
+        margin-top: 15px;
+    }
+    
+    .replies {
+        margin-left: 70px;
+        margin-top: 20px;
+    }
+    
+    /* Social Sharing */
+    .social-sharing {
+        display: flex;
+        gap: 10px;
+        margin-top: 30px;
+    }
+    
+    .social-icon {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        color: white;
+        font-size: 18px;
+        transition: all 0.2s ease;
+    }
+    
+    .social-icon:hover {
+        transform: translateY(-3px);
+    }
+    
+    .social-facebook {
+        background-color: #1877f2;
+    }
+    
+    .social-twitter {
+        background-color: #1da1f2;
+    }
+    
+    .social-linkedin {
+        background-color: #0a66c2;
+    }
+    
+    .social-pinterest {
+        background-color: #e60023;
+    }
+    
+    /* Responsive Adjustments */
+    @media (max-width: 992px) {
+        .blog-title {
+            font-size: 2.5rem;
+        }
+        
+        .blog-meta {
+            font-size: 14px;
+        }
+        
+        .blog-tabs .nav-link {
+            padding: 12px 15px;
+            font-size: 14px;
+        }
+    }
+    
+    @media (max-width: 768px) {
+        .blog-header {
+            padding: 80px 0 40px;
+        }
+        
+        .blog-title {
+            font-size: 2rem;
+        }
+        
+        .blog-tabs {
+            margin-top: -20px;
+        }
+        
+        .blog-tabs .nav-tabs {
+            padding: 0 10px;
+        }
+        
+        .blog-tabs .nav-link {
+            padding: 10px;
+            font-size: 13px;
+        }
+        
+        .blog-tabs .nav-link i {
+            margin-right: 5px;
+        }
+        
+        .main-content-card,
+        .comments-section {
+            padding: 25px;
+        }
+        
+        .sidebar-card {
+            padding: 25px;
+        }
+        
+        .blog-meta {
+            gap: 10px;
+        }
+        
+        .blog-meta-item {
+            padding: 4px 10px;
+            font-size: 13px;
+        }
+    }
+    
+    @media (max-width: 576px) {
+        .blog-header {
+            padding: 60px 0 30px;
+        }
+        
+        .blog-title {
+            font-size: 1.75rem;
+        }
+        
+        .blog-tabs {
+            margin-top: -15px;
+        }
+        
+        .blog-tabs .nav-link {
+            padding: 8px;
+            font-size: 12px;
+        }
+        
+        .blog-tabs .nav-link i {
+            font-size: 14px;
+            margin-right: 3px;
+        }
+        
+        .main-content-card,
+        .comments-section,
+        .sidebar-card {
+            padding: 20px;
+        }
+        
+        .blog-content {
+            font-size: 1rem;
+        }
+        
+        .comment-avatar {
+            width: 40px;
+            height: 40px;
+            margin-right: 15px;
+        }
+        
+        .replies {
+            margin-left: 55px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% include 'app_common/common_files/navbar.html' %}
+
+<div class="container-fluid p-0">
+    <!-- Blog Header with Modern Design -->
+    <div class="blog-header">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-8 mx-auto text-center">
+                    {% if blog.category %}
+                    <span class="category-badge">{{ blog.category }}</span>
+                    {% endif %}
+                    <h1 class="blog-title">{{ blog.title|default:blog.name }}</h1>
+                    <div class="blog-meta">
+                        <div class="blog-meta-item">
+                            <i class="fa-regular fa-calendar"></i>
+                            <span>{{ blog.published_at|default:blog.created_at|date:"F d, Y" }}</span>
+                        </div>
+                        <div class="blog-meta-item">
+                            <i class="fa-regular fa-user"></i>
+                            <span>{{ blog.author.username }}</span>
+                        </div>
+                        <div class="blog-meta-item">
+                            <i class="fa-regular fa-eye"></i>
+                            <span>{{ blog.views_count }} Views</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Blog Tabs at the Top -->
+    <div class="container">
+        <div class="blog-tabs">
+            <ul class="nav nav-tabs" id="blogTabs" role="tablist">
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link active" id="article-tab" data-bs-toggle="tab" data-bs-target="#article" type="button" role="tab" aria-controls="article" aria-selected="true">
+                        <i class="fa-solid fa-book-open"></i> Article
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="comments-tab" data-bs-toggle="tab" data-bs-target="#comments" type="button" role="tab" aria-controls="comments" aria-selected="false">
+                        <i class="fa-solid fa-comments"></i> Comments <span class="badge rounded-pill bg-primary">{{ comments|length }}</span>
+                    </button>
+                </li>
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="related-tab" data-bs-toggle="tab" data-bs-target="#related" type="button" role="tab" aria-controls="related" aria-selected="false">
+                        <i class="fa-solid fa-link"></i> Related
+                    </button>
+                </li>
+                {% if can_edit %}
+                <li class="nav-item" role="presentation">
+                    <button class="nav-link" id="actions-tab" data-bs-toggle="tab" data-bs-target="#actions" type="button" role="tab" aria-controls="actions" aria-selected="false">
+                        <i class="fa-solid fa-gear"></i> Actions
+                    </button>
+                </li>
+                {% endif %}
+            </ul>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="blogTabContent">
+            <!-- Article Tab -->
+            <div class="tab-pane fade show active" id="article" role="tabpanel" aria-labelledby="article-tab">
+                <div class="row">
+                    <!-- Main Content -->
+                    <div class="col-lg-8">
+                        <div class="main-content-card">
+                            <!-- Featured Image with Enhanced Styling -->
+                            {% if blog.featured_image %}
+                            <div class="blog-featured-image-wrapper">
+                                <img src="{{ blog.featured_image.url }}" alt="{{ blog.title }}" class="blog-featured-image">
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Blog Content with Better Typography -->
+                            <div class="blog-content">
+                                {% if blog.content %}
+                                    {{ blog.content|markdown|safe }}
+                                {% else %}
+                                    {{ blog.description|linebreaks }}
+                                {% endif %}
+                            </div>
+                            
+                            <!-- Tags with Hover Effects -->
+                            {% if blog.tags %}
+                            <div class="tag-list">
+                                {% for tag in blog.tags.split %}
+                                <span class="tag">{{ tag }}</span>
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Social Sharing -->
+                            <div class="social-sharing">
+                                <a href="#" class="social-icon social-facebook" title="Share on Facebook">
+                                    <i class="fa-brands fa-facebook-f"></i>
+                                </a>
+                                <a href="#" class="social-icon social-twitter" title="Share on Twitter">
+                                    <i class="fa-brands fa-twitter"></i>
+                                </a>
+                                <a href="#" class="social-icon social-linkedin" title="Share on LinkedIn">
+                                    <i class="fa-brands fa-linkedin-in"></i>
+                                </a>
+                                <a href="#" class="social-icon social-pinterest" title="Pin on Pinterest">
+                                    <i class="fa-brands fa-pinterest-p"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Author Sidebar -->
+                    <div class="col-lg-4">
+                        <!-- Author Info Card -->
+                        <div class="sidebar-card">
+                            <h3 class="sidebar-title">
+                                <i class="fa-solid fa-user-pen"></i> About the Author
+                            </h3>
+                            <div class="blog-author">
+                                <div class="blog-author-avatar">
+                                    <i class="fa-solid fa-user"></i>
+                                </div>
+                                <div class="blog-author-info">
+                                    <div class="blog-author-name">{{ blog.author.username }}</div>
+                                    <div class="blog-author-title">
+                                        <i class="fa-solid fa-pen-fancy"></i> Author
+                                    </div>
+                                </div>
+                            </div>
+                            <p class="blog-author-desc">Author of blogs for {{ organization.name }}. Sharing insights, knowledge and expertise in various topics.</p>
+                        </div>
+                        
+                        <!-- Back to Blogs Card -->
+                        <div class="sidebar-card">
+                            <div class="d-grid">
+                                <a href="{% url 'public_blog_list' organization_id=organization_id %}" class="action-btn action-btn-outline w-100">
+                                    <i class="fa-solid fa-arrow-left"></i> Back to All Blogs
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Comments Tab -->
+            <div class="tab-pane fade" id="comments" role="tabpanel" aria-labelledby="comments-tab">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="comments-section">
+                            <div class="section-header">
+                                <h3 class="section-title">
+                                    <i class="fa-solid fa-comments"></i> Discussion
+                                </h3>
+                                <span class="comment-count">{{ comments|length }} Comments</span>
+                            </div>
+                            
+                            <!-- Comment Form at Top -->
+                            {% if can_comment %}
+                            <div class="comment-form mb-5">
+                                <form method="post">
+                                    {% csrf_token %}
+                                    <div class="mb-3">
+                                        <label for="comment_content" class="form-label fw-bold mb-2">
+                                            <i class="fa-solid fa-message"></i> Join the conversation
+                                        </label>
+                                        <textarea name="comment_content" id="comment_content" class="form-control" rows="4" placeholder="Share your thoughts on this blog..." required></textarea>
+                                    </div>
+                                    <button type="submit" class="action-btn action-btn-primary">
+                                        <i class="fa-solid fa-paper-plane"></i> Post Comment
+                                    </button>
+                                </form>
+                            </div>
+                            {% endif %}
+                            
+                            <!-- Comments List -->
+                            {% if comments %}
+                                {% for comment in comments %}
+                                <div class="comment" id="comment-{{ comment.id }}">
+                                    <div class="comment-avatar">
+                                        <i class="fa-solid fa-user"></i>
+                                    </div>
+                                    <div class="comment-content">
+                                        <div class="comment-author">{{ comment.author.username }}</div>
+                                        <div class="comment-date">{{ comment.created_at|date:"F d, Y H:i" }}</div>
+                                        <div class="comment-text">{{ comment.content|linebreaks }}</div>
+                                        
+                                        {% if can_comment %}
+                                        <div class="comment-reply" onclick="showReplyForm({{ comment.id }})">
+                                            <i class="fa-solid fa-reply"></i> Reply
+                                        </div>
+                                        
+                                        <!-- Reply Form (Hidden by default) -->
+                                        <div class="reply-form" id="reply-form-{{ comment.id }}">
+                                            <form method="post">
+                                                {% csrf_token %}
+                                                <input type="hidden" name="parent_comment_id" value="{{ comment.id }}">
+                                                <div class="mb-3">
+                                                    <textarea name="comment_content" class="form-control" rows="3" placeholder="Write your reply..." required></textarea>
+                                                </div>
+                                                <div class="d-flex gap-2">
+                                                    <button type="submit" class="btn btn-primary btn-sm">
+                                                        <i class="fa-solid fa-paper-plane"></i> Post Reply
+                                                    </button>
+                                                    <button type="button" class="btn btn-outline-secondary btn-sm" onclick="hideReplyForm({{ comment.id }})">
+                                                        <i class="fa-solid fa-times"></i> Cancel
+                                                    </button>
+                                                </div>
+                                            </form>
+                                        </div>
+                                        {% endif %}
+                                        
+                                        <!-- Replies -->
+                                        {% if comment.replies.all %}
+                                        <div class="replies">
+                                            {% for reply in comment.replies.all %}
+                                            <div class="comment">
+                                                <div class="comment-avatar">
+                                                    <i class="fa-solid fa-user"></i>
+                                                </div>
+                                                <div class="comment-content">
+                                                    <div class="comment-author">{{ reply.author.username }}</div>
+                                                    <div class="comment-date">{{ reply.created_at|date:"F d, Y H:i" }}</div>
+                                                    <div class="comment-text">{{ reply.content|linebreaks }}</div>
+                                                </div>
+                                            </div>
+                                            {% endfor %}
+                                        </div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="py-4 text-center">
+                                    <i class="fa-regular fa-comment-dots fa-3x mb-3 text-muted"></i>
+                                    <p class="text-muted">No comments yet. Be the first to comment!</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Related Tab -->
+            <div class="tab-pane fade" id="related" role="tabpanel" aria-labelledby="related-tab">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="sidebar-card">
+                            <h3 class="sidebar-title">
+                                <i class="fa-solid fa-link"></i> Related Blogs
+                            </h3>
+                            
+                            {% if related_blogs %}
+                                <div class="recent-posts-container">
+                                    {% for related in related_blogs %}
+                                    <div class="recent-post-card">
+                                        {% if related.featured_image %}
+                                        <div class="recent-post-img">
+                                            <img src="{{ related.featured_image.url }}" alt="{{ related.title }}">
+                                        </div>
+                                        {% else %}
+                                        <div class="recent-post-img">
+                                            <div class="recent-post-placeholder">
+                                                <i class="fa-solid fa-newspaper"></i>
+                                            </div>
+                                        </div>
+                                        {% endif %}
+                                        <div class="recent-post-content">
+                                            <div>
+                                                <h4 class="recent-post-title">
+                                                    <a href="{% url 'public_blog_detail' organization_id=organization_id blog_id=related.id %}">
+                                                        {{ related.title|default:related.name }}
+                                                    </a>
+                                                </h4>
+                                                <p class="recent-post-excerpt">
+                                                    {{ related.description|truncatechars:100 }}
+                                                </p>
+                                            </div>
+                                            <div class="recent-post-meta">
+                                                <i class="fa-regular fa-calendar"></i>
+                                                <span>{{ related.published_at|default:related.created_at|date:"M d, Y" }}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                            {% else %}
+                                <div class="py-4 text-center">
+                                    <i class="fa-solid fa-link-slash fa-3x mb-3 text-muted"></i>
+                                    <p class="text-muted">No related blogs found</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Actions Tab (only visible to editors/authors) -->
+            {% if can_edit %}
+            <div class="tab-pane fade" id="actions" role="tabpanel" aria-labelledby="actions-tab">
+                <div class="row">
+                    <div class="col-12">
+                        <div class="sidebar-card">
+                            <h3 class="sidebar-title">
+                                <i class="fa-solid fa-gear"></i> Author Actions
+                            </h3>
+                            <div class="d-grid gap-3 mb-4">
+                                <a href="{% url 'edit_blog' organization_id=organization_id blog_id=blog.id %}" class="action-btn action-btn-primary">
+                                    <i class="fa-solid fa-pen-to-square"></i> Edit This Blog
+                                </a>
+                                <a href="{% url 'create_blog' organization_id=organization_id %}" class="action-btn action-btn-secondary">
+                                    <i class="fa-solid fa-plus-circle"></i> Create New Blog
+                                </a>
+                                <a href="{% url 'list_blogs' organization_id=organization_id %}" class="action-btn action-btn-outline">
+                                    <i class="fa-solid fa-list-ul"></i> Manage All Blogs
+                                </a>
+                            </div>
+                            
+                            <h4 class="mt-4 mb-3 fw-bold">Team Management</h4>
+                            <a href="{% url 'manage_blog_members_for_blog' organization_id=organization_id blog_id=blog.id %}" class="action-btn action-btn-outline w-100">
+                                <i class="fa-solid fa-users-gear"></i> Manage Blog Team
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+// Bootstrap Tab Functionality Enhancement
+document.addEventListener('DOMContentLoaded', function() {
+    // Initialize Bootstrap tabs
+    var tabElms = document.querySelectorAll('button[data-bs-toggle="tab"]');
+    var tabList = [].slice.call(tabElms);
+    
+    tabList.forEach(function(tabEl) {
+        var tabTrigger = new bootstrap.Tab(tabEl);
+        
+        tabEl.addEventListener('click', function(event) {
+            event.preventDefault();
+            tabTrigger.show();
+        });
+    });
+    
+    // Check if there's a hash in the URL to activate specific tab
+    const hash = window.location.hash;
+    if (hash) {
+        const possibleTab = document.querySelector(`button[data-bs-target="${hash}"]`);
+        if (possibleTab) {
+            new bootstrap.Tab(possibleTab).show();
+        }
+    }
+    
+    // Add hash to URL when tab changes
+    const tabPanes = document.querySelectorAll('.tab-pane');
+    tabPanes.forEach(pane => {
+        pane.addEventListener('shown.bs.tab', function(e) {
+            history.pushState(null, null, '#' + pane.id);
+        });
+    });
+    
+    // Comment functionality
+    function showReplyForm(commentId) {
+        const replyForm = document.getElementById(`reply-form-${commentId}`);
+        if (replyForm) {
+            replyForm.style.display = 'block';
+            
+            // Focus on textarea after showing the form
+            setTimeout(() => {
+                const textarea = replyForm.querySelector('textarea');
+                if (textarea) {
+                    textarea.focus();
+                }
+            }, 100);
+            
+            // Smooth scroll to make form visible if needed
+            replyForm.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+        }
+    }
+    
+    function hideReplyForm(commentId) {
+        const replyForm = document.getElementById(`reply-form-${commentId}`);
+        if (replyForm) {
+            replyForm.style.display = 'none';
+        }
+    }
+    
+    // Make these functions available globally
+    window.showReplyForm = showReplyForm;
+    window.hideReplyForm = hideReplyForm;
+    
+    // Enhance image loading with fade-in effect
+    const blogImage = document.querySelector('.blog-featured-image');
+    if (blogImage) {
+        blogImage.style.opacity = '0';
+        blogImage.addEventListener('load', function() {
+            setTimeout(() => {
+                this.style.transition = 'opacity 0.5s ease';
+                this.style.opacity = '1';
+            }, 100);
+        });
+    }
+    
+    // Automatic tab switch if comment permalink
+    const commentIdMatch = window.location.hash.match(/#comment-(\d+)/);
+    if (commentIdMatch) {
+        const commentId = commentIdMatch[0];
+        const commentTab = document.querySelector('#comments-tab');
+        if (commentTab) {
+            new bootstrap.Tab(commentTab).show();
+            
+            // Delay scrolling to comment to let tab render
+            setTimeout(() => {
+                const commentElement = document.querySelector(commentId);
+                if (commentElement) {
+                    commentElement.scrollIntoView({ behavior: 'smooth' });
+                    // Highlight effect
+                    commentElement.style.transition = 'background-color 0.5s ease';
+                    commentElement.style.backgroundColor = 'var(--bg-accent)';
+                    setTimeout(() => {
+                        commentElement.style.backgroundColor = 'transparent';
+                    }, 1500);
+                }
+            }, 300);
+        }
+    }
+    
+    // Handle click on comment links
+    document.addEventListener('click', function(e) {
+        // Check if the clicked element is a link to a comment
+        if (e.target.tagName === 'A' && e.target.getAttribute('href') && e.target.getAttribute('href').startsWith('#comment-')) {
+            e.preventDefault();
+            
+            // Switch to the comments tab
+            const commentTab = document.querySelector('#comments-tab');
+            if (commentTab) {
+                new bootstrap.Tab(commentTab).show();
+                
+                // Get the target comment ID
+                const targetId = e.target.getAttribute('href');
+                
+                // Delay scrolling to the comment to allow tab to render
+                setTimeout(() => {
+                    const targetElement = document.querySelector(targetId);
+                    if (targetElement) {
+                        targetElement.scrollIntoView({ behavior: 'smooth' });
+                        
+                        // Add highlight effect
+                        targetElement.style.transition = 'background-color 0.5s ease';
+                        targetElement.style.backgroundColor = 'var(--bg-accent)';
+                        setTimeout(() => {
+                            targetElement.style.backgroundColor = 'transparent';
+                        }, 1500);
+                    }
+                }, 300);
+            }
+        }
+    });
+    
+    // Social sharing functionality
+    const shareLinks = document.querySelectorAll('.social-sharing a');
+    shareLinks.forEach(link => {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            const url = encodeURIComponent(window.location.href);
+            const title = encodeURIComponent(document.title);
+            
+            let shareUrl = '';
+            if (this.classList.contains('social-facebook')) {
+                shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${url}`;
+            } else if (this.classList.contains('social-twitter')) {
+                shareUrl = `https://twitter.com/intent/tweet?url=${url}&text=${title}`;
+            } else if (this.classList.contains('social-linkedin')) {
+                shareUrl = `https://www.linkedin.com/sharing/share-offsite/?url=${url}`;
+            } else if (this.classList.contains('social-pinterest')) {
+                // Get the featured image if available
+                const featuredImg = document.querySelector('.blog-featured-image');
+                const imgUrl = featuredImg ? encodeURIComponent(featuredImg.src) : '';
+                shareUrl = `https://pinterest.com/pin/create/button/?url=${url}&description=${title}&media=${imgUrl}`;
+            }
+            
+            if (shareUrl) {
+                window.open(shareUrl, '_blank', 'width=600,height=400');
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

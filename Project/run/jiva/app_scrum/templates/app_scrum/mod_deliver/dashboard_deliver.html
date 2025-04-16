@@ -1,0 +1,330 @@
+
+{% extends 'app_common/common_files/base_template.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load custom_tags %}
+{% load app_web_my_filters %}
+{% load markdown_extras %}
+
+{% block head_extra %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+    .dashboard-card {
+        background: white;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.05);
+        padding: 20px;
+        margin-bottom: 20px;
+        transition: transform 0.3s;
+    }
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+    }
+    .stat-card {
+        padding: 15px;
+        border-radius: 8px;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        text-align: center;
+        height: 130px;
+    }
+    .stat-number {
+        font-size: 32px;
+        font-weight: bold;
+        margin: 10px 0;
+    }
+    .stat-title {
+        font-size: 16px;
+        text-transform: uppercase;
+    }
+    .bg-primary-gradient {
+        background: linear-gradient(45deg, #4a6fdc, #6c8df5);
+    }
+    .bg-success-gradient {
+        background: linear-gradient(45deg, #2e9b4f, #38c964);
+    }
+    .bg-warning-gradient {
+        background: linear-gradient(45deg, #f2994a, #f5bc62);
+    }
+    .bg-info-gradient {
+        background: linear-gradient(45deg, #3daec9, #57c6e0);
+    }
+    .chart-container {
+        position: relative;
+        margin: auto;
+        height: 250px;
+    }
+    .section-title {
+        font-size: 20px;
+        margin-bottom: 15px;
+        color: #333;
+        font-weight: 600;
+        padding-bottom: 5px;
+        border-bottom: 2px solid #f0f0f0;
+    }
+    .quick-action-btn {
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+        background: #f9f9f9;
+        text-align: center;
+        transition: all 0.3s;
+    }
+    .quick-action-btn:hover {
+        background: #f0f0f0;
+        border-color: #d0d0d0;
+    }
+    .quick-action-btn i {
+        font-size: 24px;
+        margin-bottom: 8px;
+        display: block;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+{% include 'app_common/common_files/navbar.html' %}
+
+<div class="content-wrapper">
+    {% include 'app_organization/mod_project/sidebar_menu.html' %}
+
+    <div class="contentbar" id="contentbar">
+        <div class="container-fluid py-4">
+            <!-- Header Section -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="dashboard-card">
+                        <div class="d-flex justify-content-between align-items-center">
+                            <div>
+                                <h1 class="mb-0"><i class="bi bi-speedometer2 me-2"></i>Deliver Dashboard</h1>
+                                <p class="text-muted mb-0">Overview and statistics for your Deliver</p>
+                            </div>
+                            <a href="{% url 'list_delivers' organization_id %}" class="btn btn-outline-primary">
+                                <i class="bi bi-list"></i> View All Deliver
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Key Stats Cards -->
+            <div class="row mb-4">
+                <div class="col-md-3">
+                    <div class="stat-card bg-primary-gradient">
+                        <div class="stat-number">{{ stats.total }}</div>
+                        <div class="stat-title">Total Deliver</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card bg-success-gradient">
+                        <div class="stat-number">{{ stats.active }}</div>
+                        <div class="stat-title">Active</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card bg-warning-gradient">
+                        <div class="stat-number">{{ stats.recent }}</div>
+                        <div class="stat-title">Recent (30d)</div>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="stat-card bg-info-gradient">
+                        <div class="stat-number">{{ stats.archived }}</div>
+                        <div class="stat-title">Archived</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Quick Actions Section -->
+            <div class="row mb-4">
+                <div class="col-12">
+                    <div class="dashboard-card">
+                        <h3 class="section-title">Quick Actions</h3>
+                        <div class="row">
+                            <div class="col-md-3 col-sm-6 mb-3">
+                                <a href="{% url 'create_deliver' organization_id %}" class="quick-action-btn d-block text-decoration-none">
+                                    <i class="bi bi-plus-square text-success"></i>
+                                    <span>Create New</span>
+                                </a>
+                            </div>
+                            <div class="col-md-3 col-sm-6 mb-3">
+                                <a href="{% url 'list_delivers' organization_id %}" class="quick-action-btn d-block text-decoration-none">
+                                    <i class="bi bi-list-ul text-primary"></i>
+                                    <span>View All</span>
+                                </a>
+                            </div>
+                            <div class="col-md-3 col-sm-6 mb-3">
+                                <a href="{% url 'list_deleted_delivers' organization_id %}" class="quick-action-btn d-block text-decoration-none">
+                                    <i class="bi bi-archive text-warning"></i>
+                                    <span>View Archived</span>
+                                </a>
+                            </div>
+                            <div class="col-md-3 col-sm-6 mb-3">
+                                <a href="{% url 'deliver_settings' organization_id %}" class="quick-action-btn d-block text-decoration-none">
+                                    <i class="bi bi-gear text-secondary"></i>
+                                    <span>Settings</span>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Charts Section -->
+            <div class="row mb-4">
+                <!-- Creation Over Time -->
+                <div class="col-md-6">
+                    <div class="dashboard-card">
+                        <h3 class="section-title">Creation Timeline</h3>
+                        <div class="chart-container" style="position: relative; height:250px;">
+                            <canvas id="creationChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Status Distribution -->
+                <div class="col-md-6">
+                    <div class="dashboard-card">
+                        <h3 class="section-title">Status Distribution</h3>
+                        <div class="chart-container" style="position: relative; height:250px;">
+                            <canvas id="statusChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Items Table -->
+            <div class="row">
+                <div class="col-12">
+                    <div class="dashboard-card">
+                        <div class="d-flex justify-content-between align-items-center mb-3">
+                            <h3 class="section-title mb-0">Recent Deliver</h3>
+                            <a href="{% url 'create_deliver' organization_id %}" class="btn btn-sm btn-success">
+                                <i class="bi bi-plus-lg"></i> Create New
+                            </a>
+                        </div>
+                        <div class="table-responsive">
+                            <table class="table table-hover">
+                                <thead>
+                                    <tr>
+                                        <th>#</th>
+                                        <th>Name</th>
+                                        <th>Description</th>
+                                        <th>Created</th>
+                                        <th>Actions</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    {% for item in recent_items %}
+                                    <tr>
+                                        <td>{{ forloop.counter }}</td>
+                                        <td><strong>{{ item.name }}</strong></td>
+                                        <td>{{ item.description|truncatechars:50 }}</td>
+                                        <td>{{ item.created_at|date:"M d, Y" }}</td>
+                                        <td>
+                                            <a href="{% url 'view_deliver' organization_id item.id %}" class="btn btn-sm btn-outline-primary">
+                                                <i class="bi bi-eye"></i>
+                                            </a>
+                                            <a href="{% url 'edit_deliver' organization_id item.id %}" class="btn btn-sm btn-outline-warning">
+                                                <i class="bi bi-pencil"></i>
+                                            </a>
+                                        </td>
+                                    </tr>
+                                    {% empty %}
+                                    <tr>
+                                        <td colspan="5" class="text-center py-3">
+                                            <p class="text-muted mb-0">No items found</p>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Chart colors
+    const colors = [
+        'rgba(74, 111, 220, 0.8)',
+        'rgba(56, 201, 100, 0.8)',
+        'rgba(245, 188, 98, 0.8)',
+        'rgba(87, 198, 224, 0.8)',
+        'rgba(231, 76, 60, 0.8)',
+    ];
+    
+    // Creation Timeline Chart
+    const creationCtx = document.getElementById('creationChart').getContext('2d');
+    new Chart(creationCtx, {
+        type: 'line',
+        data: {
+            labels: {{ chart_data.timeline_labels|default:'["Jan", "Feb", "Mar", "Apr", "May", "Jun"]'|safe }},
+            datasets: [{
+                label: 'New Deliver',
+                data: {{ chart_data.timeline_data|default:'[5, 8, 12, 7, 15, 10]'|safe }},
+                borderColor: colors[0],
+                backgroundColor: colors[0].replace('0.8', '0.1'),
+                tension: 0.4,
+                fill: true
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    mode: 'index',
+                    intersect: false
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        precision: 0
+                    }
+                }
+            }
+        }
+    });
+    
+    // Status Distribution Chart
+    const statusCtx = document.getElementById('statusChart').getContext('2d');
+    new Chart(statusCtx, {
+        type: 'doughnut',
+        data: {
+            labels: {{ chart_data.status_labels|default:'["Active", "Archived", "Draft"]'|safe }},
+            datasets: [{
+                data: {{ chart_data.status_data|default:'[65, 25, 10]'|safe }},
+                backgroundColor: colors,
+                borderColor: colors.map(c => c.replace('0.8', '1')),
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    position: 'right'
+                }
+            }
+        }
+    });
+});
+</script>
+{% endblock %}
+
+{% endblock content %}
