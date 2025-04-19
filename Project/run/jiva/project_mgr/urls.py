@@ -33,8 +33,8 @@ urlpatterns = [
     path('user/', include('app_user.urls')),
 
     # for the modern UIUX
-    path('usermgmt/', include('app_usermgmt.urls')),
-    path('todos/', include('app_todos.urls')),
+    path('usermgmt/', include('apps.app_usermgmt.urls')),
+    path('todos/', include('apps.app_todos.urls')),
 
     # administration
     path('admin/', admin.site.urls),    

@@ -1,0 +1,44 @@
+<style>
+    :root {
+           --banner-bg-color: #007bff; /* Default banner color (blue) */
+       }
+   .navbar {
+           background-color: var(--banner-bg-color); /* Use CSS variable for banner color */
+       }
+   .navbar-nav .nav-link {
+   color: white !important; /* Default text color */
+   background-color: transparent; /* Transparent background */
+   padding: 8px 15px; /* Padding for button effect */
+   border-radius: 5px; /* Rounded corners */
+   transition: all 0.3s ease-in-out;
+   margin: 5px; /* Spacing between buttons */
+   text-align: center;
+}
+
+.navbar-nav .nav-link:hover {
+   background-color: yellow !important; /* Hover background */
+   color: black !important; /* Change text color on hover */
+   border-color: yellow !important; /* Change border color */
+}
+</style>
+<nav class="navbar navbar-expand-lg navbar-dark">
+   <div class="container-fluid">
+       <a class="navbar-brand" href="/">Super User Admin</a>
+       <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+           <span class="navbar-toggler-icon"></span>
+       </button>
+       <div class="collapse navbar-collapse" id="navbarNav">
+           <ul class="navbar-nav ms-auto">
+               <li class="nav-item">
+                   <a class="nav-link" href="/">Home</a>
+               </li>
+               {% if user.is_superuser %}
+                   <li class="nav-item">
+                       <a class="nav-link" href="/admin">{{user}}</a>
+                   </li>
+               {% endif %}
+           
+           </ul>
+       </div>
+   </div>
+</nav>

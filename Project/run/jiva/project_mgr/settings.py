@@ -51,8 +51,8 @@ INSTALLED_APPS = [
     'markdown',    
     'imagekit',
     'app_user',
-    'app_usermgmt',
-    'app_todos',
+    'apps.app_usermgmt',
+    'apps.app_todos',
 ]
 
 MIDDLEWARE = [
