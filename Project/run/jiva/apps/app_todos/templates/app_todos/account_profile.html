@@ -1,0 +1,203 @@
+{% extends "base.html" %}
+
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+<div class="todo-container">
+    <div class="todo-card p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-user-circle"></i>Profile</h2>
+            <a href="{% url 'todo_app:my_todos_list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to Lists
+            </a>
+        </div>
+
+        <div class="row">
+            <!-- Profile Summary Card -->
+            <div class="col-md-4 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Profile Summary</h5>
+                    </div>
+                    <div class="card-body text-center">
+                        {% if account_profile.profile_picture %}
+                            <img src="{{ account_profile.profile_picture.url }}" alt="Profile Picture" 
+                                 class="rounded-circle img-thumbnail mb-3" style="width: 150px; height: 150px; object-fit: cover;">
+                        {% else %}
+                            <div class="bg-light rounded-circle mx-auto mb-3 d-flex align-items-center justify-content-center" 
+                                 style="width: 150px; height: 150px;">
+                                <i class="fas fa-user fa-4x text-secondary"></i>
+                            </div>
+                        {% endif %}
+                        
+                        <h4>{{ user.username }}</h4>
+                        {% if user.first_name or user.last_name %}
+                            <p class="text-muted">{{ user.first_name }} {{ user.last_name }}</p>
+                        {% endif %}
+                        {% if user.email %}
+                            <p><i class="fas fa-envelope me-2"></i>{{ user.email }}</p>
+                        {% endif %}
+                        {% if account_profile.website %}
+                            <p><i class="fas fa-globe me-2"></i><a href="{{ account_profile.website }}" target="_blank">
+                                {{ account_profile.website|truncatechars:25 }}</a></p>
+                        {% endif %}
+                        <p class="text-muted"><i class="fas fa-clock me-2"></i>Member since {{ user.date_joined|date:"M d, Y" }}</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Profile Edit Form -->
+            <div class="col-md-8 mb-4">
+                <div class="card h-100">
+                    <div class="card-header bg-primary text-white">
+                        <h5 class="mb-0">Edit Profile</h5>
+                    </div>
+                    <div class="card-body">
+                        <form method="post" enctype="multipart/form-data" id="profileForm">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <label for="username" class="form-label">Username</label>
+                                <input type="text" class="form-control" id="username" name="username" 
+                                       value="{{ user.username }}" readonly>
+                                <div class="form-text text-muted">Username cannot be changed</div>
+                            </div>
+                            
+                            <div class="row mb-3">
+                                <div class="col">
+                                    <label for="first_name" class="form-label">First Name</label>
+                                    <input type="text" class="form-control" id="first_name" name="first_name" 
+                                           value="{{ user.first_name }}">
+                                </div>
+                                <div class="col">
+                                    <label for="last_name" class="form-label">Last Name</label>
+                                    <input type="text" class="form-control" id="last_name" name="last_name" 
+                                           value="{{ user.last_name }}">
+                                </div>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="email" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="email" name="email" 
+                                       value="{{ user.email }}">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="bio" class="form-label">Bio</label>
+                                <textarea class="form-control" id="bio" name="bio" rows="4">{{ account_profile.bio }}</textarea>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="website" class="form-label">Website</label>
+                                <input type="url" class="form-control" id="website" name="website" 
+                                       value="{{ account_profile.website }}">
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="profile_picture" class="form-label">Profile Picture</label>
+                                <input type="file" class="form-control" id="profile_picture" name="profile_picture" accept="image/*">
+                                {% if account_profile.profile_picture %}
+                                    <div class="form-text">Current picture: {{ account_profile.profile_picture.name }}</div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="mb-4">
+                                <h5>Change Password</h5>
+                                <div class="form-text text-muted mb-2">Leave blank to keep your current password</div>
+                                <div class="mb-3">
+                                    <label for="current_password" class="form-label">Current Password</label>
+                                    <input type="password" class="form-control" id="current_password" name="current_password">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="new_password" class="form-label">New Password</label>
+                                    <input type="password" class="form-control" id="new_password" name="new_password">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="confirm_password" class="form-label">Confirm New Password</label>
+                                    <input type="password" class="form-control" id="confirm_password" name="confirm_password">
+                                </div>
+                            </div>
+                            
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-primary">Save Profile</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Account Activity -->
+        <div class="card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Account Activity</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <div class="card text-center h-100">
+                            <div class="card-body">
+                                <i class="fas fa-list-check fa-3x text-primary mb-3"></i>
+                                <h3 id="totalLists">0</h3>
+                                <p class="text-muted">Todo Lists</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card text-center h-100">
+                            <div class="card-body">
+                                <i class="fas fa-tasks fa-3x text-success mb-3"></i>
+                                <h3 id="totalTasks">0</h3>
+                                <p class="text-muted">Total Tasks</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <div class="card text-center h-100">
+                            <div class="card-body">
+                                <i class="fas fa-check-circle fa-3x text-info mb-3"></i>
+                                <h3 id="completedTasks">0</h3>
+                                <p class="text-muted">Completed Tasks</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    // Fetch user statistics
+    document.addEventListener('DOMContentLoaded', function() {
+        // These would be populated from your backend
+        // For now, using placeholder values
+        document.getElementById('totalLists').textContent = '{{ user.todo_lists.count }}';
+        
+        // You'd need to add a view to provide these stats or calculate them here
+        // For example:
+        fetch('{% url "todo_app:user_stats" %}')
+            .then(response => response.json())
+            .then(data => {
+                document.getElementById('totalTasks').textContent = data.total_tasks;
+                document.getElementById('completedTasks').textContent = data.completed_tasks;
+            })
+            .catch(error => {
+                console.error('Error fetching user stats:', error);
+            });
+    });
+    
+    // Form validation for password change
+    const form = document.getElementById('profileForm');
+    form.addEventListener('submit', function(event) {
+        const newPassword = document.getElementById('new_password').value;
+        const confirmPassword = document.getElementById('confirm_password').value;
+        
+        if (newPassword && newPassword !== confirmPassword) {
+            event.preventDefault();
+            alert('New passwords do not match!');
+        }
+    });
+</script>
+{% endblock %}

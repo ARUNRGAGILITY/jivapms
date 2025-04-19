@@ -1,0 +1,154 @@
+{% extends "base.html" %}
+
+{% block title %}Trash - Todo Lists{% endblock %}
+
+{% block content %}
+<div class="todo-container">
+    <div class="todo-card p-4">
+        <div class="todo-header d-flex justify-content-between align-items-center mb-3">
+            <h2><i class="fas fa-trash-alt"></i> Trash</h2>
+            <div>
+                <a href="{% url 'todo_app:my_todos_list' %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to Lists
+                </a>
+                {% if deleted_lists %}
+                <button id="emptyTrashBtn" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#emptyTrashModal">
+                    <i class="fas fa-trash"></i> Empty Trash
+                </button>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Deleted Lists Table -->
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th>Name</th>
+                        <th>Description</th>
+                        <th>Color</th>
+                        <th>Deleted At</th>
+                        <th style="width: 150px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for list in deleted_lists %}
+                    <tr>
+                        <td>
+                            <div class="d-flex align-items-center">
+                                <i class="fas {{ list.icon }} me-2 text-{{ list.color }}"></i>
+                                <span>{{ list.name }}</span>
+                            </div>
+                        </td>
+                        <td>{{ list.description|truncatechars:70 }}</td>
+                        <td>
+                            <span class="badge bg-{{ list.color }} px-3 py-2">{{ list.color }}</span>
+                        </td>
+                        <td>{{ list.updated_at|date:"Y-m-d H:i" }}</td>
+                        <td>
+                            <div class="btn-group">
+                                <form action="{% url 'todo_app:my_todos_restore' list.id %}" method="post" class="d-inline">
+                                    {% csrf_token %}
+                                    <button type="submit" class="btn btn-sm btn-outline-success">
+                                        <i class="fas fa-trash-restore"></i> Restore
+                                    </button>
+                                </form>
+                                <button class="btn btn-sm btn-outline-danger permanent-delete-btn" data-id="{{ list.id }}" data-bs-toggle="modal" data-bs-target="#permanentDeleteModal">
+                                    <i class="fas fa-trash-alt"></i> Delete
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5">
+                            <h4 class="text-muted">Trash is empty</h4>
+                            <p>Deleted todo lists will appear here.</p>
+                            <a href="{% url 'todo_app:my_todos_list' %}" class="btn btn-primary">
+                                <i class="fas fa-arrow-left"></i> Back to Lists
+                            </a>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Permanent Delete Confirmation Modal -->
+<div class="modal fade" id="permanentDeleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Permanent Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-danger">Warning: This action cannot be undone!</p>
+                <p>Are you sure you want to permanently delete this todo list?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmPermanentDeleteBtn">Permanently Delete</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Empty Trash Confirmation Modal -->
+<div class="modal fade" id="emptyTrashModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Empty Trash</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p class="text-danger">Warning: This action cannot be undone!</p>
+                <p>Are you sure you want to permanently delete all todo lists in the trash?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <form action="{% url 'todo_app:my_todos_empty_trash' %}" method="post">
+                    {% csrf_token %}
+                    <button type="submit" class="btn btn-danger">Empty Trash</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Permanent delete
+        $('.permanent-delete-btn').click(function() {
+            const listId = $(this).data('id');
+            $('#confirmPermanentDeleteBtn').data('id', listId);
+        });
+        
+        // Confirm permanent delete
+        $('#confirmPermanentDeleteBtn').click(function() {
+            const listId = $(this).data('id');
+            
+            $.ajax({
+                url: "{% url 'todo_app:my_todos_permanent_delete' 0 %}".replace('0', listId),
+                type: "POST",
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    $('#permanentDeleteModal').modal('hide');
+                    location.reload();
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error deleting list:", error);
+                    alert("Error permanently deleting list. Please try again.");
+                }
+            });
+        });
+    });
+</script>
+{% endblock %}

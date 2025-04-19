@@ -1,0 +1,160 @@
+{% extends "base.html" %}
+
+{% block title %}Todo Detail - {{ todo.name }}{% endblock %}
+
+{% block content %}
+<div class="todo-container">
+    <div class="todo-card">
+        <div class="todo-header">
+            <h2>{{ todo.name }}</h2>
+            <div class="btn-group">
+                <a href="{% url 'todo_app:todo_edit' todo.id %}" class="btn btn-sm btn-outline-primary">
+                    <i class="fas fa-edit"></i> Edit
+                </a>
+                <button type="button" class="btn btn-sm btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal">
+                    <i class="fas fa-trash"></i> Delete
+                </button>
+            </div>
+        </div>
+        
+        <div class="card mb-3">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h5 class="card-title">Details</h5>
+                        <dl class="row">
+                            <dt class="col-sm-4">Priority</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge {% if todo.priority == 'critical' %}bg-danger{% elif todo.priority == 'high' %}bg-warning text-dark{% elif todo.priority == 'medium' %}bg-info text-dark{% elif todo.priority == 'low' %}bg-success{% else %}bg-secondary{% endif %}">
+                                    {{ todo.get_priority_display }}
+                                </span>
+                            </dd>
+                            
+                            <dt class="col-sm-4">Status</dt>
+                            <dd class="col-sm-8">
+                                {% if todo.done %}
+                                    <span class="badge bg-success">Done</span>
+                                {% elif todo.blocked %}
+                                    <span class="badge bg-danger">Blocked</span>
+                                {% else %}
+                                    <span class="badge bg-secondary">Todo</span>
+                                {% endif %}
+                            </dd>
+                            
+                            {% if todo.start_date %}
+                            <dt class="col-sm-4">Start Date</dt>
+                            <dd class="col-sm-8">{{ todo.start_date|date:"M d, Y H:i" }}</dd>
+                            {% endif %}
+                            
+                            {% if todo.due_date %}
+                            <dt class="col-sm-4">Due Date</dt>
+                            <dd class="col-sm-8">{{ todo.due_date|date:"M d, Y H:i" }}</dd>
+                            {% endif %}
+                            
+                            <dt class="col-sm-4">Created</dt>
+                            <dd class="col-sm-8">{{ todo.created_at|date:"M d, Y H:i" }}</dd>
+                            
+                            <dt class="col-sm-4">Updated</dt>
+                            <dd class="col-sm-8">{{ todo.updated_at|date:"M d, Y H:i" }}</dd>
+                            
+                            {% if todo.done_at %}
+                            <dt class="col-sm-4">Completed</dt>
+                            <dd class="col-sm-8">{{ todo.done_at|date:"M d, Y H:i" }}</dd>
+                            {% endif %}
+                            
+                            {% if todo.blocked_at %}
+                            <dt class="col-sm-4">Blocked</dt>
+                            <dd class="col-sm-8">{{ todo.blocked_at|date:"M d, Y H:i" }}</dd>
+                            {% endif %}
+                        </dl>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <h5 class="card-title">Position</h5>
+                        {% if todo.parent %}
+                        <p><strong>Parent Todo:</strong> <a href="{% url 'todo_app:todo_view' todo.parent.id %}">{{ todo.parent.name }}</a></p>
+                        {% endif %}
+                        
+                        {% if todo.get_children %}
+                        <p><strong>Child Todos:</strong></p>
+                        <ul>
+                            {% for child in todo.get_children %}
+                            <li><a href="{% url 'todo_app:todo_view' child.id %}">{{ child.name }}</a></li>
+                            {% endfor %}
+                        </ul>
+                        {% endif %}
+                        
+                        {% if todo.kanban_column %}
+                        <p><strong>Kanban Column:</strong> {{ todo.kanban_column.name }}</p>
+                        {% endif %}
+                        
+                        <p><strong>Canvas Position:</strong> X: {{ todo.canvas_x }}, Y: {{ todo.canvas_y }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card">
+            <div class="card-body">
+                <h5 class="card-title">Description</h5>
+                <div class="card-text">
+                    {% if todo.description %}
+                    <p>{{ todo.description|linebreaks }}</p>
+                    {% else %}
+                    <p class="text-muted">No description provided.</p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="mt-3">
+            <a href="{% url 'todo_app:table_view' %}" class="btn btn-secondary">
+                <i class="fas fa-arrow-left"></i> Back to List
+            </a>
+            
+            {% if not todo.done %}
+            <a href="{% url 'todo_app:todo_mark_done' todo.id %}" class="btn btn-success">
+                <i class="fas fa-check"></i> Mark as Done
+            </a>
+            {% else %}
+            <a href="{% url 'todo_app:todo_mark_done' todo.id %}" class="btn btn-secondary">
+                <i class="fas fa-times"></i> Mark as Not Done
+            </a>
+            {% endif %}
+            
+            {% if not todo.blocked %}
+            <a href="{% url 'todo_app:todo_toggle_blocked' todo.id %}" class="btn btn-warning">
+                <i class="fas fa-lock"></i> Block
+            </a>
+            {% else %}
+            <a href="{% url 'todo_app:todo_toggle_blocked' todo.id %}" class="btn btn-info">
+                <i class="fas fa-unlock"></i> Unblock
+            </a>
+            {% endif %}
+            
+            <a href="{% url 'todo_app:todo_copy' todo.id %}" class="btn btn-primary">
+                <i class="fas fa-copy"></i> Copy
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to delete this todo?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <a href="{% url 'todo_app:todo_delete' todo.id %}" class="btn btn-danger">Delete</a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

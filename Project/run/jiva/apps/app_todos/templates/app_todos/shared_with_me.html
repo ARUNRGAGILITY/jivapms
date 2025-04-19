@@ -1,0 +1,63 @@
+{% extends "base.html" %}
+
+{% block title %}Shared With Me{% endblock %}
+
+{% block content %}
+<div class="todo-container">
+    <div class="todo-card p-4">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-share-alt"></i> Lists Shared With Me</h2>
+            <a href="{% url 'todo_app:my_todos_list' %}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Back to My Lists
+            </a>
+        </div>
+        
+        <!-- Lists shared with me -->
+        <div class="card">
+            <div class="card-header">
+                <h5 class="mb-0">Lists Shared With Me</h5>
+            </div>
+            <div class="card-body">
+                {% if shares %}
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>List Name</th>
+                                <th>Owner</th>
+                                <th>Permissions</th>
+                                <th>Shared On</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for share in shares %}
+                            <tr>
+                                <td>{{ share.todo_list.name }}</td>
+                                <td>{{ share.todo_list.owner.username }}</td>
+                                <td>
+                                    {% if share.can_edit %}
+                                    <span class="badge bg-success">Can edit</span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">View only</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ share.created_at|date:"M d, Y" }}</td>
+                                <td>
+                                    <a href="{% url 'todo_app:my_todos_detail' share.todo_list.id %}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-eye"></i> View
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <p class="text-center my-3 text-muted">No lists have been shared with you yet.</p>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

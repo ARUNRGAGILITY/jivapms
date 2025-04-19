@@ -1,0 +1,286 @@
+{% extends "base.html" %}
+
+{% block title %}Trash - {{ todo_list.name }}{% endblock %}
+
+{% block content %}
+<div class="todo-container">
+    <div class="todo-card">
+        <div class="todo-header">
+            <h2><i class="fas fa-trash-alt"></i> Trash - {{ todo_list.name }}</h2>
+            <div class="btn-group">
+                <button type="button" class="btn btn-sm btn-outline-success" id="bulkRestoreBtn" disabled>
+                    <i class="fas fa-trash-restore"></i> Restore Selected
+                </button>
+                <button type="button" class="btn btn-sm btn-outline-danger" id="bulkDeleteBtn" disabled>
+                    <i class="fas fa-times"></i> Delete Selected
+                </button>
+                <a href="{% url 'todo_app:my_todos_detail' todo_list.id %}" class="btn btn-sm btn-outline-secondary">
+                    <i class="fas fa-arrow-left"></i> Back to List
+                </a>
+            </div>
+        </div>
+        
+        <!-- Deleted Items Table -->
+        <div class="table-responsive">
+            <table class="table table-hover">
+                <thead>
+                    <tr>
+                        <th style="width: 30px;"><input type="checkbox" id="selectAll"></th>
+                        <th style="width: 50px;">#</th>
+                        <th>Name</th>
+                        <th style="width: 120px;">Priority</th>
+                        <th style="width: 170px;">Deleted</th>
+                        <th style="width: 120px;">Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for todo in deleted_todos %}
+                    <tr>
+                        <td>
+                            <input type="checkbox" class="bulk-select" value="{{ todo.id }}">
+                        </td>
+                        <td>{{ forloop.counter }}</td>
+                        <td>{{ todo.name }}</td>
+                        <td>
+                            <span class="badge {% if todo.priority == 'critical' %}bg-danger{% elif todo.priority == 'high' %}bg-warning text-dark{% elif todo.priority == 'medium' %}bg-info text-dark{% elif todo.priority == 'low' %}bg-success{% else %}bg-secondary{% endif %}">
+                                {{ todo.get_priority_display }}
+                            </span>
+                        </td>
+                        <td>{{ todo.updated_at|date:"M d, Y H:i" }}</td>
+                        <td>
+                            <div class="btn-group btn-group-sm">
+                                <button type="button" class="btn btn-outline-success restore-todo" data-id="{{ todo.id }}" data-bs-toggle="tooltip" title="Restore">
+                                    <i class="fas fa-trash-restore"></i>
+                                </button>
+                                <button type="button" class="btn btn-outline-danger permanently-delete-todo" data-id="{{ todo.id }}" data-bs-toggle="tooltip" title="Delete Permanently">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="6" class="text-center">
+                            <p class="my-3">Trash is empty for this list</p>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Restore Confirmation Modal -->
+<div class="modal fade" id="bulkRestoreModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Bulk Restore</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to restore <strong><span id="bulkRestoreCount">0</span></strong> selected items?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="confirmBulkRestoreBtn">Restore</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bulk Delete Confirmation Modal -->
+<div class="modal fade" id="bulkDeleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Bulk Permanent Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to <strong>permanently delete</strong> <strong><span id="bulkDeleteCount">0</span></strong> selected items? This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmBulkDeleteBtn">Delete Permanently</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Individual Restore Confirmation Modal -->
+<div class="modal fade" id="restoreModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Restore</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to restore this item?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-success" id="confirmRestoreBtn">Restore</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Individual Delete Confirmation Modal -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Confirm Permanent Delete</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Are you sure you want to permanently delete this item? This action cannot be undone.</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmDeleteBtn">Delete Permanently</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    $(document).ready(function() {
+        // Select all checkbox
+        $('#selectAll').change(function() {
+            $('.bulk-select').prop('checked', $(this).is(':checked'));
+            updateBulkButtonStatus();
+        });
+
+        // Individual checkboxes
+        $('.bulk-select').change(function() {
+            updateBulkButtonStatus();
+        });
+
+        function updateBulkButtonStatus() {
+            const selectedCount = $('.bulk-select:checked').length;
+            $('#bulkRestoreBtn, #bulkDeleteBtn').prop('disabled', selectedCount === 0);
+        }
+
+        // Bulk Restore
+        $('#bulkRestoreBtn').click(function() {
+            const selectedCount = $('.bulk-select:checked').length;
+            $('#bulkRestoreCount').text(selectedCount);
+            $('#bulkRestoreModal').modal('show');
+        });
+
+        $('#confirmBulkRestoreBtn').click(function() {
+            const selectedIds = getSelectedIds();
+            
+            $.ajax({
+                url: "{% url 'todo_app:list_bulk_restore' todo_list.id %}",
+                type: "POST",
+                data: {
+                    ids: JSON.stringify(selectedIds),
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    $('#bulkRestoreModal').modal('hide');
+                    location.reload();
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error during bulk restore:", error);
+                }
+            });
+        });
+
+        // Bulk Delete
+        $('#bulkDeleteBtn').click(function() {
+            const selectedCount = $('.bulk-select:checked').length;
+            $('#bulkDeleteCount').text(selectedCount);
+            $('#bulkDeleteModal').modal('show');
+        });
+
+        $('#confirmBulkDeleteBtn').click(function() {
+            const selectedIds = getSelectedIds();
+            
+            $.ajax({
+                url: "{% url 'todo_app:list_bulk_permanent_delete' todo_list.id %}",
+                type: "POST",
+                data: {
+                    ids: JSON.stringify(selectedIds),
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    $('#bulkDeleteModal').modal('hide');
+                    location.reload();
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error during bulk delete:", error);
+                }
+            });
+        });
+
+        // Individual Restore
+        $('.restore-todo').click(function() {
+            const todoId = $(this).data('id');
+            $('#confirmRestoreBtn').data('id', todoId);
+            $('#restoreModal').modal('show');
+        });
+
+        $('#confirmRestoreBtn').click(function() {
+            const todoId = $(this).data('id');
+            
+            $.ajax({
+                url: "{% url 'todo_app:todo_restore' %}",
+                type: "POST",
+                data: {
+                    id: todoId,
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    $('#restoreModal').modal('hide');
+                    location.reload();
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error restoring todo:", error);
+                }
+            });
+        });
+
+        // Individual Delete
+        $('.permanently-delete-todo').click(function() {
+            const todoId = $(this).data('id');
+            $('#confirmDeleteBtn').data('id', todoId);
+            $('#deleteModal').modal('show');
+        });
+
+        $('#confirmDeleteBtn').click(function() {
+            const todoId = $(this).data('id');
+            
+            $.ajax({
+                url: "{% url 'todo_app:todo_permanent_delete' %}",
+                type: "POST",
+                data: {
+                    id: todoId,
+                    csrfmiddlewaretoken: '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    $('#deleteModal').modal('hide');
+                    location.reload();
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error permanently deleting todo:", error);
+                }
+            });
+        });
+
+        // Helper function to get selected IDs
+        function getSelectedIds() {
+            return $('.bulk-select:checked').map(function() {
+                return $(this).val();
+            }).get();
+        }
+    });
+</script>
+{% endblock %}
