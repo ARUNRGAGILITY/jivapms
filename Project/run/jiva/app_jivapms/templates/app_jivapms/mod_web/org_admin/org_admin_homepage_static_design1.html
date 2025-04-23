@@ -1,0 +1,692 @@
+{% extends 'app_jivapms/mod_web/org_admin/base.html' %}
+{% load static %}
+{% block title %}Organization Admin Home{% endblock %}
+
+{% block content %}
+<!-- Navbar Styles -->
+<style>
+    .navbar {
+        background-color: #0d6efd;
+    }
+    
+    .navbar-brand img {
+        height: 40px;
+    }
+    
+    .navbar .navbar-nav .nav-link {
+        color: rgba(255, 255, 255, 0.85);
+    }
+    
+    .navbar .navbar-nav .nav-link:hover {
+        color: white;
+    }
+    
+    .navbar .dropdown-menu {
+        border-radius: 0.25rem;
+        box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+    }
+    
+    .user-avatar {
+        width: 32px;
+        height: 32px;
+        border-radius: 50%;
+        object-fit: cover;
+        margin-right: 8px;
+    }
+    
+    .dropdown-item i {
+        width: 20px;
+        margin-right: 8px;
+        text-align: center;
+    }
+</style>
+
+<!-- Sidebar and Content Styles -->
+<style>
+    /* Main Layout */
+    .wrapper {
+        display: flex;
+        width: 100%;
+        min-height: 100vh;
+    }
+
+    /* Sidebar styling */
+    .sidebar {
+        width: 60px;
+        background-color: darkblue;
+        color: white;
+        display: flex;
+        flex-direction: column;
+        padding-top: 56px; /* Offset for the navbar height */
+        transition: width 0.3s;
+        height: 100vh; /* Full height of the viewport */
+        position: fixed; /* Sidebar is fixed */
+        top: 0;
+        left: 0;
+        overflow: hidden;
+        opacity: 1;
+        z-index: 900;
+    }
+
+    /* Sidebar expands on hover */
+    .sidebar:hover, .sidebar.open {
+        width: 280px;
+    }
+
+    /* Scrollable sidebar menu */
+    .sidebar-menu {
+        flex: 1;
+        overflow-y: auto; /* Sidebar should scroll when content overflows */
+        width: 100%;
+    }
+
+    .sidebar .nav-link {
+        color: white;
+        font-size: 1.0em;
+        text-align: left;
+        width: 100%;
+        padding: 10px 20px;
+        display: flex;
+        align-items: center;
+        transition: background-color 0.3s, color 0.3s;
+    }
+
+    .sidebar .nav-link i {
+        margin-right: 10px;
+        width: 20px;
+        text-align: center;
+    }
+
+    .sidebar .nav-link span {
+        white-space: nowrap;
+        overflow: hidden;
+        opacity: 0;
+        transition: opacity 0.3s;
+    }
+
+    .sidebar:hover .nav-link span, .sidebar.open .nav-link span {
+        opacity: 1;
+    }
+
+    .sidebar .nav-link.active {
+        background-color: #495057;
+        border-radius: 5px;
+    }
+
+    .sidebar .nav-link.active i {
+        color: #ffc107;
+    }
+
+    /* Section headings in sidebar */
+    .sidebar .section-heading {
+        font-size: 0.75em;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+        color: #adb5bd;
+        padding: 10px 20px;
+        margin-top: 10px;
+        white-space: nowrap;
+        overflow: hidden;
+    }
+
+    /* Sticky settings section at the bottom */
+    .sidebar .settings {
+        position: sticky;
+        bottom: 0;
+        width: 100%;
+        background-color: darkblue;
+        text-align: left;
+    }
+
+    .sidebar .settings .nav-link {
+        color: white;
+        font-size: 1.0em;
+    }
+
+    /* Icon states (filled vs outlined) */
+    .sidebar .fa-solid {
+        display: none;
+    }
+
+    .sidebar .fa-regular {
+        display: inline-block;
+    }
+
+    .sidebar .nav-link.active .fa-solid {
+        display: inline-block;
+    }
+
+    .sidebar .nav-link.active .fa-regular {
+        display: none;
+    }
+
+    .sidebar .nav-link:hover .fa-solid {
+        display: inline-block;
+    }
+
+    .sidebar .nav-link:hover .fa-regular {
+        display: none;
+    }
+
+    /* Content area */
+    .content-wrapper {
+        display: flex;
+        flex-direction: column;
+        margin-left: 60px; /* Leave space for the sidebar */
+        width: calc(100% - 60px);
+        transition: margin-left 0.3s, width 0.3s;
+    }
+
+    .sidebar:hover + .content-wrapper, .sidebar.open + .content-wrapper {
+        margin-left: 280px;
+        width: calc(100% - 280px);
+    }
+
+    .contentbar {
+        flex: 1;
+        padding: 20px;
+        overflow-y: auto; /* Make the contentbar scrollable */
+        margin-top: 56px; /* Space for the navbar */
+    }
+
+    /* Tab Content */
+    .tab-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        padding-bottom: 10px;
+        border-bottom: 1px solid #dee2e6;
+    }
+
+    .tab-title h3 {
+        margin: 0;
+        font-weight: 500;
+    }
+
+    .tab-actions .btn-group {
+        margin-left: auto;
+    }
+
+    .admin-actions {
+        margin-left: 15px;
+    }
+
+    /* Tab navigation */
+    .tab-navigation {
+        margin-bottom: 20px;
+    }
+
+    /* Sidebar toggle button (for mobile) */
+    .toggle-btn {
+        display: none;
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        z-index: 1100;
+        background-color: #343a40;
+        border: none;
+        color: white;
+        padding: 10px;
+        cursor: pointer;
+    }
+
+    /* Adjustments for small screens */
+    @media (max-width: 768px) {
+        .sidebar {
+            width: 0;
+            transform: translateX(-100%);
+            z-index: 1000;
+        }
+        
+        .sidebar.open {
+            width: 280px;
+            transform: translateX(0);
+        }
+        
+        .navbar .navbar-brand {
+            margin-left: 30px;
+        }
+        
+        .toggle-btn {
+            display: block;
+        }
+        
+        .content-wrapper {
+            margin-left: 0;
+            width: 100%;
+        }
+        
+        .contentbar {
+            margin-left: 0;
+        }
+
+        .sidebar:hover + .content-wrapper {
+            margin-left: 0;
+            width: 100%;
+        }
+    }
+</style>
+
+<!-- Navigation Bar -->
+<nav class="navbar navbar-expand-lg navbar-dark fixed-top">
+    <div class="container-fluid">
+        <!-- Toggle button for sidebar (mobile) -->
+        <button class="toggle-btn d-md-none" type="button">
+            <i class="fas fa-bars"></i>
+        </button>
+        
+        <!-- Left side logo -->
+        <a class="navbar-brand" href="/">
+            Logo
+        </a>
+        
+        <!-- Mobile toggle button -->
+        <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarContent" 
+                aria-controls="navbarContent" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+        
+        <!-- Navbar content -->
+        <div class="collapse navbar-collapse" id="navbarContent">
+            <!-- Main navigation links (on the right) -->
+            <ul class="navbar-nav ms-auto mb-2 mb-lg-0">
+                <li class="nav-item">
+                    <a class="nav-link active" aria-current="page" href="/">Home</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/dashboard">Dashboard</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/projects">Projects</a>
+                </li>
+                <li class="nav-item">
+                    <a class="nav-link" href="/reports">Reports</a>
+                </li>
+                
+                <!-- User dropdown menu -->
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle d-flex align-items-center" href="#" id="userDropdown" 
+                       role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <img src="/static/images/user-avatar.jpg" alt="User" class="user-avatar">
+                        <span>{{ user.name }}</span>
+                    </a>
+                    <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="userDropdown">
+                        <li><a class="dropdown-item" href="/profile"><i class="bi bi-person"></i> Profile</a></li>
+                        <li><a class="dropdown-item" href="/change-password"><i class="bi bi-key"></i> Change Password</a></li>
+                        <li><a class="dropdown-item" href="/my-roles"><i class="bi bi-person-badge"></i> My Roles</a></li>
+                        <li><hr class="dropdown-divider"></li>
+                        <li><a class="dropdown-item" href="/logout"><i class="bi bi-box-arrow-right"></i> Logout</a></li>
+                    </ul>
+                </li>
+            </ul>
+        </div>
+    </div>
+</nav>
+
+<div class="wrapper">
+    <!-- Sidebar -->
+    <nav class="sidebar" id="sidebar">
+        <div class="sidebar-menu">
+            <!-- Business Section -->
+            <div class="section-heading">
+                <span>Business</span>
+            </div>
+            <a href="#organization-content" class="nav-link active" data-bs-toggle="tab" role="tab">
+                <i class="fa-regular fa-building"></i>
+                <i class="fa-solid fa-building"></i>
+                <span>Organization</span>
+            </a>
+            <a href="#value-stream-content" class="nav-link" data-bs-toggle="tab" role="tab">
+                <i class="fa-regular fa-diagram-project"></i>
+                <i class="fa-solid fa-diagram-project"></i>
+                <span>Value Stream</span>
+            </a>
+            <a href="#mapping-content" class="nav-link" data-bs-toggle="tab" role="tab">
+                <i class="fa-regular fa-map"></i>
+                <i class="fa-solid fa-map"></i>
+                <span>Mapping</span>
+            </a>
+
+            <!-- Delivery Section -->
+            <div class="section-heading">
+                <span>Delivery</span>
+            </div>
+            <a href="#delivery-content" class="nav-link" data-bs-toggle="tab" role="tab">
+                <i class="fa-regular fa-truck-fast"></i>
+                <i class="fa-solid fa-truck-fast"></i>
+                <span>Delivery</span>
+            </a>
+            <a href="#planning-content" class="nav-link" data-bs-toggle="tab" role="tab">
+                <i class="fa-regular fa-calendar-alt"></i>
+                <i class="fa-solid fa-calendar-alt"></i>
+                <span>Planning</span>
+            </a>
+            <a href="#backlog-content" class="nav-link" data-bs-toggle="tab" role="tab">
+                <i class="fa-regular fa-list-check"></i>
+                <i class="fa-solid fa-list-check"></i>
+                <span>Backlog</span>
+            </a>
+            <a href="#board-content" class="nav-link" data-bs-toggle="tab" role="tab">
+                <i class="fa-regular fa-table-columns"></i>
+                <i class="fa-solid fa-table-columns"></i>
+                <span>Board</span>
+            </a>
+            <a href="#workflow-content" class="nav-link" data-bs-toggle="tab" role="tab">
+                <i class="fa-regular fa-diagram-project"></i>
+                <i class="fa-solid fa-diagram-project"></i>
+                <span>Workflow</span>
+            </a>
+            <a href="#calendar-content" class="nav-link" data-bs-toggle="tab" role="tab">
+                <i class="fa-regular fa-calendar"></i>
+                <i class="fa-solid fa-calendar"></i>
+                <span>Calendar</span>
+            </a>
+
+            <!-- Quality Section -->
+            <div class="section-heading">
+                <span>Quality</span>
+            </div>
+            <a href="#metric-content" class="nav-link" data-bs-toggle="tab" role="tab">
+                <i class="fa-regular fa-chart-bar"></i>
+                <i class="fa-solid fa-chart-bar"></i>
+                <span>Metric</span>
+            </a>
+            <a href="#reports-content" class="nav-link" data-bs-toggle="tab" role="tab">
+                <i class="fa-regular fa-file-lines"></i>
+                <i class="fa-solid fa-file-lines"></i>
+                <span>Reports</span>
+            </a>
+            <a href="#release-content" class="nav-link" data-bs-toggle="tab" role="tab">
+                <i class="fa-regular fa-rocket"></i>
+                <i class="fa-solid fa-rocket"></i>
+                <span>Release</span>
+            </a>
+            <a href="#monitor-content" class="nav-link" data-bs-toggle="tab" role="tab">
+                <i class="fa-regular fa-desktop"></i>
+                <i class="fa-solid fa-desktop"></i>
+                <span>Monitor</span>
+            </a>
+
+            <!-- Settings Section at the bottom -->
+            <div class="settings">
+                <div class="section-heading">
+                    <span>Management</span>
+                </div>
+                <a href="#settings-content" class="nav-link" data-bs-toggle="tab" role="tab">
+                    <i class="fa-regular fa-gear"></i>
+                    <i class="fa-solid fa-gear"></i>
+                    <span>Settings</span>
+                </a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Page Content Wrapper -->
+    <div class="content-wrapper">
+        <div class="contentbar">
+            <div class="tab-content">
+                <!-- Organization Content -->
+                <div class="tab-pane fade show active" id="organization-content" role="tabpanel">
+                    <div class="tab-header">
+                        <div class="tab-title">
+                            <h3>Organization Management</h3>
+                        </div>
+                        <div class="tab-actions d-flex">
+                            <div class="btn-group" role="group" aria-label="View options">
+                                <button type="button" class="btn btn-outline-primary active">
+                                    <i class="fas fa-table-list"></i> List
+                                </button>
+                                <button type="button" class="btn btn-outline-primary">
+                                    <i class="fas fa-grip"></i> Grid
+                                </button>
+                                <button type="button" class="btn btn-outline-primary">
+                                    <i class="fas fa-diagram-project"></i> Tree
+                                </button>
+                            </div>
+                            {% if user.is_org_admin %}
+                            <div class="admin-actions">
+                                <button type="button" class="btn btn-primary">
+                                    <i class="fas fa-plus"></i> Add Organization
+                                </button>
+                            </div>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <!-- Organization Tabs -->
+                    <ul class="nav nav-tabs tab-navigation" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="org-details-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#org-details" type="button" role="tab" 
+                                    aria-controls="org-details" aria-selected="true">Details</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="org-teams-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#org-teams" type="button" role="tab" 
+                                    aria-controls="org-teams" aria-selected="false">Teams</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="org-members-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#org-members" type="button" role="tab" 
+                                    aria-controls="org-members" aria-selected="false">Members</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="org-permissions-tab" data-bs-toggle="tab" 
+                                    data-bs-target="#org-permissions" type="button" role="tab" 
+                                    aria-controls="org-permissions" aria-selected="false">Permissions</button>
+                        </li>
+                    </ul>
+                    
+                    <!-- Tab Content -->
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="org-details" role="tabpanel" aria-labelledby="org-details-tab">
+                            <!-- Organization Details Content -->
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Organization Details</h5>
+                                    <p class="card-text">This is where organization details would be displayed and managed.</p>
+                                    <!-- Organization details would go here -->
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="org-teams" role="tabpanel" aria-labelledby="org-teams-tab">
+                            <!-- Teams Content -->
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Teams</h5>
+                                    <p class="card-text">Manage teams within this organization.</p>
+                                    <!-- Teams content would go here -->
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="org-members" role="tabpanel" aria-labelledby="org-members-tab">
+                            <!-- Members Content -->
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Members</h5>
+                                    <p class="card-text">Manage members within this organization.</p>
+                                    <!-- Members content would go here -->
+                                </div>
+                            </div>
+                        </div>
+                        <div class="tab-pane fade" id="org-permissions" role="tabpanel" aria-labelledby="org-permissions-tab">
+                            <!-- Permissions Content -->
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Permissions</h5>
+                                    <p class="card-text">Configure permissions for this organization.</p>
+                                    <!-- Permissions content would go here -->
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Value Stream Content -->
+                <div class="tab-pane fade" id="value-stream-content" role="tabpanel">
+                    <div class="tab-header">
+                        <div class="tab-title">
+                            <h3>Value Stream</h3>
+                        </div>
+                        <div class="tab-actions">
+                            <div class="btn-group" role="group" aria-label="View options">
+                                <button type="button" class="btn btn-outline-primary active">
+                                    <i class="fas fa-table-list"></i> List
+                                </button>
+                                <button type="button" class="btn btn-outline-primary">
+                                    <i class="fas fa-diagram-project"></i> Flow
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <div class="card-body">
+                            <h5 class="card-title">Value Stream Management</h5>
+                            <p class="card-text">This is where value streams would be displayed and managed.</p>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Other tab contents (placeholders) -->
+                <div class="tab-pane fade" id="mapping-content" role="tabpanel">
+                    <div class="tab-header">
+                        <div class="tab-title"><h3>Mapping</h3></div>
+                        <div class="tab-actions"><!-- Actions --></div>
+                    </div>
+                    <div class="card"><div class="card-body"><h5 class="card-title">Mapping Management</h5></div></div>
+                </div>
+                
+                <div class="tab-pane fade" id="delivery-content" role="tabpanel">
+                    <div class="tab-header">
+                        <div class="tab-title"><h3>Delivery</h3></div>
+                        <div class="tab-actions"><!-- Actions --></div>
+                    </div>
+                    <div class="card"><div class="card-body"><h5 class="card-title">Delivery Management</h5></div></div>
+                </div>
+                
+                <div class="tab-pane fade" id="planning-content" role="tabpanel">
+                    <div class="tab-header">
+                        <div class="tab-title"><h3>Planning</h3></div>
+                        <div class="tab-actions"><!-- Actions --></div>
+                    </div>
+                    <div class="card"><div class="card-body"><h5 class="card-title">Planning Management</h5></div></div>
+                </div>
+                
+                <div class="tab-pane fade" id="backlog-content" role="tabpanel">
+                    <div class="tab-header">
+                        <div class="tab-title"><h3>Backlog</h3></div>
+                        <div class="tab-actions"><!-- Actions --></div>
+                    </div>
+                    <div class="card"><div class="card-body"><h5 class="card-title">Backlog Management</h5></div></div>
+                </div>
+                
+                <div class="tab-pane fade" id="board-content" role="tabpanel">
+                    <div class="tab-header">
+                        <div class="tab-title"><h3>Board</h3></div>
+                        <div class="tab-actions"><!-- Actions --></div>
+                    </div>
+                    <div class="card"><div class="card-body"><h5 class="card-title">Board Management</h5></div></div>
+                </div>
+                
+                <div class="tab-pane fade" id="workflow-content" role="tabpanel">
+                    <div class="tab-header">
+                        <div class="tab-title"><h3>Workflow</h3></div>
+                        <div class="tab-actions"><!-- Actions --></div>
+                    </div>
+                    <div class="card"><div class="card-body"><h5 class="card-title">Workflow Management</h5></div></div>
+                </div>
+                
+                <div class="tab-pane fade" id="calendar-content" role="tabpanel">
+                    <div class="tab-header">
+                        <div class="tab-title"><h3>Calendar</h3></div>
+                        <div class="tab-actions"><!-- Actions --></div>
+                    </div>
+                    <div class="card"><div class="card-body"><h5 class="card-title">Calendar Management</h5></div></div>
+                </div>
+                
+                <div class="tab-pane fade" id="metric-content" role="tabpanel">
+                    <div class="tab-header">
+                        <div class="tab-title"><h3>Metrics</h3></div>
+                        <div class="tab-actions"><!-- Actions --></div>
+                    </div>
+                    <div class="card"><div class="card-body"><h5 class="card-title">Metrics Management</h5></div></div>
+                </div>
+                
+                <div class="tab-pane fade" id="reports-content" role="tabpanel">
+                    <div class="tab-header">
+                        <div class="tab-title"><h3>Reports</h3></div>
+                        <div class="tab-actions"><!-- Actions --></div>
+                    </div>
+                    <div class="card"><div class="card-body"><h5 class="card-title">Reports Management</h5></div></div>
+                </div>
+                
+                <div class="tab-pane fade" id="release-content" role="tabpanel">
+                    <div class="tab-header">
+                        <div class="tab-title"><h3>Release</h3></div>
+                        <div class="tab-actions"><!-- Actions --></div>
+                    </div>
+                    <div class="card"><div class="card-body"><h5 class="card-title">Release Management</h5></div></div>
+                </div>
+                
+                <div class="tab-pane fade" id="monitor-content" role="tabpanel">
+                    <div class="tab-header">
+                        <div class="tab-title"><h3>Monitor</h3></div>
+                        <div class="tab-actions"><!-- Actions --></div>
+                    </div>
+                    <div class="card"><div class="card-body"><h5 class="card-title">Monitor Management</h5></div></div>
+                </div>
+                
+                <div class="tab-pane fade" id="settings-content" role="tabpanel">
+                    <div class="tab-header">
+                        <div class="tab-title"><h3>Settings</h3></div>
+                        <div class="tab-actions"><!-- Actions --></div>
+                    </div>
+                    <div class="card"><div class="card-body"><h5 class="card-title">Settings Management</h5></div></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript -->
+<script>
+    $(document).ready(function() {
+        // Toggle mobile sidebar
+        $(".toggle-btn").click(function() {
+            $("#sidebar").toggleClass("open");
+        });
+        
+        // Handle sidebar menu click
+        $(".sidebar .nav-link").click(function() {
+            $(".sidebar .nav-link").removeClass("active");
+            $(this).addClass("active");
+            
+            // Close sidebar on mobile after clicking
+            if ($(window).width() < 768) {
+                $("#sidebar").removeClass("open");
+            }
+        });
+
+        // Initialize active tab from URL hash if present
+        if (window.location.hash) {
+            const hash = window.location.hash;
+            $(`a[href="${hash}"]`).tab("show");
+            $(".sidebar .nav-link").removeClass("active");
+            $(`.sidebar a[href="${hash}"]`).addClass("active");
+        }
+        
+        // Handle navbar menu active state
+        const currentPath = window.location.pathname;
+        $('.navbar-nav .nav-link').each(function() {
+            const linkPath = $(this).attr('href');
+            if (linkPath !== '/' && currentPath.startsWith(linkPath)) {
+                $(this).addClass('active').attr('aria-current', 'page');
+                $(this).closest('.nav-item').siblings().find('.nav-link').removeClass('active').removeAttr('aria-current');
+            } else if (linkPath === '/' && currentPath === '/') {
+                $(this).addClass('active').attr('aria-current', 'page');
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -173,7 +173,7 @@ def project_related_access_check(allowed_roles=None):
             allowed_roles_objs = Role.objects.filter(name__in=allowed_roles)
             logger.debug(f">>> === ORG_DECORATOR_CHECK1: User:{user},Member:{member},AllowedRoles:{allowed_roles_objs} === <<<")            
             try:
-                org_membership = MemberOrganizationRole.objects.get(member_id=member.id, org=organization, role__in=allowed_roles_objs)
+                org_membership = MemberOrganizationRole.objects.filter(member_id=member.id, org=organization, role__in=allowed_roles_objs)
                 return view_func(request, *args, **kwargs)
             except MemberOrganizationRole.DoesNotExist:
                 #return HttpResponseForbidden("You do not have the required privileges to access this organization.")
