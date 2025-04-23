@@ -2362,3 +2362,61 @@ def remove_share(request, pk, user_id):
         messages.success(request, f"List is no longer shared with {username}.")
     
     return redirect('todo_app:share_todo_list', pk=pk)
+
+@require_POST
+def todo_assign_parent(request):
+    """Assign a parent to a todo item."""
+    todo_id = request.POST.get('todo_id')
+    parent_id = request.POST.get('parent_id')
+    
+    try:
+        todo = Todo.objects.get(id=todo_id)
+        
+        # If parent_id is empty, set parent to None
+        if parent_id == '':
+            todo.parent = None
+        else:
+            parent = Todo.objects.get(id=parent_id)
+            
+            # Check for circular references
+            if todo.id == parent.id:
+                return JsonResponse({'success': False, 'error': 'Cannot set todo as its own parent'}, status=400)
+                
+            # Check if assigning this parent would create a circular reference
+            current_parent = parent
+            while current_parent is not None:
+                if current_parent.id == todo.id:
+                    return JsonResponse({'success': False, 'error': 'Circular reference detected'}, status=400)
+                current_parent = current_parent.parent
+                
+            todo.parent = parent
+            
+        todo.save()
+        return JsonResponse({'success': True})
+    except Todo.DoesNotExist:
+        return JsonResponse({'success': False, 'error': 'Todo not found'}, status=404)
+    except Exception as e:
+        return JsonResponse({'success': False, 'error': str(e)}, status=500)
+
+def get_potential_parents(request):
+    """Get all potential parent todos for the dropdown."""
+    # Retrieve all todos that can be parents
+    todos = Todo.objects.all()
+    
+    # If we're in a specific todo list, filter by that list
+    todo_list_id = request.GET.get('list_id')
+    if todo_list_id:
+        todos = todos.filter(my_todos_id=todo_list_id, active=True)
+    
+    # Format the response
+    potential_parents = []
+    for todo in todos:
+        # Get the level for indentation
+        level = len(todo.get_ancestors())
+        potential_parents.append({
+            'id': todo.id,
+            'name': todo.name,
+            'level': level
+        })
+    
+    return JsonResponse({'potential_parents': potential_parents})

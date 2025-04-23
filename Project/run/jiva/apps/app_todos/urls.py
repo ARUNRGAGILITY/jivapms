@@ -34,7 +34,8 @@ urlpatterns = [
     path('todo/<int:pk>/mark-done/', views.todo_mark_done, name='todo_mark_done'),
     path('todo/<int:pk>/toggle-blocked/', views.todo_toggle_blocked, name='todo_toggle_blocked'),
     path('todo/get-children/', views.get_children, name='get_children'),
-
+    path('todo/assign-parent/', views.todo_assign_parent, name='todo_assign_parent'),
+    path('todo/get-potential-parents/', views.get_potential_parents, name='get_potential_parents'),
     # View type routes
     path('view/table/', views.table_view, name='table_view'),
     path('view/kanban/', views.kanban_view, name='kanban_view'),

@@ -218,7 +218,7 @@
                     <div class="mb-3">
                         <label for="todoParent" class="form-label">Parent Todo (optional)</label>
                         <select class="form-select" id="todoParent" name="parent">
-                            <option value="">None</option>
+                            <option value="">-- Select Parent --</option>
                             {% for parent in potential_parents %}
                                 <option value="{{ parent.id }}" {% if parent.id == todo.parent_id %}selected{% endif %}>
                                     {% for _ in parent.get_ancestors %}&nbsp;&nbsp;&nbsp;{% endfor %}
@@ -231,7 +231,7 @@
                     <div class="mb-3">
                         <label for="todoMyTodos" class="form-label">Todo List</label>
                         <select class="form-select" id="todoMyTodos" name="my_todos">
-                            <option value="">None (Global)</option>
+                            <option value="">(Global)</option>
                             {% for list in todo_lists %}
                             <option value="{{ list.id }}" {% if todo_list and todo_list.id == list.id %}selected{% endif %}>{{ list.name }}</option>
                             {% endfor %}
@@ -283,7 +283,36 @@
         </div>
     </div>
 </div>
-
+<!-- Assign parent -->
+<div class="modal fade" id="bulkAssignParentModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Assign Parent to Selected Items</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>Choose a parent for <strong><span id="bulkAssignCount">0</span></strong> selected items:</p>
+                
+                <div class="mb-3">
+                    <select class="form-select" id="bulkParentSelect">
+                        <option value="">-- Select Parent --</option>
+                        {% for parent in potential_parents %}
+                            <option value="{{ parent.id }}">
+                                {% for _ in parent.get_ancestors %}&nbsp;&nbsp;&nbsp;{% endfor %}
+                                {% if parent.get_ancestors %}└─ {% endif %}{{ parent.name }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-primary" id="confirmAssignParentBtn">Assign</button>
+            </div>
+        </div>
+    </div>
+</div>
 <!-- Bulk Delete Confirmation Modal -->
 <div class="modal fade" id="bulkDeleteModal" tabindex="-1" aria-hidden="true">
     <div class="modal-dialog">
@@ -539,6 +568,9 @@ function updateBulkActionsVisibility() {
                     <button type="button" class="btn btn-sm btn-outline-danger" id="bulkDelete">
                         <i class="fas fa-trash"></i> Delete
                     </button>
+                    <button type="button" class="btn btn-sm btn-outline-primary" id="bulkAssignParent">
+                        <i class="fas fa-sitemap"></i> Assign Parent
+                    </button>
                 </div>
             `;
             $('.todo-header').after(bulkActions);
@@ -546,6 +578,7 @@ function updateBulkActionsVisibility() {
             // Add event handlers for bulk actions
             $('#bulkMarkDone').click(performBulkMarkDone);
             $('#bulkMarkUndone').click(performBulkMarkUndone);
+            $('#bulkAssignParent').click(performBulkAssignParent);
             $('#bulkDelete').click(performBulkDelete);
         }
     } else {
@@ -553,7 +586,51 @@ function updateBulkActionsVisibility() {
         $('#bulkActions').remove();
     }
 }
+// Function to handle bulk parent assignment
+function performBulkAssignParent() {
+    const selectedIds = getSelectedIds();
+    
+    // Update modal content
+    $('#bulkAssignCount').text(selectedIds.length);
+    $('#bulkAssignParentModal').modal('show');
+}
 
+// Handle the confirmation button click
+$('#confirmAssignParentBtn').click(function() {
+    const selectedIds = getSelectedIds();
+    const parentId = $('#bulkParentSelect').val();
+    
+    processBulkParentAssignment(selectedIds, parentId);
+});
+
+// Function to process bulk parent assignment
+function processBulkParentAssignment(ids, parentId) {
+    let completed = 0;
+    
+    ids.forEach(function(id) {
+        $.ajax({
+            url: "{% url 'todo_app:todo_assign_parent' %}",
+            type: "POST",
+            data: { 
+                todo_id: id,
+                parent_id: parentId
+            },
+            headers: {
+                'X-CSRFToken': '{{ csrf_token }}'
+            },
+            success: function() {
+                completed++;
+                if (completed === ids.length) {
+                    $('#bulkAssignParentModal').modal('hide');
+                    location.reload();
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error("Error assigning parent:", error);
+            }
+        });
+    });
+}
 // Bulk action functions
 function performBulkMarkDone() {
     const selectedIds = getSelectedIds();
@@ -586,7 +663,30 @@ function getSelectedIds() {
         return $(this).val();
     }).get();
 }
-
+function refreshParentDropdown() {
+    $.ajax({
+        url: "{% url 'todo_app:get_potential_parents' %}",
+        type: "GET",
+        success: function(response) {
+            // Clear existing options except for the "None" option
+            $('#todoParent option:not(:first)').remove();
+            $('#bulkParentSelect option:not(:first)').remove();
+            
+            // Add new options
+            response.potential_parents.forEach(function(parent) {
+                const indent = '&nbsp;&nbsp;&nbsp;'.repeat(parent.level);
+                const prefix = parent.level > 0 ? '└─ ' : '';
+                const option = `<option value="${parent.id}">${indent}${prefix}${parent.name}</option>`;
+                
+                $('#todoParent').append(option);
+                $('#bulkParentSelect').append(option);
+            });
+        },
+        error: function(xhr, status, error) {
+            console.error("Error refreshing parent dropdown:", error);
+        }
+    });
+}
 function processBulkAction(ids, done, urlTemplate) {
     let completed = 0;
     
@@ -673,6 +773,7 @@ $(document).ready(function() {
                     success: function(response) {
                         // Add the new todo to the list without reloading
                         addTodoToList(response);
+                        refreshParentDropdown();
                         // Clear the input
                         $('#combinedInput').val('');
                         // Update stats
