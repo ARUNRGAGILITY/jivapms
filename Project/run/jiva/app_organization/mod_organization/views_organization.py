@@ -628,11 +628,12 @@ def org_homepage(request,  org_id):
         'page_title': f'Organization Homepage',
     }
     context.update(role_context)
-    editable = request.editable
-    if editable:
-        template_file = f"{app_name}/{module_path}/organization_homepage.html"
-    else:
-        template_file = f"{app_name}/{module_path}/viewer_organization_homepage.html"
+    # editable = request.editable
+    # if editable:
+    #     template_file = f"{app_name}/{module_path}/organization_homepage.html"
+    # else:
+    #     template_file = f"{app_name}/{module_path}/viewer_organization_homepage.html"
+    template_file = f"{app_name}/{module_path}/organization_homepage.html"
     return render(request, template_file, context)
 
 # Dashboard View for Organizations
