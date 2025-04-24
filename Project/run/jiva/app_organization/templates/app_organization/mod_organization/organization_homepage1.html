@@ -1,0 +1,262 @@
+{% extends 'app_common/common_files/base_template.html' %}
+{% load static %}
+
+{% block content %}
+{% include 'app_common/common_files/navbar.html' %}
+
+{% include 'app_jivapms/mod_web/common_files/css.html' %}
+
+    <div class="content-wrapper">
+        <!-- Breadcrumb navigation -->
+        <nav aria-label="breadcrumb" class="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">Home</a></li>
+                <li class="breadcrumb-item"><a href="{% url 'list_organizations' %}">Organization</a></li>
+                <li class="breadcrumb-item active" aria-current="page">{{organization}}</li>
+            </ol>
+        </nav>
+
+
+        <button class="toggle-btn" onclick="toggleSidebar()">
+            <i class="bi bi-list"></i>
+        </button>
+        <div class="sidebar" id="sidebar">
+            <!-- Scrollable menu section -->
+            <div class="sidebar-menu">
+                <a href="#" class="nav-link" >
+                    <i class="bi bi-grid"></i>
+                    <span>Organization Administration</span>
+                </a>
+                <a href="#" class="nav-link" >
+                    <i class="bi bi-collection"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="{% url 'list_organizations' %}" class="nav-link">
+                    <i class="bi bi-calendar"></i>
+                    <span>Organizations</span>
+                </a>
+            </div>
+
+            <!-- Sticky settings section -->
+            <div class="settings">
+                <a href="#" class="nav-link" >
+                    <i class="bi bi-gear"></i>
+                    <span>Settings</span>
+                </a>
+            </div>
+        </div>
+
+        <div class="contentbar mb-5" id="contentbar">
+            <div class="container mt-5">
+                <h1 class="text-center">Organization: {{ organization.name }} *** TEST ***</h1>
+                
+                <table class="table table-bordered">
+                    <!-- <thead class="thead-dark">
+                    <tr>
+                        <th>Field</th>
+                        <th>Value</th>
+                    </tr>
+                    </thead> -->
+                    <tbody>
+                    <tr>
+                        <td><b>Name</b></td>
+                        <td  id="org-name"
+                        ondblclick="makeEditable(this)"
+                        onblur="save_element_text(this,   '{{ organization.id }}', 'app_organization', 'Organization',  'name')"
+                        >{{ organization.name }}</td>
+                    </tr>
+                    <tr>
+                        <td><b>Vision</b></td>
+                        <td contenteditable="true" id="org-vision"
+                        ondblclick="makeEditable(this)"
+                        onblur="save_related_element_text(this, 'app_organization', 'Organization', '{{ organization.id }}','org', 'Organizationdetail',  'vision')"
+                        >{% if org_detail.vision != None %}{{ org_detail.vision }}{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td><b>Mission</b></td>
+                        <td contenteditable="true" id="org-mission"
+                        ondblclick="makeEditable(this)"
+                        onblur="save_related_element_text(this, 'app_organization', 'Organization', '{{ organization.id }}','org', 'Organizationdetail',  'mission')"
+                        >{% if org_detail.mission != None %}{{ org_detail.mission }}{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td><b>Values</b></td>
+                        <td contenteditable="true" id="org-values"
+                        ondblclick="makeEditable(this)"
+                        onblur="save_related_element_text(this, 'app_organization', 'Organization', '{{ organization.id }}','org', 'Organizationdetail',  'values')"
+                        >{% if org_detail.values != None %}{{ org_detail.values }}{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td><b>Strategy</b></td>
+                        <td contenteditable="true" id="org-strategy"
+                        ondblclick="makeEditable(this)"
+                        onblur="save_related_element_text(this, 'app_organization', 'Organization', '{{ organization.id }}','org', 'Organizationdetail',  'strategy')"
+                        >{% if org_detail.strategy != None %}{{ org_detail.strategy }}{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td><b>Roadmap</b></td>
+                        <td contenteditable="true" id="org-roadmap"
+                        ondblclick="makeEditable(this)"
+                        onblur="save_related_element_text(this, 'app_organization', 'Organization', '{{ organization.id }}','org', 'Organizationdetail',  'roadmap_description')"
+                        >{% if org_detail.roadmap_description != None %}{{ org_detail.roadmap_description }}{% endif %}</td>
+                    </tr>
+                    <tr>
+                        <td><b>Visual Roadmap</b>
+                        <br>
+                        <a href="{% url 'list_roadmapitems' organization.id %}">Update</a>
+                        </td>
+                        <td id="visual_roadmap">
+                            <h3 class="mt-5">Roadmap (1-3 Years)</h3>
+                            <div class="mermaid">
+                                {{ roadmap|safe }}
+                            </div>
+            
+                            <hr>
+            
+            <!-- 
+                            <div class="mermaid">
+                                gantt
+                                    title Organizational Roadmap
+                                    dateFormat  YYYY-MM-DD
+                                    section Year 1 - Foundations
+                                    Define strategy       :done, 2024-01-01, 2024-04-01
+                                    UX/UI revamp          :active, 2024-03-01, 2024-06-01
+                                    Product MVP launch    :crit, 2024-06-01, 2024-09-01
+                                    section Year 2 - Expansion
+                                    Increase team size    :2024-10-01, 2025-01-01
+                                    Expand features       :2025-01-01, 2025-04-01
+                                    Customer acquisition  :2025-04-01, 2025-07-01
+                                    section Year 3 - Maturity
+                                    Scaling operations    :2025-08-01, 2026-01-01
+                                    Global expansion      :2026-01-01, 2026-04-01
+                            </div> -->
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            
+                <b class="h5">{{organization}}</b> Project(s)
+                <!-- <table class="table table-striped">
+                    <thead>
+                    <tr>
+                        <th width="2%">#</th>
+                        <th>Project Name</th>
+                        <th>Description</th>
+                        <th>Role</th>
+                        <th>Actions</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                    {% for project in projects %}
+                    <tr>
+                        <td width="2%">{{forloop.counter}}</td>
+                        <td>{{ project.name }}</td>
+                        <td>{{ project.description }}</td>
+                        <td></td>
+                        <td>
+                            <a href="{% url 'project_homepage' organization.id project.id %}">View</a>
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="4" class="text-center">No projects available.</td>
+                    </tr>
+                    {% endfor %}
+                    </tbody>
+                </table> -->
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th width="2%">#</th>
+                            <th>Project Name</th>
+                            <th>Description</th>
+                            <th>Role</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for project in project_with_roles %}
+                        <tr>
+                            <td width="2%">{{ forloop.counter }}</td>
+                            <td>{{ project.name }}</td>
+                            <td>{{ project.description }}</td>
+                            <td>{{ project.roles }}</td> <!-- Print the roles -->
+                            <td>
+                                <a href="{% url 'project_homepage' organization.id project.id %}">View</a>
+                            </td>
+                        </tr>
+                        {% empty %}
+                        <tr>
+                            <td colspan="5" class="text-center">No projects available.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+                
+                <!-- <button class="btn btn-primary" onclick="saveChanges()">Save Changes</button> -->
+            </div>
+    </div>
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            sidebar.classList.toggle('open');  // Toggle the 'open' class
+        }
+    </script>
+    <script>
+        function makeEditable(element) {
+            element.contentEditable = true;
+            element.focus();
+        }
+        
+    
+        function save_element_text(element, id,  appName, modelName, fieldName) {
+            element.contentEditable = false;
+            $.ajax({
+                url: '/common/common_ajax/ajax_save_element_text/',
+                type: 'POST',
+                data : {
+                'csrfmiddlewaretoken': "{{ csrf_token }}",
+                'model_name': modelName,
+                'app_name': appName,
+                'field_name': fieldName,
+                'text': element.textContent, 
+                'id': id,
+                },
+                dataType: 'json',
+                success: function(data) {
+                console.log(data);
+                }
+            })
+        }
+    
+        function save_related_element_text(element, appName, parentModelName, parentId, parentModelKey, childModelName, fieldName) {
+            element.contentEditable = false;
+            $.ajax({
+                url: '/common/common_ajax/ajax_save_related_model/',
+                type: 'POST',
+                data : {
+                'csrfmiddlewaretoken': "{{ csrf_token }}",
+                'app_name': appName,
+                'parent_model': parentModelName,
+                'parent_id': parentId,
+                'parent_model_key': parentModelKey,
+                'child_model': childModelName,
+                'field_name': fieldName,
+                'text': element.textContent, 
+    
+                },
+                dataType: 'json',
+                success: function(data) {
+                console.log(data);
+                }
+            })
+        }
+    </script>
+    
+    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
+    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.16/jstree.min.js" integrity="sha512-ekwRoEshEqHU64D4luhOv/WNmhml94P8X5LnZd9FNOiOfSKgkY12cDFz3ZC6Ws+7wjMPQ4bPf94d+zZ3cOjlig==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.16/jstree.min.js" integrity="sha512-ekwRoEshEqHU64D4luhOv/WNmhml94P8X5LnZd9FNOiOfSKgkY12cDFz3ZC6Ws+7wjMPQ4bPf94d+zZ3cOjlig==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
+    
+<!-- End: Content -->
+{% endblock content %}
