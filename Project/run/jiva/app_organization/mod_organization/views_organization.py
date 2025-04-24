@@ -27,6 +27,83 @@ def get_viewable_dicts(user, viewable_flag, first_viewable_flag):
     first_viewable_dict = {} if first_viewable_flag == '__ALL__' else {'author': user}
     return viewable_dict, first_viewable_dict
 # ============================================================= #
+# Define the function to get role context
+def get_role_context(user):
+    """
+    Determines the administrative roles of a user and returns them as a dictionary.
+    
+    Args:
+        user: The user object to check roles for
+        
+    Returns:
+        Dictionary with role information
+    """
+    # Fetch all active memberships for the user across any organization
+    memberships = Member.objects.filter(user=user, active=True)
+    member_roles = MemberOrganizationRole.objects.filter(member__in=memberships)
+    
+    # Check if user is a site admin
+    is_site_admin = MemberOrganizationRole.objects.filter(
+        member__in=memberships, 
+        role__name=site_admin_str
+    ).exists()
+    
+    # Default values
+    is_org_admin = False
+    is_project_admin = False
+    non_admin_role = False
+    admin_org_ids = []
+    project_org_ids = []
+    member_org_ids = []
+    
+    if not is_site_admin:
+        # Check if user is an org admin
+        org_admin_roles = MemberOrganizationRole.objects.filter(
+            member__in=memberships,
+            role__name=org_admin_str
+        )
+        is_org_admin = org_admin_roles.exists()
+        
+        if is_org_admin:
+            # Extract organization IDs where user is an org admin
+            admin_org_ids = list(org_admin_roles.values_list('org_id', flat=True).distinct())
+        else:
+            # Check if user is a project admin
+            project_admin_roles = MemberOrganizationRole.objects.filter(
+                member__in=memberships,
+                role__name=project_admin_str
+            )
+            is_project_admin = project_admin_roles.exists()
+            
+            if is_project_admin:
+                # Extract organization IDs where user is a project admin
+                project_org_ids = list(project_admin_roles.values_list('org_id', flat=True).distinct())
+            else:
+                # User is just a regular member
+                project_member_roles = MemberOrganizationRole.objects.filter(
+                    member__in=memberships,
+                    role__name__in=PROJECT_MEMBER_ROLES
+                )
+                non_admin_role = True
+                
+                # Extract organization IDs where user is a member
+                member_org_ids = list(project_member_roles.values_list('org_id', flat=True).distinct())
+    
+    # Determine if user has any admin privileges (site or org)
+    relevant_admin = is_site_admin or is_org_admin
+    
+    # Create and return role_context dictionary
+    return {
+        'is_site_admin': is_site_admin,
+        'is_org_admin': is_org_admin,
+        'is_project_admin': is_project_admin,
+        'non_admin_role': non_admin_role,
+        'relevant_admin': relevant_admin,
+        'admin_org_ids': admin_org_ids,
+        'project_org_ids': project_org_ids,
+        'member_org_ids': member_org_ids,
+    }
+
 @login_required
 def list_organizations(request):
     # take inputs
@@ -329,36 +406,6 @@ def create_organization(request):
     return render(request, template_file, context)
 
 
-
-# # Edit
-# @login_required
-# def edit_organization(request, organization_id):
-#     user = request.user
-    
-#     object = get_object_or_404(Organization, pk=organization_id, active=True, **viewable_dict)
-#     if request.method == 'POST':
-#         form = OrganizationForm(request.POST, instance=object)
-#         if form.is_valid():
-#             form.instance.author = user
-#             form.save()
-#         else:
-#             print(f">>> === form.errors: {form.errors} === <<<")
-#         return redirect('list_organizations')
-#     else:
-#         form = OrganizationForm(instance=object)
-
-#     context = {
-#         'parent_page': '___PARENTPAGE___',
-#         'page': 'edit_organization',
-        
-#         'module_path': module_path,
-#         'form': form,
-#         'object': object,
-#         'page_title': f'Edit Organization',
-#     }
-#     template_file = f"{app_name}/{module_path}/edit_organization.html"
-#     return render(request, template_file, context)
-
 # Edit View
 @login_required
 def edit_organization(request, organization_id):
@@ -484,7 +531,7 @@ def view_organization(request,  organization_id):
 @site_admin_this_org_admin_or_member_of_org
 def org_homepage(request,  org_id):
     user = request.user
-    
+    role_context = get_role_context(user)
     organization = get_object_or_404(Organization, pk=org_id, 
                                active=True, **viewable_dict)    
     org_detail = organization.org_details.filter(active=True).first()
@@ -580,6 +627,7 @@ def org_homepage(request,  org_id):
         'roadmap': roadmap_str,
         'page_title': f'Organization Homepage',
     }
+    context.update(role_context)
     editable = request.editable
     if editable:
         template_file = f"{app_name}/{module_path}/organization_homepage.html"

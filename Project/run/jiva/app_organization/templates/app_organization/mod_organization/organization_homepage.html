@@ -6,15 +6,40 @@
 {% include 'app_jivapms/mod_web/common_files/css.html' %}
 
 <style>
-    /* Simple styling for editable fields */
-    [contenteditable="true"] {
-        background-color: #f8f9fa;
-        border: 1px solid #007bff;
-        padding: 10px;
-        outline: none;
+    /* Styling for editable fields */
+    .editable-field.highlight {
+        background-color: #fff8e8;
+        border: 1px dashed #ffc107;
+        cursor: pointer;
+        transition: all 0.2s;
     }
     
-    /* Simple toast notification */
+    .editable-field.highlight:hover {
+        background-color: #fff3cd;
+        border-color: #fd7e14;
+    }
+    
+    /* Field when actually editing */
+    [contenteditable="true"] {
+        background-color: #fff !important;
+        border: 1px solid #007bff !important;
+        padding: 10px !important;
+        outline: none;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+    }
+    
+    /* Edit mode indicator */
+    .edit-mode-indicator {
+        background-color: #fff3cd;
+        color: #856404;
+        padding: 10px 15px;
+        border-radius: 4px;
+        margin-bottom: 15px;
+        border: 1px solid #ffeeba;
+        font-size: 0.9rem;
+    }
+    
+    /* Save toast notification */
     .save-toast {
         position: fixed;
         bottom: 20px;
@@ -25,6 +50,14 @@
         border-radius: 4px;
         display: none;
         z-index: 1050;
+    }
+    
+    /* Table header with button */
+    .table-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
     }
     
     /* Simple tab styling */
@@ -51,6 +84,14 @@
         border: 1px solid #dee2e6;
         border-radius: 0.25rem;
         margin-bottom: 20px;
+        overflow: hidden;
+    }
+    
+    /* Card header */
+    .card-header {
+        background-color: #f8f9fa;
+        padding: 0.75rem 1rem;
+        border-bottom: 1px solid #dee2e6;
     }
 </style>
 
@@ -113,48 +154,62 @@
             
             <div class="tab-content" id="orgTabsContent">
                 <div class="tab-pane fade show active" id="home" role="tabpanel" aria-labelledby="home-tab">
-                    <!-- Organization details table - structure preserved -->
+                    <!-- Edit mode indicator -->
+                    <div id="editModeIndicator" class="edit-mode-indicator" style="display: none;">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong>Edit Mode Active:</strong> Double-click on highlighted fields to edit content
+                    </div>
+                    
+                    <!-- Organization details card with edit button -->
                     <div class="content-card">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Organization Details</h5>
+                            {% if relevant_admin %}
+                            <button id="editModeToggle" class="btn btn-sm btn-primary" onclick="toggleEditMode()">
+                                <i class="bi bi-pencil-square me-1"></i> Edit
+                            </button>
+                            {% endif %}
+                        </div>
                         <table class="table table-bordered mb-0">
                             <tbody>
                                 <tr>
                                     <td width="15%"><b>Name</b></td>
-                                    <td id="org-name"
+                                    <td class="editable-field" id="org-name"
                                         ondblclick="makeEditable(this)"
                                         onblur="save_element_text(this, '{{ organization.id }}', 'app_organization', 'Organization', 'name')"
                                     >{{ organization.name }}</td>
                                 </tr>
                                 <tr>
                                     <td><b>Vision</b></td>
-                                    <td id="org-vision"
+                                    <td class="editable-field" id="org-vision"
                                         ondblclick="makeEditable(this)"
                                         onblur="save_related_element_text(this, 'app_organization', 'Organization', '{{ organization.id }}','org', 'Organizationdetail', 'vision')"
                                     >{% if org_detail.vision != None %}{{ org_detail.vision }}{% endif %}</td>
                                 </tr>
                                 <tr>
                                     <td><b>Mission</b></td>
-                                    <td id="org-mission"
+                                    <td class="editable-field" id="org-mission"
                                         ondblclick="makeEditable(this)"
                                         onblur="save_related_element_text(this, 'app_organization', 'Organization', '{{ organization.id }}','org', 'Organizationdetail', 'mission')"
                                     >{% if org_detail.mission != None %}{{ org_detail.mission }}{% endif %}</td>
                                 </tr>
                                 <tr>
                                     <td><b>Values</b></td>
-                                    <td id="org-values"
+                                    <td class="editable-field" id="org-values"
                                         ondblclick="makeEditable(this)"
                                         onblur="save_related_element_text(this, 'app_organization', 'Organization', '{{ organization.id }}','org', 'Organizationdetail', 'values')"
                                     >{% if org_detail.values != None %}{{ org_detail.values }}{% endif %}</td>
                                 </tr>
                                 <tr>
                                     <td><b>Strategy</b></td>
-                                    <td id="org-strategy"
+                                    <td class="editable-field" id="org-strategy"
                                         ondblclick="makeEditable(this)"
                                         onblur="save_related_element_text(this, 'app_organization', 'Organization', '{{ organization.id }}','org', 'Organizationdetail', 'strategy')"
                                     >{% if org_detail.strategy != None %}{{ org_detail.strategy }}{% endif %}</td>
                                 </tr>
                                 <tr>
                                     <td><b>Roadmap</b></td>
-                                    <td id="org-roadmap"
+                                    <td class="editable-field" id="org-roadmap"
                                         ondblclick="makeEditable(this)"
                                         onblur="save_related_element_text(this, 'app_organization', 'Organization', '{{ organization.id }}','org', 'Organizationdetail', 'roadmap_description')"
                                     >{% if org_detail.roadmap_description != None %}{{ org_detail.roadmap_description }}{% endif %}</td>
@@ -177,7 +232,7 @@
                         </table>
                     </div>
                 
-                    <!-- Projects section - slightly improved -->
+                    <!-- Projects section -->
                     <h4 class="mt-4 mb-3">{{organization}} Projects</h4>
                     <div class="content-card">
                         <table class="table table-striped mb-0">
@@ -221,7 +276,7 @@
     </div>
 </div>
 
-<!-- Scripts - minimal changes -->
+<!-- Scripts -->
 <script>
     // Toggle sidebar - unchanged
     function toggleSidebar() {
@@ -229,8 +284,58 @@
         sidebar.classList.toggle('open');
     }
     
-    // Make element editable - minor improvement
+    // Edit mode state
+    let editModeActive = false;
+    
+    // Toggle edit mode
+    function toggleEditMode() {
+        editModeActive = !editModeActive;
+        
+        // Get elements
+        const editModeIndicator = document.getElementById('editModeIndicator');
+        const editModeToggle = document.getElementById('editModeToggle');
+        const editableFields = document.querySelectorAll('.editable-field');
+        
+        if (editModeActive) {
+            // Enable edit mode
+            editModeIndicator.style.display = 'block';
+            editModeToggle.innerHTML = '<i class="bi bi-x-circle me-1"></i> Exit Edit Mode';
+            editModeToggle.classList.remove('btn-outline-primary');
+            editModeToggle.classList.add('btn-outline-warning');
+            
+            // Highlight editable fields
+            editableFields.forEach(field => {
+                field.classList.add('highlight');
+                field.title = 'Double-click to edit';
+            });
+        } else {
+            // Disable edit mode
+            editModeIndicator.style.display = 'none';
+            editModeToggle.innerHTML = '<i class="bi bi-pencil-square me-1"></i> Enable Edit Mode';
+            editModeToggle.classList.remove('btn-outline-warning');
+            // editModeToggle.classList.add('btn-outline-success');
+            
+            // Remove highlighting
+            editableFields.forEach(field => {
+                field.classList.remove('highlight');
+                field.removeAttribute('title');
+                
+                // If any field is still being edited, save it
+                if (field.getAttribute('contenteditable') === 'true') {
+                    field.blur(); // This will trigger the onblur event to save
+                }
+            });
+        }
+    }
+    
+    // Make element editable
     function makeEditable(element) {
+        // Only allow editing if edit mode is active
+        if (!editModeActive) {
+            alert('Please enable edit mode first by clicking the edit button.');
+            return;
+        }
+        
         element.contentEditable = true;
         element.focus();
         
@@ -238,7 +343,7 @@
         element.dataset.originalContent = element.innerHTML;
     }
     
-    // Save element text - minor improvement to show toast
+    // Save element text
     function save_element_text(element, id, appName, modelName, fieldName) {
         element.contentEditable = false;
         $.ajax({
@@ -256,11 +361,19 @@
             success: function(data) {
                 console.log(data);
                 showSaveToast();
+            },
+            error: function(error) {
+                console.error('Error saving:', error);
+                // Restore original content on error
+                if (element.dataset.originalContent) {
+                    element.innerHTML = element.dataset.originalContent;
+                }
+                alert('Error saving changes. Please try again.');
             }
         });
     }
     
-    // Save related element - minor improvement to show toast
+    // Save related element
     function save_related_element_text(element, appName, parentModelName, parentId, parentModelKey, childModelName, fieldName) {
         element.contentEditable = false;
         $.ajax({
@@ -280,11 +393,19 @@
             success: function(data) {
                 console.log(data);
                 showSaveToast();
+            },
+            error: function(error) {
+                console.error('Error saving:', error);
+                // Restore original content on error
+                if (element.dataset.originalContent) {
+                    element.innerHTML = element.dataset.originalContent;
+                }
+                alert('Error saving changes. Please try again.');
             }
         });
     }
     
-    // Simple toast to show save confirmation
+    // Show save toast
     function showSaveToast() {
         const toast = document.getElementById('saveToast');
         toast.style.display = 'block';
