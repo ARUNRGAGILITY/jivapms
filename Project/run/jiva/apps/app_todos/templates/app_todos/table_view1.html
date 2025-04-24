@@ -335,7 +335,61 @@
 
 {% block extra_js %}
 <script>
+    // New function to handle toggle-blocked functionality
+    function attachToggleBlockedHandler(elementSelector) {
+        // Use event delegation for dynamically added elements
+        $(document).on('click', elementSelector, function() {
+            const button = $(this);
+            const todoId = button.data('id');
+            const isBlocked = button.data('blocked') === true;
+            
+            $.ajax({
+                url: "{% url 'todo_app:todo_toggle_blocked' 0 %}".replace('0', todoId),
+                type: "POST",
+                data: { blocked: !isBlocked },
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    // Update the button and row styling
+                    const button = $('button.toggle-blocked[data-id="' + todoId + '"]');
+                    button.data('blocked', response.blocked);
+                    
+                    // Update button icon and tooltip
+                    if (response.blocked) {
+                        button.attr('title', 'Unblock');
+                        button.find('i').removeClass('fa-lock').addClass('fa-lock-open');
+                        $('tr[data-id="' + todoId + '"]').addClass('blocked');
+                    } else {
+                        button.attr('title', 'Block');
+                        button.find('i').removeClass('fa-lock-open').addClass('fa-lock');
+                        $('tr[data-id="' + todoId + '"]').removeClass('blocked');
+                    }
+                    
+                    // Update status badge
+                    const statusCell = $('tr[data-id="' + todoId + '"] td:nth-child(6)');
+                    if (response.blocked) {
+                        statusCell.html('<span class="badge bg-danger">Blocked</span>');
+                    } else {
+                        statusCell.html('<span class="badge bg-secondary">Todo</span>');
+                    }
+                    
+                    // Update stats
+                    updateStats();
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error toggling blocked status:", error);
+                }
+            });
+        });
+    }
+
     $(document).ready(function() {
+        // Initialize the toggle-blocked handler using event delegation
+        // Remove any existing delegated handlers first to avoid duplicates
+        $(document).off('click', 'button.toggle-blocked');
+        attachToggleBlockedHandler('button.toggle-blocked');
+        
         // Make table rows sortable
         new Sortable(document.getElementById('todoList'), {
             handle: '.grab-handle',
@@ -521,416 +575,524 @@
             });
         });
         
-           
-        
         // Reset form when modal is closed
         $('#todoModal').on('hidden.bs.modal', function () {
             $('#todoForm')[0].reset();
             $('#todoId').val('');
             $('#todoModalLabel').text('Add New Todo');
         });
-
-       
     });
-
- 
- 
 </script>
 
 <script>
     // Add to table_view.html script section
-// Select all checkbox
-$('#selectAll').change(function() {
-    $('.bulk-select').prop('checked', $(this).is(':checked'));
-    updateBulkActionsVisibility();
-});
-
-// Individual checkboxes
-$('.bulk-select').change(function() {
-    updateBulkActionsVisibility();
-});
-
-// Function to show/hide bulk actions
-function updateBulkActionsVisibility() {
-    const anyChecked = $('.bulk-select:checked').length > 0;
-    
-    if (anyChecked) {
-        // If bulk actions don't exist yet, add them
-        if ($('#bulkActions').length === 0) {
-            const bulkActions = `
-                <div id="bulkActions" class="btn-group mb-3">
-                    <button type="button" class="btn btn-sm btn-outline-success" id="bulkMarkDone">
-                        <i class="fas fa-check"></i> Mark Done
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-warning" id="bulkMarkUndone">
-                        <i class="fas fa-times"></i> Mark Not Done
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-danger" id="bulkDelete">
-                        <i class="fas fa-trash"></i> Delete
-                    </button>
-                    <button type="button" class="btn btn-sm btn-outline-primary" id="bulkAssignParent">
-                        <i class="fas fa-sitemap"></i> Assign Parent
-                    </button>
-                </div>
-            `;
-            $('.todo-header').after(bulkActions);
-            
-            // Add event handlers for bulk actions
-            $('#bulkMarkDone').click(performBulkMarkDone);
-            $('#bulkMarkUndone').click(performBulkMarkUndone);
-            $('#bulkAssignParent').click(performBulkAssignParent);
-            $('#bulkDelete').click(performBulkDelete);
-        }
-    } else {
-        // Remove bulk actions if no checkboxes selected
-        $('#bulkActions').remove();
-    }
-}
-// Function to handle bulk parent assignment
-function performBulkAssignParent() {
-    const selectedIds = getSelectedIds();
-    
-    // Update modal content
-    $('#bulkAssignCount').text(selectedIds.length);
-    $('#bulkAssignParentModal').modal('show');
-}
-
-// Handle the confirmation button click
-$('#confirmAssignParentBtn').click(function() {
-    const selectedIds = getSelectedIds();
-    const parentId = $('#bulkParentSelect').val();
-    
-    processBulkParentAssignment(selectedIds, parentId);
-});
-
-// Function to process bulk parent assignment
-function processBulkParentAssignment(ids, parentId) {
-    let completed = 0;
-    
-    ids.forEach(function(id) {
-        $.ajax({
-            url: "{% url 'todo_app:todo_assign_parent' %}",
-            type: "POST",
-            data: { 
-                todo_id: id,
-                parent_id: parentId
-            },
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            success: function() {
-                completed++;
-                if (completed === ids.length) {
-                    $('#bulkAssignParentModal').modal('hide');
-                    location.reload();
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error("Error assigning parent:", error);
-            }
-        });
+    // Select all checkbox
+    $('#selectAll').change(function() {
+        $('.bulk-select').prop('checked', $(this).is(':checked'));
+        updateBulkActionsVisibility();
     });
-}
-// Bulk action functions
-function performBulkMarkDone() {
-    const selectedIds = getSelectedIds();
-    processBulkAction(selectedIds, true, "{% url 'todo_app:todo_mark_done' 0 %}");
-}
 
-function performBulkMarkUndone() {
-    const selectedIds = getSelectedIds();
-    processBulkAction(selectedIds, false, "{% url 'todo_app:todo_mark_done' 0 %}");
-}
+    // Individual checkboxes
+    $('.bulk-select').change(function() {
+        updateBulkActionsVisibility();
+    });
 
-
-function performBulkDelete() {
-    const selectedIds = getSelectedIds();
-    
-    // Update modal content
-    $('#bulkDeleteCount').text(selectedIds.length);
-    $('#bulkDeleteModal').modal('show');
-}
-
-
-$('#confirmBulkDeleteBtn').click(function() {
-    const selectedIds = getSelectedIds();
-    processBulkAction(selectedIds, null, "{% url 'todo_app:todo_delete' 0 %}");
-});
-
-// Add this modal HTML after your existing modals
-function getSelectedIds() {
-    return $('.bulk-select:checked').map(function() {
-        return $(this).val();
-    }).get();
-}
-function refreshParentDropdown() {
-    $.ajax({
-        url: "{% url 'todo_app:get_potential_parents' %}",
-        type: "GET",
-        success: function(response) {
-            // Clear existing options except for the "None" option
-            $('#todoParent option:not(:first)').remove();
-            $('#bulkParentSelect option:not(:first)').remove();
-            
-            // Add new options
-            response.potential_parents.forEach(function(parent) {
-                const indent = '&nbsp;&nbsp;&nbsp;'.repeat(parent.level);
-                const prefix = parent.level > 0 ? '└─ ' : '';
-                const option = `<option value="${parent.id}">${indent}${prefix}${parent.name}</option>`;
+    // Function to show/hide bulk actions
+    function updateBulkActionsVisibility() {
+        const anyChecked = $('.bulk-select:checked').length > 0;
+        
+        if (anyChecked) {
+            // If bulk actions don't exist yet, add them
+            if ($('#bulkActions').length === 0) {
+                const bulkActions = `
+                    <div id="bulkActions" class="btn-group mb-3">
+                        <button type="button" class="btn btn-sm btn-outline-success" id="bulkMarkDone">
+                            <i class="fas fa-check"></i> Mark Done
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-warning" id="bulkMarkUndone">
+                            <i class="fas fa-times"></i> Mark Not Done
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-danger" id="bulkDelete">
+                            <i class="fas fa-trash"></i> Delete
+                        </button>
+                        <button type="button" class="btn btn-sm btn-outline-primary" id="bulkAssignParent">
+                            <i class="fas fa-sitemap"></i> Assign Parent
+                        </button>
+                    </div>
+                `;
+                $('.todo-header').after(bulkActions);
                 
-                $('#todoParent').append(option);
-                $('#bulkParentSelect').append(option);
-            });
-        },
-        error: function(xhr, status, error) {
-            console.error("Error refreshing parent dropdown:", error);
-        }
-    });
-}
-function processBulkAction(ids, done, urlTemplate) {
-    let completed = 0;
-    
-    ids.forEach(function(id) {
-        $.ajax({
-            url: urlTemplate.replace('0', id),
-            type: "POST",
-            data: done !== null ? { done: done } : {},
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            success: function() {
-                completed++;
-                if (completed === ids.length) {
-                    location.reload();
-                }
-            },
-            error: function(xhr, status, error) {
-                console.error("Error performing bulk action:", error);
+                // Add event handlers for bulk actions
+                $('#bulkMarkDone').click(performBulkMarkDone);
+                $('#bulkMarkUndone').click(performBulkMarkUndone);
+                $('#bulkAssignParent').click(performBulkAssignParent);
+                $('#bulkDelete').click(performBulkDelete);
             }
-        });
-    });
-}
-
-
-
-</script>
-
-<script>
-    // Add this JavaScript to replace the separate quick add and search functions
-$(document).ready(function() {
-    // Combined input field handling
-    let searchMode = false;
-    // Add this function to initialize search mode if there's a search parameter
-    function checkUrlForSearch() {
-        if (window.location.search.includes('search=')) {
-            setSearchMode();
-            // Extract search term from URL
-            const searchParams = new URLSearchParams(window.location.search);
-            const searchTerm = searchParams.get('search');
-            if (searchTerm) {
-                $('#combinedInput').val(decodeURIComponent(searchTerm));
-            }
+        } else {
+            // Remove bulk actions if no checkboxes selected
+            $('#bulkActions').remove();
         }
     }
+    
+    // Function to handle bulk parent assignment
+    function performBulkAssignParent() {
+        const selectedIds = getSelectedIds();
+        
+        // Update modal content
+        $('#bulkAssignCount').text(selectedIds.length);
+        $('#bulkAssignParentModal').modal('show');
+    }
 
-    // Switch to add mode (default)
-    function setAddMode() {
-        searchMode = false;
-        $('#combinedInput').attr('placeholder', 'Add a todo or search existing ones...');
-        $('#addBtn').removeClass('btn-outline-primary').addClass('btn-primary');
-        $('#searchBtn').removeClass('btn-info').addClass('btn-outline-info');
-    }
-    
-    // Switch to search mode
-    function setSearchMode() {
-        searchMode = true;
-        $('#combinedInput').attr('placeholder', 'Search todos...');
-        $('#searchBtn').removeClass('btn-outline-info').addClass('btn-info');
-        $('#addBtn').removeClass('btn-primary').addClass('btn-outline-primary');
-    }
-    
-    // Initialize with add mode
-    setAddMode();
-    
-    // Toggle mode when clicking the respective buttons
-    $('#addBtn').click(function() {
-    if (searchMode) {
-        setAddMode();
-    } else {
-        // Add functionality
-        const todoName = $('#combinedInput').val().trim();
-        if (todoName !== '') {
+    // Handle the confirmation button click
+    $('#confirmAssignParentBtn').click(function() {
+        const selectedIds = getSelectedIds();
+        const parentId = $('#bulkParentSelect').val();
+        
+        processBulkParentAssignment(selectedIds, parentId);
+    });
+
+    // Function to process bulk parent assignment
+    function processBulkParentAssignment(ids, parentId) {
+        let completed = 0;
+        
+        ids.forEach(function(id) {
             $.ajax({
-                url: "{% url 'todo_app:api_quick_add' %}",
+                url: "{% url 'todo_app:todo_assign_parent' %}",
                 type: "POST",
                 data: { 
-                    name: todoName,
-                    my_todos: {% if todo_list %}{{ todo_list.id }}{% else %}''{% endif %}
+                    todo_id: id,
+                    parent_id: parentId
                 },
                 headers: {
                     'X-CSRFToken': '{{ csrf_token }}'
                 },
-                success: function(response) {
-                    // Add the new todo to the list without reloading
-                    addTodoToList(response);
-                    // Refresh parent dropdown
-                    refreshParentDropdown();
-                    // Clear the input
-                    $('#combinedInput').val('');
-                    // Update stats
-                    updateStats();
+                success: function() {
+                    completed++;
+                    if (completed === ids.length) {
+                        $('#bulkAssignParentModal').modal('hide');
+                        location.reload();
+                    }
                 },
                 error: function(xhr, status, error) {
-                    console.error("Error adding todo:", error);
+                    console.error("Error assigning parent:", error);
                 }
             });
-        }
+        });
     }
-});
     
-   //  search and clear button click handlers 
-    $('#searchBtn').click(function() {
-        // Always perform search when button is clicked
-        const query = $('#combinedInput').val().trim();
-        if (query !== '') {
-            {% if todo_list %}
-            window.location.href = "{% url 'todo_app:my_todos_detail' todo_list.id %}?search=" + encodeURIComponent(query);
-            {% else %}
-            window.location.href = "{% url 'todo_app:table_view' %}?search=" + encodeURIComponent(query);
-            {% endif %}
-        } else if (!searchMode) {
-            // Only toggle mode if empty and not already in search mode
-            setSearchMode();
-        }
-    });
+    // Bulk action functions
+    function performBulkMarkDone() {
+        const selectedIds = getSelectedIds();
+        processBulkAction(selectedIds, true, "{% url 'todo_app:todo_mark_done' 0 %}");
+    }
 
-    $('#clearBtn').click(function() {
-        // Always clear input
-        $('#combinedInput').val('');
+    function performBulkMarkUndone() {
+        const selectedIds = getSelectedIds();
+        processBulkAction(selectedIds, false, "{% url 'todo_app:todo_mark_done' 0 %}");
+    }
+
+    function performBulkDelete() {
+        const selectedIds = getSelectedIds();
         
-        // Always clear search parameters by checking URL
-        if (window.location.search.includes('search=')) {
-            {% if todo_list %}
-            window.location.href = "{% url 'todo_app:my_todos_detail' todo_list.id %}";
-            {% else %}
-            window.location.href = "{% url 'todo_app:table_view' %}";
-            {% endif %}
-        }
+        // Update modal content
+        $('#bulkDeleteCount').text(selectedIds.length);
+        $('#bulkDeleteModal').modal('show');
+    }
+
+    $('#confirmBulkDeleteBtn').click(function() {
+        const selectedIds = getSelectedIds();
+        processBulkAction(selectedIds, null, "{% url 'todo_app:todo_delete' 0 %}");
     });
 
+    // Add this modal HTML after your existing modals
+    function getSelectedIds() {
+        return $('.bulk-select:checked').map(function() {
+            return $(this).val();
+        }).get();
+    }
     
-// Call this function when page loads
-
-    
-    // Enter key behavior
-    $('#combinedInput').keypress(function(e) {
-        if (e.which === 13) { // Enter key
-            e.preventDefault();
-            if (searchMode) {
-                $('#searchBtn').click();
-            } else {
-                $('#addBtn').click();
+    function refreshParentDropdown() {
+        $.ajax({
+            url: "{% url 'todo_app:get_potential_parents' %}",
+            type: "GET",
+            success: function(response) {
+                // Clear existing options except for the "None" option
+                $('#todoParent option:not(:first)').remove();
+                $('#bulkParentSelect option:not(:first)').remove();
+                
+                // Add new options
+                response.potential_parents.forEach(function(parent) {
+                    const indent = '&nbsp;&nbsp;&nbsp;'.repeat(parent.level);
+                    const prefix = parent.level > 0 ? '└─ ' : '';
+                    const option = `<option value="${parent.id}">${indent}${prefix}${parent.name}</option>`;
+                    
+                    $('#todoParent').append(option);
+                    $('#bulkParentSelect').append(option);
+                });
+            },
+            error: function(xhr, status, error) {
+                console.error("Error refreshing parent dropdown:", error);
             }
-        }
-    });
+        });
+    }
     
-    // Focus input when changing modes
-    $('#addBtn, #searchBtn').click(function() {
-        $('#combinedInput').focus();
-    });
-});
+    function processBulkAction(ids, done, urlTemplate) {
+        let completed = 0;
+        
+        ids.forEach(function(id) {
+            $.ajax({
+                url: urlTemplate.replace('0', id),
+                type: "POST",
+                data: done !== null ? { done: done } : {},
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                success: function() {
+                    completed++;
+                    if (completed === ids.length) {
+                        location.reload();
+                    }
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error performing bulk action:", error);
+                }
+            });
+        });
+    }
 </script>
 
 <script>
-    // Toggle blocked status
-$('.toggle-blocked').click(function() {
-    const todoId = $(this).data('id');
-    const isBlocked = $(this).data('blocked') === true;
-    
-    $.ajax({
-        url: "{% url 'todo_app:todo_toggle_blocked' 0 %}".replace('0', todoId),
-        type: "POST",
-        data: { blocked: !isBlocked },
-        headers: {
-            'X-CSRFToken': '{{ csrf_token }}'
-        },
-        success: function(response) {
-            // Update the button and row styling
-            const button = $('button.toggle-blocked[data-id="' + todoId + '"]');
-            button.data('blocked', response.blocked);
-            
-            // Update button icon and tooltip
-            if (response.blocked) {
-                button.attr('title', 'Unblock');
-                button.find('i').removeClass('fa-lock').addClass('fa-lock-open');
-                $('tr[data-id="' + todoId + '"]').addClass('blocked');
-            } else {
-                button.attr('title', 'Block');
-                button.find('i').removeClass('fa-lock-open').addClass('fa-lock');
-                $('tr[data-id="' + todoId + '"]').removeClass('blocked');
-            }
-            
-            // Update status badge
-            const statusCell = $('tr[data-id="' + todoId + '"] td:nth-child(6)');
-            if (response.blocked) {
-                statusCell.html('<span class="badge bg-danger">Blocked</span>');
-            } else {
-                statusCell.html('<span class="badge bg-secondary">Todo</span>');
-            }
-            
-            // Update stats
-            updateStats();
-        },
-        error: function(xhr, status, error) {
-            console.error("Error toggling blocked status:", error);
-        }
-    });
-});
-
-$('.toggle-blocked:not(.bound)').each(function() {
-    $(this).addClass('bound');
-    $(this).on('click', function() {
-        const todoId = $(this).data('id');
-        const isBlocked = $(this).data('blocked') === true;
+    // Add this JavaScript to replace the separate quick add and search functions
+    $(document).ready(function() {
+        // Combined input field handling
+        let searchMode = false;
         
-        // Same AJAX call as above
-        $.ajax({
-            url: "{% url 'todo_app:todo_toggle_blocked' 0 %}".replace('0', todoId),
-            type: "POST",
-            data: { blocked: !isBlocked },
-            headers: {
-                'X-CSRFToken': '{{ csrf_token }}'
-            },
-            success: function(response) {
-                // Same update logic as above
-                const button = $('button.toggle-blocked[data-id="' + todoId + '"]');
-                button.data('blocked', response.blocked);
-                
-                if (response.blocked) {
-                    button.attr('title', 'Unblock');
-                    button.find('i').removeClass('fa-lock').addClass('fa-lock-open');
-                    $('tr[data-id="' + todoId + '"]').addClass('blocked');
-                } else {
-                    button.attr('title', 'Block');
-                    button.find('i').removeClass('fa-lock-open').addClass('fa-lock');
-                    $('tr[data-id="' + todoId + '"]').removeClass('blocked');
+        // Add this function to initialize search mode if there's a search parameter
+        function checkUrlForSearch() {
+            if (window.location.search.includes('search=')) {
+                setSearchMode();
+                // Extract search term from URL
+                const searchParams = new URLSearchParams(window.location.search);
+                const searchTerm = searchParams.get('search');
+                if (searchTerm) {
+                    $('#combinedInput').val(decodeURIComponent(searchTerm));
                 }
-                
-                const statusCell = $('tr[data-id="' + todoId + '"] td:nth-child(6)');
-                if (response.blocked) {
-                    statusCell.html('<span class="badge bg-danger">Blocked</span>');
-                } else {
-                    statusCell.html('<span class="badge bg-secondary">Todo</span>');
+            }
+        }
+
+        // Switch to add mode (default)
+        function setAddMode() {
+            searchMode = false;
+            $('#combinedInput').attr('placeholder', 'Add a todo or search existing ones...');
+            $('#addBtn').removeClass('btn-outline-primary').addClass('btn-primary');
+            $('#searchBtn').removeClass('btn-info').addClass('btn-outline-info');
+        }
+        
+        // Switch to search mode
+        function setSearchMode() {
+            searchMode = true;
+            $('#combinedInput').attr('placeholder', 'Search todos...');
+            $('#searchBtn').removeClass('btn-outline-info').addClass('btn-info');
+            $('#addBtn').removeClass('btn-primary').addClass('btn-outline-primary');
+        }
+        
+        // Initialize with add mode
+        setAddMode();
+        
+        // Check URL for search parameter
+        checkUrlForSearch();
+        
+        // Toggle mode when clicking the respective buttons
+        $('#addBtn').click(function() {
+            if (searchMode) {
+                setAddMode();
+            } else {
+                // Add functionality
+                const todoName = $('#combinedInput').val().trim();
+                if (todoName !== '') {
+                    $.ajax({
+                        url: "{% url 'todo_app:api_quick_add' %}",
+                        type: "POST",
+                        data: { 
+                            name: todoName,
+                            my_todos: {% if todo_list %}{{ todo_list.id }}{% else %}''{% endif %}
+                        },
+                        headers: {
+                            'X-CSRFToken': '{{ csrf_token }}'
+                        },
+                        success: function(response) {
+                            // Add the new todo to the list without reloading
+                            addTodoToList(response);
+                            // refreshParentDropdown();
+                            location.reload();
+                            // Clear the input
+                            $('#combinedInput').val('');
+                            // Update stats
+                            updateStats();
+                        },
+                        error: function(xhr, status, error) {
+                            console.error("Error adding todo:", error);
+                        }
+                    });
                 }
-                
-                updateStats();
-            },
-            error: function(xhr, status, error) {
-                console.error("Error toggling blocked status:", error);
             }
         });
+        
+        //  search and clear button click handlers 
+        $('#searchBtn').click(function() {
+            // Always perform search when button is clicked
+            const query = $('#combinedInput').val().trim();
+            if (query !== '') {
+                {% if todo_list %}
+                window.location.href = "{% url 'todo_app:my_todos_detail' todo_list.id %}?search=" + encodeURIComponent(query);
+                {% else %}
+                window.location.href = "{% url 'todo_app:table_view' %}?search=" + encodeURIComponent(query);
+                {% endif %}
+            } else if (!searchMode) {
+                // Only toggle mode if empty and not already in search mode
+                setSearchMode();
+            }
+        });
+
+        $('#clearBtn').click(function() {
+            // Always clear input
+            $('#combinedInput').val('');
+            
+            // Always clear search parameters by checking URL
+            if (window.location.search.includes('search=')) {
+                {% if todo_list %}
+                window.location.href = "{% url 'todo_app:my_todos_detail' todo_list.id %}";
+                {% else %}
+                window.location.href = "{% url 'todo_app:table_view' %}";
+                {% endif %}
+            }
+        });
+        
+        // Enter key behavior
+        $('#combinedInput').keypress(function(e) {
+            if (e.which === 13) { // Enter key
+                e.preventDefault();
+                if (searchMode) {
+                    $('#searchBtn').click();
+                } else {
+                    $('#addBtn').click();
+                }
+            }
+        });
+        
+        // Focus input when changing modes
+        $('#addBtn, #searchBtn').click(function() {
+            $('#combinedInput').focus();
+        });
     });
-});
+</script>
+
+<script>
+    // Function to update stats after adding a new todo
+    function updateStats() {
+        $.ajax({
+            url: "{% url 'todo_app:api_get_stats' %}",
+            type: "GET",
+            data: {
+                {% if todo_list %}list_id: {{ todo_list.id }}{% endif %}
+            },
+            success: function(response) {
+                // Update the statistics badges
+                $('[data-stat-type="total"]').text(response.total);
+                $('[data-stat-type="todo"]').text(response.todo);
+                $('[data-stat-type="wip"]').text(response.wip);
+                $('[data-stat-type="done"]').text(response.done);
+                $('[data-stat-type="blocked"]').text(response.blocked);
+            },
+            error: function(xhr, status, error) {
+                console.error("Error updating stats:", error);
+            }
+        });
+    }
+
+    // Function to add a new todo to the list without reloading the page
+    function addTodoToList(todo) {
+        // Get the current number of todos for the row counter
+        const rowCount = $('#todoList tr.todo-item').length + 1;
+        
+        // Create the new row HTML
+        const newRow = `
+        <tr class="todo-item priority-${todo.priority} ${todo.blocked ? 'blocked' : ''}" data-id="${todo.id}">
+            <td>
+                <span class="grab-handle"><i class="fas fa-grip-vertical"></i></span>
+            </td>
+            <td>
+                <input type="checkbox" class="bulk-select" value="${todo.id}">
+            </td>
+            <td>${rowCount}</td>
+            <td>
+                <div class="form-check">
+                    <label class="form-check-label ${todo.done ? 'done' : ''}">
+                        ${todo.name}
+                    </label>
+                    <!-- No children yet since this is a new todo -->
+                </div>
+            </td>
+            <td>
+                ${todo.owner ? todo.owner.charAt(0).toUpperCase() + todo.owner.slice(1) : ''}
+            </td>
+            <td>
+                <span class="badge ${getPriorityBadgeClass(todo.priority)}">
+                    ${getPriorityDisplayName(todo.priority)}
+                </span>
+            </td>
+            <td>
+                ${todo.blocked ? 
+                    '<span class="badge bg-danger">Blocked</span>' : 
+                    '<span class="badge bg-secondary">Todo</span>'}
+            </td>
+            <td class="text-center">
+                <input class="toggle-done" type="checkbox" ${todo.done ? 'checked' : ''} data-id="${todo.id}">
+            </td>
+            <td>
+                <div class="btn-group btn-group-sm">
+                    <button type="button" class="btn btn-outline-info view-todo" data-id="${todo.id}" data-bs-toggle="tooltip" title="View">
+                        <i class="fas fa-eye"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-secondary edit-todo" data-id="${todo.id}" data-bs-toggle="tooltip" title="Edit">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-warning toggle-blocked" data-id="${todo.id}" data-blocked="${todo.blocked}" data-bs-toggle="tooltip" title="${todo.blocked ? 'Unblock' : 'Block'}">
+                        <i class="fas ${todo.blocked ? 'fa-lock-open' : 'fa-lock'}"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-success copy-todo" data-id="${todo.id}" data-bs-toggle="tooltip" title="Copy">
+                        <i class="fas fa-copy"></i>
+                    </button>
+                    <button type="button" class="btn btn-outline-danger delete-todo" data-id="${todo.id}" data-bs-toggle="tooltip" title="Delete">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </td>
+        </tr>
+        `;
+        
+        // If the table is empty (has the "No todos found" row), remove it
+        if ($('#todoList tr').length === 1 && $('#todoList tr td').length === 1 && $('#todoList tr td').text().includes('No todos found')) {
+            $('#todoList tr').remove();
+        }
+        
+        // Add the new row to the table
+        $('#todoList').append(newRow);
+        
+        // Attach event handlers to the new row's buttons
+        attachEventHandlers(todo.id);
+    }
+
+    // Helper function to get the appropriate badge class for a priority
+    function getPriorityBadgeClass(priority) {
+        switch(priority) {
+            case 'critical': return 'bg-danger';
+            case 'high': return 'bg-warning text-dark';
+            case 'medium': return 'bg-info text-dark';
+            case 'low': return 'bg-success';
+            default: return 'bg-secondary'; // For 'normal' or any other priority
+        }
+    }
+
+    // Helper function to get the display name for a priority
+    function getPriorityDisplayName(priority) {
+        // Capitalize first letter
+        return priority.charAt(0).toUpperCase() + priority.slice(1);
+    }
+
+    // Attach event handlers to the newly added todo
+    function attachEventHandlers(todoId) {
+        // Toggle done status
+        $(`input.toggle-done[data-id="${todoId}"]`).change(function() {
+            const isDone = $(this).prop('checked');
+            
+            $.ajax({
+                url: "{% url 'todo_app:todo_mark_done' 0 %}".replace('0', todoId),
+                type: "POST",
+                data: { done: isDone },
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    // Update stats
+                    updateStats();
+                }
+            });
+        });
+        
+        // View Todo
+        $(`button.view-todo[data-id="${todoId}"]`).click(function() {
+            $.ajax({
+                url: "{% url 'todo_app:todo_view' 0 %}".replace('0', todoId),
+                type: "GET",
+                success: function(response) {
+                    $('#viewTodoContent').html(response);
+                    $('#viewTodoModal').modal('show');
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error viewing todo:", error);
+                }
+            });
+        });
+        
+        // Edit Todo
+        $(`button.edit-todo[data-id="${todoId}"]`).click(function() {
+            $.ajax({
+                url: "{% url 'todo_app:todo_edit' 0 %}".replace('0', todoId),
+                type: "GET",
+                success: function(response) {
+                    // Fill the form with todo data
+                    $('#todoModalLabel').text('Edit Todo');
+                    $('#todoId').val(response.id);
+                    $('#todoName').val(response.name);
+                    $('#todoDescription').val(response.description);
+                    $('#todoStartDate').val(response.start_date);
+                    $('#todoDueDate').val(response.due_date);
+                    $('#todoPriority').val(response.priority);
+                    $('#todoBlocked').prop('checked', response.blocked);
+                    $('#todoParent').val(response.parent);
+                    
+                    $('#todoModal').modal('show');
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error editing todo:", error);
+                }
+            });
+        });
+        
+        // Delete Todo
+        $(`button.delete-todo[data-id="${todoId}"]`).click(function() {
+            $('#confirmDeleteBtn').data('id', todoId);
+            $('#deleteModal').modal('show');
+        });
+        
+        // Copy todo
+        $(`button.copy-todo[data-id="${todoId}"]`).click(function() {
+            $(this).prop('disabled', true);
+            
+            $.ajax({
+                url: "{% url 'todo_app:todo_copy' 0 %}".replace('0', todoId),
+                type: "POST",
+                headers: {
+                    'X-CSRFToken': '{{ csrf_token }}'
+                },
+                success: function(response) {
+                    location.reload();
+                },
+                error: function(xhr, status, error) {
+                    console.error("Error copying todo:", error);
+                    $(this).prop('disabled', false);
+                }
+            });
+        });
+        
+        // Make sure bulk select works for this row
+        $(`input.bulk-select[value="${todoId}"]`).change(function() {
+            updateBulkActionsVisibility();
+        });
+        
+        // Note: toggle-blocked is now handled by the global event delegation
+    }
 </script>
 
 {% endblock %}

@@ -3,283 +3,573 @@
 {% load crispy_forms_tags %}
 {% load custom_tags %}
 {% load app_web_my_filters %}
-{% load markdown_extras  %}
+{% load markdown_extras %}
 {% load mptt_tags %}
+
 {% block content %}
 {% include 'app_common/common_files/navbar.html' %}
 {% include 'app_jivapms/mod_web/common_files/css.html' %}
-<!--
-required from the view
-project
-org
-org_id
--->
 
 <style>
-    .trash-icon {
-      position: fixed;
-      right: 10px;
-      bottom: 10px;
-      font-size: 24px;  /* Size of the icon */
-      cursor: pointer;
-      color: #707070;  /* Color of the icon */
+    /* Custom styles for organization list */
+    .table-responsive {
+        overflow-x: auto;
+        overflow-y: visible !important;
     }
-  </style>
-<form method="post">
-{% csrf_token %}
+    
+    .dropdown-menu {
+        z-index: 1050;
+    }
+    
+    /* For horizontal scrolling but keeping dropdowns visible */
+    .table-container {
+        position: relative;
+    }
+
+    /* Make sure dropdown items are readable */
+    .dropdown-item {
+        white-space: normal;
+        word-wrap: break-word;
+    }
+    
+    /* Add spacing for dropdown items */
+    .dropdown-item {
+        padding: 8px 16px;
+    }
+    
+    /* Proper alignment for dropdown */
+    .dropdown-menu {
+        min-width: 220px;
+    }
+</style>
+
 <div class="content-wrapper">
-    <div class="container-fluid-width">
-        <div class="row">
-            <div class="col col-md-12">
-                
+    {% include 'app_organization/mod_project/sidebar_menu.html' %}
+
+    <div class="contentbar" id="contentbar">
+        <div class="container-fluid">
+            <!-- Page Header -->
+            <div class="page-header mb-4">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h1 class="page-title">Organizations</h1>
+                        <p class="text-muted">Manage your organization list</p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        {% if relevant_admin %}
+                        <a href="{% url 'dashboard_organizations' %}" class="btn btn-outline-primary me-2">
+                            <i class="bi bi-speedometer2 me-1"></i> Dashboard
+                        </a>
+                        <a href="{% url 'create_organization' %}" class="btn btn-primary">
+                            <i class="bi bi-plus-circle me-1"></i> Create Organization
+                        </a>
+                        {% endif %}
+                        
+                        {% if deleted_count > 0 %}
+                        <a href="{% url 'list_deleted_organizations' %}" class="btn btn-outline-danger ms-2">
+                            <i class="bi bi-trash me-1"></i> Deleted ({{ deleted_count }})
+                        </a>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+
+            <!-- Search & Filters -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="get" class="row g-3 align-items-center">
+                        <div class="col-md-8">
+                            <div class="input-group">
+                                <span class="input-group-text bg-transparent border-end-0">
+                                    <i class="bi bi-search"></i>
+                                </span>
+                                <input type="text" name="search" class="form-control border-start-0" placeholder="Search organizations..." value="{{ search }}">
+                                <button type="submit" class="btn btn-primary">Search</button>
+                                <button type="submit" class="btn btn-outline-secondary">Clear</button>
+                            </div>
+                        </div>
+                        <div class="col-md-4 text-md-end">
+                            <span class="badge bg-secondary p-2">{{objects_count}} organization(s)</span>
+                            <div class="d-inline-block ms-2">
+                                <select name="pagination" id="paginationselect" class="form-select form-select-sm">
+                                    <option value="none" {% if selected_pagination == 'none' %}selected{% endif %}>Items per page</option>
+                                    {% for option in pagination_options %}
+                                    <option value="{{ option }}" {% if show_all|lower == option|lower|stringformat:"s" %}selected{% endif %}>
+                                        {{ option|capfirst }}
+                                    </option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Organizations Table -->
+            <div class="card">
+                <div class="card-body p-0">
+                    <form method="post">
+                        {% csrf_token %}
+                        <div class="table-responsive" style="overflow: visible;">
+                            <table class="new_excel table table-hover sortable_table mb-0">
+                                <thead class="table-light">
+                                    <tr>
+                                        <th width="2%" class="border-0 align-middle"><i class="bi bi-grip-vertical"></i></th>
+                                        <th width="2%" class="border-0 align-middle">
+                                            <div class="form-check mb-0">
+                                                <input type="checkbox" class="form-check-input" name="select_all" id="select_all" onclick='checkUncheck(this)'>
+                                            </div>
+                                        </th>
+                                        <th width="2%" class="border-0 align-middle">#</th>
+                                        <th class="border-0 align-middle">Organization</th>
+                                        <th width="20%" class="border-0 align-middle">Description</th>
+                                        <th width="15%" class="border-0 align-middle">Configure</th>
+                                        <th width="15%" class="border-0 align-middle">
+                                            <div class="d-flex justify-content-between align-items-center">
+                                                <span>Actions</span>
+                                                <select name="bulk_operations" id="bulk_operations" class="form-select form-select-sm ms-2" onchange="this.form.submit()">
+                                                    <option value="none" {% if 'none' in selected_bulk_operations %}selected{% endif %}>Bulk Actions</option>
+                                                    <option value="bulk_done" {% if 'bulk_done' in selected_bulk_operations %}selected{% endif %}>Done</option>
+                                                    <option value="bulk_not_done" {% if 'bulk_not_done' in selected_bulk_operations %}selected{% endif %}>Not Done</option>
+                                                    <option value="bulk_blocked" {% if 'bulk_blocked' in selected_bulk_operations %}selected{% endif %}>Blocked</option>
+                                                    <option value="bulk_delete" {% if 'bulk_delete' in selected_bulk_operations %}selected{% endif %}>Delete</option>
+                                                </select>
+                                            </div>
+                                        </th>
+                                    </tr>
+                                </thead>
+                                <tbody id="sortable" class="sortable-tbody">
+                                    {% for tobject in page_obj %}
+                                    <tr id="{{tobject.id}}_{{ forloop.counter }}" class="sortable-row">
+                                        <td class="drag-handle">
+                                            <i class="bi bi-grip-vertical"></i>
+                                        </td>
+                                        <td>
+                                            <div class="form-check">
+                                                <input type="checkbox" class="form-check-input" name="selected_item" id="selected_item_ids" value="{{tobject.id}}">
+                                            </div>
+                                        </td>
+                                        <td>{{forloop.counter}}</td>
+                                        <td ondblclick="makeEditable(this)" onblur="save_element_text(this, '{{ tobject.id }}', 'app_organization', 'Organization', 'name')">
+                                            <strong>{{tobject.name}}</strong>
+                                        </td>
+                                        <td ondblclick="makeEditable(this)" onblur="save_element_text(this, '{{ tobject.id }}', 'app_organization', 'Organization', 'description')">
+                                            {% if tobject.description != None %}{{tobject.description}}{% endif %}
+                                        </td>
+                                        <td>
+                                            <div class="dropdown">
+                                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="configDropdown{{tobject.id}}" data-bs-toggle="dropdown" data-bs-auto-close="true" data-bs-offset="0,10" aria-expanded="false">
+                                                    Configure
+                                                </button>
+                                                <ul class="dropdown-menu">
+                                                    {% include './connected_organizations.html' %}
+                                                    
+                                                    {% if is_org_admin or is_project_admin %}
+                                                    <li><a class="dropdown-item" href="{% url 'list_project_templates' tobject.id %}">Project Templates</a></li>
+                                                    <li><a class="dropdown-item" href="{% url 'list_projects' tobject.id %}">Projects</a></li>
+                                                    <li><a class="dropdown-item" href="{% url 'list_ops_value_streams' tobject.id %}">Ops Value Streams</a></li>
+                                                    {% endif %}
+                                                    
+                                                    {% if is_site_admin %}
+                                                    <li><hr class="dropdown-divider"></li>
+                                                    <li><a class="dropdown-item" href="{% url 'list_memberorganizationroles' tobject.id %}">Org Membership</a></li>
+                                                    <li><a class="dropdown-item" href="{% url 'site_admin_bulk_add_user' tobject.id %}">User Management</a></li>
+                                                    <li><a class="dropdown-item" href="{% url 'list_memberorganizationroles' tobject.id %}">Member Management</a></li>
+                                                    {% endif %}
+                                                </ul>
+                                            </div>
+                                        </td>
+                                        <td>
+                                            <div class="btn-group" role="group">
+                                                <a href="{% url 'org_homepage' tobject.id %}" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="Organization Home">
+                                                    <i class="bi bi-bank"></i> Home
+                                                </a>
+                                                
+                                                {% if relevant_admin %}
+                                                <a href="{% url 'view_organization' tobject.id %}" class="btn btn-sm btn-outline-info" data-bs-toggle="tooltip" title="View Details">
+                                                    <i class="bi bi-eye"></i>
+                                                </a>
+                                                <button type="button" 
+                                                        class="btn btn-sm btn-outline-warning edit-organization-btn" 
+                                                        data-bs-toggle="tooltip" 
+                                                        title="Edit"
+                                                        data-organization-id="{{ tobject.id }}"
+                                                        data-organization-name="{{ tobject.name }}"
+                                                        data-organization-description="{{ tobject.description|default:'' }}">
+                                                    <i class="bi bi-pencil-square"></i>
+                                                </button>
+                                                <a href="{% url 'delete_organization' tobject.id %}" class="btn btn-sm btn-outline-danger" data-bs-toggle="tooltip" title="Delete">
+                                                    <i class="bi bi-x-square"></i>
+                                                </a>
+                                                {% endif %}
+                                            </div>
+                                        </td>
+                                    </tr>
+                                    {% endfor %}
+                                </tbody>
+                            </table>
+                        </div>
+                        
+                        <!-- Pagination -->
+                        <div class="card-footer">
+                            {% include 'app_common/common_files/pagination.html' %}
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
-    
-    {% include 'app_organization/mod_project/sidebar_menu.html' %}
-
-    <div class="contentbar mb-5" id="contentbar">
-        
-<div class="container-fluid">
-    <div class="row">
-        <div class="col col-md-12">           
-            <!-- display -->
-            
-            <div class="row">
-                <div class="col col-md-12">
-                    <div class="container-fluid-width">
-                        <div class="row pb-2">
-                            <div class="col col-md-5">
-                                <b class="h2">Organization</b>
-                                &nbsp;&nbsp;
-                                List
-                               
-                            </div>
-                            <div class="col col-md-4">
-                                <form method="get">
-                                    <input type="text" name="search" placeholder="Search" value="{{ search }}">
-                                    &nbsp;&nbsp;  
-                                    <button type="submit" class="btn btn-sm btn-primary">Search</button> 
-                                    &nbsp;&nbsp;  
-                                    <button type="submit" class="btn btn-sm btn-info">Clear</button>   
-                                </form>
-                            </div>
-                            <div class="col col-md-3 text-end">
-                                <span class="display_count">{{objects_count}} organization(s)</span>
-                                &nbsp;&nbsp;
-                                {% if relevant_admin %} 
-                                <a href="{% url 'create_organization'   %}" 
-                                class="btn btn-sm btn-success"><b>+ Create Organization</b></a>
-                                {% endif %}
-                            </div>
-                        </div>
-                    </div>
-                    <form method="post">
-                    {% csrf_token %}
-                    <table class="new_excel table table-bordered sortable_table">
-                        <thead>
-                            <tr>
-                                <th width="2%"><i class="bi bi-grip-vertical"></i></th>
-                                <th width="2%">
-                                    <input type="checkbox" name="select_all" id="select_all" onclick='checkUncheck(this)'>
-                                </th>  
-                                <th width="2%">#</th>
-                                <th>Organization</th>
-                                <th width="20%">Description</th>
-                                <th width="10%">Configure</th>
-                                <th width="50%">                                    
-                                    Actions
-                                    &nbsp;&nbsp;
-                                    <select name="pagination" id="paginationselect">
-                                        <option value="none" {% if selected_pagination == 'none' %}selected{% endif %}>-Page-</option>
-                                        {% for option in pagination_options %}
-                                            <option value="{{ option }}" {% if show_all|lower == option|lower|stringformat:"s" %}selected{% endif %}>
-                                                {{ option|capfirst }}
-                                            </option>
-                                        {% endfor %}
-                                    </select>
-                                    &nbsp;&nbsp;
-                                    <b>Bulk:</b>&nbsp;&nbsp; 
-                                    <select name="bulk_operations" id="bulk_operations"  onchange="this.form.submit()">
-                                        <option value="none" {% if 'none' in selected_bulk_operations %}selected{% endif %}>-- Ops --</option>
-                                        <option value="bulk_done" {% if 'bulk_done' in selected_bulk_operations %}selected{% endif %}>Done</option>
-                                        <option value="bulk_not_done" {% if 'bulk_not_done' in selected_bulk_operations %}selected{% endif %}>Not Done</option>
-                                        <option value="bulk_blocked" {% if 'bulk_blocked' in selected_bulk_operations %}selected{% endif %}>Blocked</option>
-                                        <option value="bulk_delete" {% if 'bulk_delete' in selected_bulk_operations %}selected{% endif %}>Delete</option>
-                                    </select>                  
-                                </th>
-                            </tr>
-                        </thead>
-
-                        <tbody  id="sortable" class="sortable-tbody">
-                            {% for tobject in page_obj %}
-                            <tr id="{{tobject.id}}_{{ forloop.counter }}" class="sortable-row display_tr">
-                                <td class="drag-handle">
-                                    <i class="bi bi-grip-vertical"></i>
-                                </td>
-                                <td width="2%">
-                                    <input type="checkbox" name="selected_item" id="selected_item_ids" value="{{tobject.id}}">
-                                </td>
-                                <td>{{forloop.counter}}</td>
-                                <td width="20%" ondblclick="makeEditable(this)"
-                                 onblur="save_element_text(this, '{{ tobject.id }}',  'app_organization', 'Organization', 'name')"
-                                ><strong>{{tobject.name}}</strong></td>
-                                <td width="" ondblclick="makeEditable(this)"
-                                onblur="save_element_text(this, '{{ tobject.id }}',  'app_organization', 'Organization', 'description')"
-                                >{% if tobject.description != None %}{{tobject.description}}{% endif %}</td>
-                                <td width="20%">
-                                    {% include './connected_organizations.html' %}
-                                    {% if is_org_admin or is_project_admin %}
-                                    <a href="{% url 'list_project_templates' tobject.id %}">Project Templates</a>
-                                    &nbsp;&nbsp;
-                                    <a href="{% url 'list_projects' tobject.id %}">Projects</a>
-                                  
-                                    &nbsp;&nbsp;                             
-                                    <a href="{% url 'list_ops_value_streams' tobject.id %}">List Ops Value Streams</a>
-                                   
-                                    {% endif %}
-
-                                    
-                                    {% if is_site_admin %}
-                                    &nbsp;&nbsp;<a href="{% url 'list_memberorganizationroles'   tobject.id  %}">Org Membership</a>
-                                    &nbsp;&nbsp;<a href="{% url 'site_admin_bulk_add_user' tobject.id %}">User Management </a>
-                                    &nbsp;&nbsp;<a href="{% url 'list_memberorganizationroles' tobject.id %}">Member Management </a>
-                                    {% endif %}
-                                </td>
-                                <td width="50%">
-                                    {% if relevant_admin %}
-                                    <a href="{% url 'org_homepage'   tobject.id  %}"
-                                    class="btn btn-sm btn-primary"><i class="bi bi-bank"></i></a>
-                                    &nbsp;&nbsp;
-                                    <a href="{% url 'view_organization'   tobject.id  %}"
-                                    class="btn btn-sm btn-primary"><i class="bi bi-eye"></i></a>
-                                    &nbsp;&nbsp;
-                                    <a href="{% url 'edit_organization'   tobject.id %}"
-                                    class="btn btn-sm btn-warning"><i class="bi bi-pencil-square"></i></a>
-                                    &nbsp;&nbsp;
-                                    <a href="{% url 'delete_organization'   tobject.id %}"
-                                    class="btn btn-sm btn-danger"><i class="bi bi-x-square"></i></a>
-                                    {% else %}
-                                    <a href="{% url 'org_homepage'   tobject.id  %}"><i class="bi bi-bank"></i></a></a>
-                                    {% endif %}
-
-                                   
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                            <tr>
-                                <td colspan="7">
-                                    {% include 'app_common/common_files/pagination.html' %}
-                                </td>
-                            </tr>                        
-                    </table>
-                <!-- end display -->
+</div>
+<!-- Create Organization Modal -->
+<div class="modal fade" id="createOrganizationModal" tabindex="-1" aria-labelledby="createOrganizationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white">
+          <h5 class="modal-title" id="createOrganizationModalLabel">Create Organization</h5>
+          <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
         </div>
+        <form id="createOrganizationForm" method="post" action="{% url 'create_organization' %}">
+          <div class="modal-body p-4">
+            {% csrf_token %}
+            <div class="mb-3">
+              <label for="modal_org_name" class="form-label">Organization Name <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="modal_org_name" name="name" required>
+            </div>
+            <div class="mb-3">
+              <label for="modal_org_description" class="form-label">Description</label>
+              <textarea class="form-control" id="modal_org_description" name="description" rows="4"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-save me-1"></i> Save Organization
+            </button>
+          </div>
+        </form>
+      </div>
     </div>
-  
 </div>
-<div class="trash-icon">
-    {% if deleted_count > 0 %}
-    <a href="{% url 'list_deleted_organizations' %}"><i class="bi bi-trash-fill"></i></a>    
-    {% endif %}
+
+<!-- Edit Organization Modal -->
+<div class="modal fade" id="editOrganizationModal" tabindex="-1" aria-labelledby="editOrganizationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+      <div class="modal-content">
+        <div class="modal-header bg-primary text-white d-flex justify-content-between align-items-center">
+          <h5 class="modal-title" id="editOrganizationModalLabel">Edit Organization</h5>
+          <div>
+            <a href="#" id="viewOrganizationLink" class="btn btn-sm btn-outline-light me-2">
+              <i class="bi bi-eye"></i> View
+            </a>
+            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
+          </div>
+        </div>
+        <form id="editOrganizationForm" method="post">
+          <div class="modal-body p-4">
+            {% csrf_token %}
+            <input type="hidden" id="edit_organization_id" name="organization_id" value="">
+            
+            <div class="mb-3">
+              <label for="edit_org_name" class="form-label">Organization Name <span class="text-danger">*</span></label>
+              <input type="text" class="form-control" id="edit_org_name" name="name" required>
+            </div>
+            
+            <div class="mb-3">
+              <label for="edit_org_description" class="form-label">Description</label>
+              <textarea class="form-control" id="edit_org_description" name="description" rows="4"></textarea>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-outline-secondary" data-bs-dismiss="modal">Cancel</button>
+            <button type="submit" class="btn btn-primary">
+              <i class="bi bi-save me-1"></i> Save Changes
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
 </div>
-</form>
+<!-- JavaScript -->
 <script>
-// Select all / checkbox
-function checkUncheck(checkBox) {
-    get = document.getElementsByName('selected_item');
-    for(var i=0; i<get.length; i++) {
-        get[i].checked = checkBox.checked;
+    // Select all / checkbox
+    function checkUncheck(checkBox) {
+        get = document.getElementsByName('selected_item');
+        for (var i = 0; i < get.length; i++) {
+            get[i].checked = checkBox.checked;
+        }
     }
-}
-</script>
 
-<script>
-    // pagination select
-document.addEventListener("DOMContentLoaded", function () {
-  const redirectSelect = document.getElementById("paginationselect");
-  redirectSelect.addEventListener("change", function () {
-    const selectedValue = redirectSelect.value;
-    
-    // Redirect the user based on the selected value
-    if (selectedValue === "5") {
-      window.location.href = "{% url 'list_organizations'  %}?page=1&all=5";
-    } else if (selectedValue === "10") {
-      window.location.href = "{% url 'list_organizations'  %}?page=1&all=10";
-    } else if (selectedValue === "15") {
-      window.location.href = "{% url 'list_organizations'  %}?page=1&all=15";
-    } else if (selectedValue === "25") {
-      window.location.href = "{% url 'list_organizations'   %}?page=1&all=25";
-    } else if (selectedValue === "50") {
-      window.location.href = "{% url 'list_organizations'  %}?page=1&all=50";
-    } else if (selectedValue === "100") {
-      window.location.href = "{% url 'list_organizations'  %}?page=1&all=100";
-    } else if (selectedValue === "all") {
-      window.location.href = "{% url 'list_organizations'  %}?page=1&all=all";
-    } 
-    // Add more conditions for other options as needed
-  });
-});
-</script>
-
-<script>
-    $(".sortable_table").find("tbody").sortable({
-      items: "> tr",
-      handle: ".drag-handle",
-      appendTo: "parent",
-      cancel: "[contenteditable]",
-      update: function(event, ui) {
-              var serialOrder = $('#sortable').sortable('serialize');
-              var arrayOrder = $('#sortable').sortable('toArray');
-              //alert(arrayOrder);
-              $.ajax({
-                url: '/common/common_ajax/ajax_update_model_list_sorted/',
-                type: 'POST',
-                data : {
-                  'csrfmiddlewaretoken': "{{ csrf_token }}",
-                  'model_name': 'Organization',
-                  'app_name': 'app_organization',
-                  'sorted_list_data': JSON.stringify(arrayOrder),
-                  
-                },
-                dataType: 'json',
-                success: function(data) {
-                  console.log(data);
-                }
-              })
+    // Pagination select
+    document.addEventListener("DOMContentLoaded", function () {
+        const redirectSelect = document.getElementById("paginationselect");
+        redirectSelect.addEventListener("change", function () {
+            const selectedValue = redirectSelect.value;
+            
+            // Redirect the user based on the selected value
+            if (selectedValue === "5") {
+                window.location.href = "{% url 'list_organizations' %}?page=1&all=5";
+            } else if (selectedValue === "10") {
+                window.location.href = "{% url 'list_organizations' %}?page=1&all=10";
+            } else if (selectedValue === "15") {
+                window.location.href = "{% url 'list_organizations' %}?page=1&all=15";
+            } else if (selectedValue === "25") {
+                window.location.href = "{% url 'list_organizations' %}?page=1&all=25";
+            } else if (selectedValue === "50") {
+                window.location.href = "{% url 'list_organizations' %}?page=1&all=50";
+            } else if (selectedValue === "100") {
+                window.location.href = "{% url 'list_organizations' %}?page=1&all=100";
+            } else if (selectedValue === "all") {
+                window.location.href = "{% url 'list_organizations' %}?page=1&all=all";
             }
-    });
-</script>
+        });
 
-<script>
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+        
+        // Make dropdowns work better with table
+        $(document).on('shown.bs.dropdown', '.dropdown', function() {
+            $('body').addClass('dropdown-open');
+        });
+        
+        $(document).on('hidden.bs.dropdown', '.dropdown', function() {
+            $('body').removeClass('dropdown-open');
+        });
+    });
+
+    // Make editable and save
     function makeEditable(element) {
         element.contentEditable = true;
         element.focus();
     }
 
-
-    function save_element_text(element, id,  appName, modelName, fieldName) {
+    function save_element_text(element, id, appName, modelName, fieldName) {
         element.contentEditable = false;
         $.ajax({
             url: '/common/common_ajax/ajax_save_element_text/',
             type: 'POST',
-            data : {
-            'csrfmiddlewaretoken': "{{ csrf_token }}",
-            'model_name': modelName,
-            'app_name': appName,
-            'field_name': fieldName,
-            'text': element.textContent, 
-            'id': id,
+            data: {
+                'csrfmiddlewaretoken': "{{ csrf_token }}",
+                'model_name': modelName,
+                'app_name': appName,
+                'field_name': fieldName,
+                'text': element.textContent,
+                'id': id,
             },
             dataType: 'json',
-            success: function(data) {
-            console.log(data);
+            success: function (data) {
+                console.log(data);
+                // Show a success toast
+                const toast = document.createElement('div');
+                toast.className = 'position-fixed bottom-0 end-0 p-3';
+                toast.style.zIndex = 11;
+                toast.innerHTML = `
+                    <div class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                Updated successfully!
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                const toastEl = toast.querySelector('.toast');
+                const bsToast = new bootstrap.Toast(toastEl);
+                bsToast.show();
+                setTimeout(() => {
+                    toast.remove();
+                }, 3000);
             }
-        })
+        });
     }
+
+    // Sortable
+    $(".sortable_table").find("tbody").sortable({
+        items: "> tr",
+        handle: ".drag-handle",
+        appendTo: "parent",
+        cancel: "[contenteditable]",
+        update: function (event, ui) {
+            var serialOrder = $('#sortable').sortable('serialize');
+            var arrayOrder = $('#sortable').sortable('toArray');
+            $.ajax({
+                url: '/common/common_ajax/ajax_update_model_list_sorted/',
+                type: 'POST',
+                data: {
+                    'csrfmiddlewaretoken': "{{ csrf_token }}",
+                    'model_name': 'Organization',
+                    'app_name': 'app_organization',
+                    'sorted_list_data': JSON.stringify(arrayOrder),
+                },
+                dataType: 'json',
+                success: function (data) {
+                    console.log(data);
+                }
+            });
+        }
+    });
 </script>
-    </div>
-</div>
-</form> 
+
+<script>
+    // Handle the modal form submission
+    document.addEventListener('DOMContentLoaded', function() {
+      const createOrganizationForm = document.getElementById('createOrganizationForm');
+      
+      if (createOrganizationForm) {
+        createOrganizationForm.addEventListener('submit', function(event) {
+          event.preventDefault();
+          
+          // Submit the form via AJAX
+          const formData = new FormData(createOrganizationForm);
+          
+          fetch(createOrganizationForm.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+              'X-Requested-With': 'XMLHttpRequest'
+            }
+          })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              // Show success message
+              const toast = document.createElement('div');
+              toast.className = 'position-fixed bottom-0 end-0 p-3';
+              toast.style.zIndex = 11;
+              toast.innerHTML = `
+                <div class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                  <div class="d-flex">
+                    <div class="toast-body">
+                      Organization created successfully!
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                  </div>
+                </div>
+              `;
+              document.body.appendChild(toast);
+              const toastEl = toast.querySelector('.toast');
+              const bsToast = new bootstrap.Toast(toastEl);
+              bsToast.show();
+              
+              // Close the modal
+              const modal = bootstrap.Modal.getInstance(document.getElementById('createOrganizationModal'));
+              modal.hide();
+              
+              // Reload the page to show the new organization
+              setTimeout(() => {
+                window.location.reload();
+              }, 1000);
+            } else {
+              // Show error message
+              alert('Error creating organization: ' + (data.message || 'Unknown error'));
+            }
+          })
+          .catch(error => {
+            console.error('Error:', error);
+            alert('An error occurred while creating the organization');
+          });
+        });
+      }
+      
+      // Clear form when modal is opened
+      const createOrganizationModal = document.getElementById('createOrganizationModal');
+      if (createOrganizationModal) {
+        createOrganizationModal.addEventListener('show.bs.modal', function() {
+          createOrganizationForm.reset();
+        });
+      }
+    });
+  </script>
+
+<script>
+    // Handle Edit Organization Modal
+document.addEventListener('DOMContentLoaded', function() {
+  // Add click event listeners to edit buttons
+  document.querySelectorAll('.edit-organization-btn').forEach(button => {
+    button.addEventListener('click', function(e) {
+      e.preventDefault();
+      
+      const organizationId = this.getAttribute('data-organization-id');
+      const organizationName = this.getAttribute('data-organization-name');
+      const organizationDescription = this.getAttribute('data-organization-description');
+      
+      // Set form values
+      document.getElementById('edit_organization_id').value = organizationId;
+      document.getElementById('edit_org_name').value = organizationName;
+      document.getElementById('edit_org_description').value = organizationDescription || '';
+      
+      // Update view link
+      document.getElementById('viewOrganizationLink').href = `/org/organization/view_organization/${organizationId}/`;
+      
+      // Set form action
+      document.getElementById('editOrganizationForm').action = `/org/organization/edit_organization/${organizationId}/`;
+      
+      // Open the modal
+      const editModal = new bootstrap.Modal(document.getElementById('editOrganizationModal'));
+      editModal.show();
+    });
+  });
+  
+  // Handle edit form submission
+  const editOrganizationForm = document.getElementById('editOrganizationForm');
+  if (editOrganizationForm) {
+    editOrganizationForm.addEventListener('submit', function(event) {
+      event.preventDefault();
+      
+      // Submit the form via AJAX
+      const formData = new FormData(editOrganizationForm);
+      
+      fetch(editOrganizationForm.action, {
+        method: 'POST',
+        body: formData,
+        headers: {
+          'X-Requested-With': 'XMLHttpRequest'
+        }
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Show success message
+          const toast = document.createElement('div');
+          toast.className = 'position-fixed bottom-0 end-0 p-3';
+          toast.style.zIndex = 11;
+          toast.innerHTML = `
+            <div class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+              <div class="d-flex">
+                <div class="toast-body">
+                  Organization updated successfully!
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+              </div>
+            </div>
+          `;
+          document.body.appendChild(toast);
+          const toastEl = toast.querySelector('.toast');
+          const bsToast = new bootstrap.Toast(toastEl);
+          bsToast.show();
+          
+          // Close the modal
+          const modal = bootstrap.Modal.getInstance(document.getElementById('editOrganizationModal'));
+          modal.hide();
+          
+          // Reload the page to show the updated organization
+          setTimeout(() => {
+            window.location.reload();
+          }, 1000);
+        } else {
+          // Show error message in the modal
+          alert('Error updating organization: ' + (data.message || 'Unknown error'));
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        alert('An error occurred while updating the organization');
+      });
+    });
+  }
+});
+</script>
 {% endblock content %}

@@ -113,7 +113,7 @@ def list_organizations(request):
         deleted = Organization.objects.filter(active=False, deleted=False).order_by('position')
         deleted_count = deleted.count()
     else:
-        #tobjects = Organization.objects.filter(active=True).order_by('position')
+        tobjects = Organization.objects.filter(active=True).order_by('position')
         deleted = Organization.objects.filter(active=False, deleted=False).order_by('position')
         deleted_count = deleted.count()
     
@@ -273,34 +273,54 @@ def list_deleted_organizations(request):
 
 
 
-
 # Create View
 @login_required
 def create_organization(request):
     user = request.user
+    logger.debug(f">>> === TEST1: CREATE ORGANIZATION === <<<")
     
     if request.method == 'POST':
         form = OrganizationForm(request.POST)
         if form.is_valid():
             form.instance.author = user
-            form.save()
+            organization = form.save()
 
-            org_admin_roles = Role.objects.filter(name=org_admin_str, org=form.instance).values_list('id', flat=True)
+            org_admin_roles = Role.objects.filter(name=org_admin_str, org=organization).values_list('id', flat=True)
             member = Member.objects.filter(user=user, active=True).first()
-            member_create, created = MemberOrganizationRole.objects.get_or_create(member=member, 
-                                                                                  org=form.instance, 
-                                                                                  role_id__in=org_admin_roles)
+            member_create, created = MemberOrganizationRole.objects.get_or_create(
+                member=member, 
+                org=organization, 
+                role_id__in=org_admin_roles
+            )
             logger.debug(f">>> === member_create: {member_create} === <<<")
+            
+            # Check if it's an AJAX request
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'organization_id': organization.id,
+                    'organization_name': organization.name,
+                    'message': 'Organization created successfully!'
+                })
+            
+            # For regular form submission
+            return redirect('list_organizations')
         else:
             print(f">>> === form.errors: {form.errors} === <<<")
-        return redirect('list_organizations')
+            
+            # Return form errors for AJAX requests
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Form validation failed',
+                    'errors': form.errors.as_json()
+                }, status=400)
     else:
         form = OrganizationForm()
-
+    
     context = {
         'parent_page': '___PARENTPAGE___',
         'page': 'create_organization',
-        
         'module_path': module_path,
         'form': form,
         'page_title': f'Create Organization',
@@ -310,8 +330,36 @@ def create_organization(request):
 
 
 
+# # Edit
+# @login_required
+# def edit_organization(request, organization_id):
+#     user = request.user
+    
+#     object = get_object_or_404(Organization, pk=organization_id, active=True, **viewable_dict)
+#     if request.method == 'POST':
+#         form = OrganizationForm(request.POST, instance=object)
+#         if form.is_valid():
+#             form.instance.author = user
+#             form.save()
+#         else:
+#             print(f">>> === form.errors: {form.errors} === <<<")
+#         return redirect('list_organizations')
+#     else:
+#         form = OrganizationForm(instance=object)
 
-# Edit
+#     context = {
+#         'parent_page': '___PARENTPAGE___',
+#         'page': 'edit_organization',
+        
+#         'module_path': module_path,
+#         'form': form,
+#         'object': object,
+#         'page_title': f'Edit Organization',
+#     }
+#     template_file = f"{app_name}/{module_path}/edit_organization.html"
+#     return render(request, template_file, context)
+
+# Edit View
 @login_required
 def edit_organization(request, organization_id):
     user = request.user
@@ -321,13 +369,31 @@ def edit_organization(request, organization_id):
         form = OrganizationForm(request.POST, instance=object)
         if form.is_valid():
             form.instance.author = user
-            form.save()
+            organization = form.save()
+            
+            # Check if it's an AJAX request
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': True,
+                    'organization_id': organization.id,
+                    'organization_name': organization.name,
+                    'message': 'Organization updated successfully!'
+                })
+            
+            return redirect('list_organizations')
         else:
             print(f">>> === form.errors: {form.errors} === <<<")
-        return redirect('list_organizations')
+            
+            # Return form errors for AJAX requests
+            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                return JsonResponse({
+                    'success': False,
+                    'message': 'Form validation failed',
+                    'errors': form.errors.as_json()
+                }, status=400)
     else:
         form = OrganizationForm(instance=object)
-
+    
     context = {
         'parent_page': '___PARENTPAGE___',
         'page': 'edit_organization',
@@ -338,9 +404,7 @@ def edit_organization(request, organization_id):
         'page_title': f'Edit Organization',
     }
     template_file = f"{app_name}/{module_path}/edit_organization.html"
-    return render(request, template_file, context)
-
-
+    return render(request, template_file, context)  
 
 @login_required
 def delete_organization(request, organization_id):
@@ -521,4 +585,171 @@ def org_homepage(request,  org_id):
         template_file = f"{app_name}/{module_path}/organization_homepage.html"
     else:
         template_file = f"{app_name}/{module_path}/viewer_organization_homepage.html"
+    return render(request, template_file, context)
+
+# Dashboard View for Organizations
+@login_required
+def dashboard_organizations(request):
+    user = request.user       
+    
+    # Variables for dashboard stats
+    total_organizations = 0
+    active_projects = 0
+    total_members = 0
+    recent_activities = 0
+    
+    # Authorization variables
+    relevant_admin = False
+    is_site_admin = False
+    is_org_admin = False
+    is_project_admin = False
+    
+    # Fetch all active memberships for the user across any organization
+    memberships = Member.objects.filter(user=user, active=True)
+    member_roles = MemberOrganizationRole.objects.filter(member__in=memberships)
+    is_site_admin = MemberOrganizationRole.objects.filter(member__in=memberships, role__name=site_admin_str).exists()
+    
+    # Get organizations based on user role
+    if is_site_admin:
+        # Make sure we're only counting active=True and deleted=False
+        organizations = Organization.objects.filter(active=True, deleted=False)
+        total_organizations = organizations.count()
+        active_projects = Project.objects.filter(active=True, deleted=False).count()
+        # Rest of the code remains the same...
+
+    # And similarly update all other organization queries to include both active=True and deleted=False:
+    else:
+        # Check if user is org admin
+        org_admin_roles = MemberOrganizationRole.objects.filter(
+            member__in=memberships,
+            role__name=org_admin_str
+        )
+        is_org_admin = org_admin_roles.exists()
+        
+        if is_org_admin:
+            org_ids = org_admin_roles.values_list('org_id', flat=True).distinct()
+            # Update the filter here too
+            organizations = Organization.objects.filter(id__in=org_ids, active=True, deleted=False).order_by('position')
+            total_organizations = Organization.objects.filter(active=True, deleted=False)
+            my_organizations = organizations.count()
+            active_projects = Project.objects.filter(org_id__in=org_ids, active=True).count()
+            member_org_roles = MemberOrganizationRole.objects.filter(org_id__in=org_ids)
+            member_ids = member_org_roles.values_list('member_id', flat=True).distinct()
+            total_members = member_ids.count()
+            recent_activities = MemberOrganizationRole.objects.filter(org_id__in=org_ids).order_by('-id')[:10]
+        else:
+            # Check if user is project admin
+            project_admin_roles = MemberOrganizationRole.objects.filter(
+                member__in=memberships,
+                role__name=project_admin_str
+            )
+            is_project_admin = project_admin_roles.exists()
+            
+            if is_project_admin:
+                project_org_ids = project_admin_roles.values_list('org_id', flat=True).distinct()
+                organizations = Organization.objects.filter(id__in=project_org_ids, active=True)
+                total_organizations = organizations.count()
+                active_projects = Project.objects.filter(org_id__in=project_org_ids, active=True).count()
+                project_memberships = Projectmembership.objects.filter(project__org_id__in=project_org_ids, active=True)
+                member_ids = project_memberships.values_list('member_id', flat=True).distinct()
+                total_members = member_ids.count()
+                recent_activities = Projectmembership.objects.filter(project__org_id__in=project_org_ids).order_by('-id')[:10]
+            else:
+                # Regular member
+                project_member_roles = MemberOrganizationRole.objects.filter(
+                    member__in=memberships,
+                    role__name__in=PROJECT_MEMBER_ROLES
+                )
+                project_org_ids = project_member_roles.values_list('org_id', flat=True).distinct()
+                organizations = Organization.objects.filter(id__in=project_org_ids, active=True)
+                total_organizations = organizations.count()
+                active_projects = Project.objects.filter(
+                    projectmembership__member__in=memberships, 
+                    active=True
+                ).distinct().count()
+                member_project_ids = Projectmembership.objects.filter(
+                    member__in=memberships, 
+                    active=True
+                ).values_list('project_id', flat=True)
+                project_memberships = Projectmembership.objects.filter(
+                    project_id__in=member_project_ids, 
+                    active=True
+                )
+                member_ids = project_memberships.values_list('member_id', flat=True).distinct()
+                total_members = member_ids.count()
+                recent_activities = Projectmembership.objects.filter(
+                    project_id__in=member_project_ids
+                ).order_by('-id')[:10]
+    
+    # Calculate monthly organization statistics for chart
+    current_year = timezone.now().year
+    monthly_org_counts = []
+    monthly_project_counts = []
+    
+    for month in range(1, 13):
+        # Count organizations created in this month
+        month_orgs = Organization.objects.filter(
+            created_at__year=current_year,
+            created_at__month=month,
+            active=True
+        ).count()
+        monthly_org_counts.append(month_orgs)
+        
+        # Count projects created in this month
+        month_projects = Project.objects.filter(
+            created_at__year=current_year,
+            created_at__month=month,
+            active=True
+        ).count()
+        monthly_project_counts.append(month_projects)
+    
+    # Get authors of organizations for distribution chart
+    author_stats = Organization.objects.filter(active=True).values('author__username').annotate(
+        count=Count('author')
+    ).order_by('-count')[:5]  # Top 5 authors
+    
+    # Format for chart
+    author_labels = [item['author__username'] or 'Unknown' for item in author_stats]
+    author_counts = [item['count'] for item in author_stats]
+    
+    # Get list of recent organizations
+    recent_organizations = organizations.order_by('-created_at')[:5]  # Most recently created
+    
+    # Add project and member counts for each organization
+    for org in recent_organizations:
+        org.project_count = Project.objects.filter(org=org, active=True).count()
+        org.member_count = MemberOrganizationRole.objects.filter(org=org).values('member').distinct().count()
+    
+    relevant_admin = is_site_admin or is_org_admin
+    
+    # send outputs info, template,
+    context = {
+        'parent_page': '___PARENTPAGE___',
+        'page': 'dashboard_organizations',
+        
+        'module_path': module_path,
+        'user': user,
+        'organizations': organizations,
+        'total_organizations_count': total_organizations.count(),
+        'my_organizations_count': my_organizations,
+        'total_organizations': total_organizations,
+        'my_organizations': organizations,
+        'active_projects': active_projects,
+        'total_members': total_members,
+        'recent_activities': recent_activities,
+        'recent_orgs': recent_organizations,
+        
+        # Chart data
+        'monthly_org_counts': monthly_org_counts,
+        'monthly_project_counts': monthly_project_counts,
+        'author_labels': author_labels,
+        'author_counts': author_counts,
+
+        'page_title': 'Organizations Dashboard',
+        'relevant_admin': relevant_admin,
+        'is_project_admin': is_project_admin,
+        'is_org_admin': is_org_admin,
+        'is_site_admin': is_site_admin,
+    }       
+    template_file = f"{app_name}/{module_path}/dashboard_organizations.html"
     return render(request, template_file, context)

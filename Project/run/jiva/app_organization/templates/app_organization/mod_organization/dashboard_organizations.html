@@ -1,0 +1,434 @@
+{% extends 'app_common/common_files/base_template.html' %}
+{% load static %}
+{% load crispy_forms_tags %}
+{% load custom_tags %}
+{% load app_web_my_filters %}
+{% load markdown_extras %}
+{% load mptt_tags %}
+
+{% block content %}
+{% include 'app_common/common_files/navbar.html' %}
+{% include 'app_jivapms/mod_web/common_files/css.html' %}
+
+<div class="content-wrapper">
+    {% include 'app_organization/mod_project/sidebar_menu.html' %}
+
+    <div class="contentbar" id="contentbar">
+        <div class="container-fluid">
+            <!-- Dashboard Header -->
+            <div class="page-header mb-4">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h1 class="page-title">Organizations Dashboard</h1>
+                        <p class="text-muted">Overview and management of all organizations</p>
+                    </div>
+                    <div class="col-md-6 text-md-end">
+                        <div class="btn-group" role="group">
+                            <button type="button" class="btn btn-outline-secondary">
+                                <i class="bi bi-calendar3"></i> 
+                                <span id="currentDate"></span>
+                            </button>
+                            <a href="{% url 'list_organizations' %}" class="btn btn-outline-primary">
+                                <i class="bi bi-list me-1"></i> Organization List
+                            </a>
+                            {% if relevant_admin %}
+                            <a href="{% url 'create_organization' %}" class="btn btn-primary">
+                                <i class="bi bi-plus-circle me-1"></i> Create Organization
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="row mb-4">
+                <div class="col-xl-3 col-md-6">
+                    <div class="card border-start border-primary border-4">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <h5 class="card-title mb-1">My/Total Organizations</h5>
+                                    <h2 class="mb-0">{{ my_organizations_count }}/{{ total_organizations_count }}</h2>
+                                </div>
+                                <div class="avatar-md rounded-circle bg-primary-subtle">
+                                    <i class="bi bi-building fs-3 text-primary position-absolute top-50 start-50 translate-middle"></i>
+                                </div>
+                            </div>
+                            <p class="mt-3 mb-0 text-muted">
+                                <span class="text-nowrap">Active organizations</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="card border-start border-success border-4">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <h5 class="card-title mb-1">Active Projects</h5>
+                                    <h2 class="mb-0">{{ active_projects }}</h2>
+                                </div>
+                                <div class="avatar-md rounded-circle bg-success-subtle">
+                                    <i class="bi bi-folder fs-3 text-success position-absolute top-50 start-50 translate-middle"></i>
+                                </div>
+                            </div>
+                            <p class="mt-3 mb-0 text-muted">
+                                <span class="text-nowrap">Across all organizations</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="card border-start border-info border-4">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <h5 class="card-title mb-1">Total Members</h5>
+                                    <h2 class="mb-0">{{ total_members }}</h2>
+                                </div>
+                                <div class="avatar-md rounded-circle bg-info-subtle">
+                                    <i class="bi bi-people fs-3 text-info position-absolute top-50 start-50 translate-middle"></i>
+                                </div>
+                            </div>
+                            <p class="mt-3 mb-0 text-muted">
+                                <span class="text-nowrap">Active members</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-3 col-md-6">
+                    <div class="card border-start border-warning border-4">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center">
+                                <div class="flex-grow-1">
+                                    <h5 class="card-title mb-1">Recent Activities</h5>
+                                    <h2 class="mb-0">{{ recent_activities.count }}</h2>
+                                </div>
+                                <div class="avatar-md rounded-circle bg-warning-subtle">
+                                    <i class="bi bi-activity fs-3 text-warning position-absolute top-50 start-50 translate-middle"></i>
+                                </div>
+                            </div>
+                            <p class="mt-3 mb-0 text-muted">
+                                <span class="text-nowrap">Recent system activities</span>
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Organization Activity -->
+            <div class="row">
+                <div class="col-xl-8 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header d-flex align-items-center justify-content-between">
+                            <h5 class="card-title mb-0">Organization Activity</h5>
+                            <div class="dropdown">
+                                <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="activityTimeRange" data-bs-toggle="dropdown" aria-expanded="false">
+                                    This Year
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="activityTimeRange">
+                                    <li><a class="dropdown-item" href="#">Last 7 Days</a></li>
+                                    <li><a class="dropdown-item" href="#">Last 30 Days</a></li>
+                                    <li><a class="dropdown-item" href="#">Last 90 Days</a></li>
+                                    <li><a class="dropdown-item" href="#">This Year</a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="organizationActivityChart" height="300"></canvas>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-4 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Top Organization Authors</h5>
+                        </div>
+                        <div class="card-body">
+                            <canvas id="organizationDistributionChart" height="260"></canvas>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Organizations & Quick Actions -->
+            <div class="row">
+                <div class="col-xl-7 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header d-flex align-items-center justify-content-between">
+                            <h5 class="card-title mb-0">Recent Organizations</h5>
+                            <a href="{% url 'list_organizations' %}" class="btn btn-sm btn-primary">View All</a>
+                        </div>
+                        <div class="card-body p-0">
+                            <div class="table-responsive">
+                                <table class="table table-hover mb-0">
+                                    <thead class="table-light">
+                                        <tr>
+                                            <th class="align-middle">Organization</th>
+                                            <th class="align-middle">Author</th>
+                                            <th class="align-middle">Projects</th>
+                                            <th class="align-middle">Members</th>
+                                            <th class="align-middle">Created</th>
+                                            <th class="align-middle">Actions</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for org in recent_orgs %}
+                                        <tr>
+                                            <td>
+                                                <div class="d-flex align-items-center">
+                                                    <div class="avatar-xs me-2 bg-primary-subtle rounded-circle">
+                                                        <span class="avatar-title text-primary">
+                                                            {{ org.name|first|upper }}
+                                                        </span>
+                                                    </div>
+                                                    <span><strong>{{ org.name }}</strong></span>
+                                                </div>
+                                            </td>
+                                            <td>{{ org.author.get_full_name|default:org.author.username }}</td>
+                                            <td>{{ org.project_count }}</td>
+                                            <td>{{ org.member_count }}</td>
+                                            <td>{{ org.created_at|date:"M d, Y"|default:"N/A" }}</td>
+                                            <td>
+                                                <div class="btn-group" role="group">
+                                                    <a href="{% url 'org_homepage' org.id %}" class="btn btn-sm btn-outline-primary" data-bs-toggle="tooltip" title="Organization Home">
+                                                        <i class="bi bi-bank"></i>
+                                                    </a>
+                                                    {% if relevant_admin %}
+                                                    <a href="{% url 'edit_organization' org.id %}" class="btn btn-sm btn-outline-warning" data-bs-toggle="tooltip" title="Edit">
+                                                        <i class="bi bi-pencil-square"></i>
+                                                    </a>
+                                                    {% endif %}
+                                                </div>
+                                            </td>
+                                        </tr>
+                                        {% empty %}
+                                        <tr>
+                                            <td colspan="6" class="text-center py-4">No organizations found</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-xl-5 mb-4">
+                    <div class="card h-100">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">Quick Actions</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row g-3">
+                                {% if relevant_admin %}
+                                <div class="col-md-6">
+                                    <div class="card h-100 border-0 shadow-sm">
+                                        <div class="card-body text-center">
+                                            <div class="position-relative mx-auto mb-3" style="height: 56px; width: 56px;">
+                                                <div class="rounded-circle bg-primary-subtle h-100 w-100"></div>
+                                                <i class="bi bi-building-add fs-3 text-primary position-absolute" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></i>
+                                            </div>
+                                            <h6 class="card-title mb-1">Create Organization</h6>
+                                            <p class="card-text text-muted small">Add a new organization to your system</p>
+                                            <a href="{% url 'create_organization' %}" class="stretched-link"></a>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% if is_org_admin or is_site_admin %}
+                                <div class="col-md-6">
+                                    <div class="card h-100 border-0 shadow-sm">
+                                        <div class="card-body text-center">
+                                            <div class="position-relative mx-auto mb-3" style="height: 56px; width: 56px;">
+                                                <div class="rounded-circle bg-success-subtle h-100 w-100"></div>
+                                                <i class="bi bi-folder-plus fs-3 text-success position-absolute" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></i>
+                                            </div>
+                                            <h6 class="card-title mb-1">Create Project</h6>
+                                            <p class="card-text text-muted small">Start a new project in your organization</p>
+                                            <a href="#" class="stretched-link"></a>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                                {% if is_site_admin %}
+                                <div class="col-md-6">
+                                    <div class="card h-100 border-0 shadow-sm">
+                                        <div class="card-body text-center">
+                                            <div class="position-relative mx-auto mb-3" style="height: 56px; width: 56px;">
+                                                <div class="rounded-circle bg-info-subtle h-100 w-100"></div>
+                                                <i class="bi bi-people fs-3 text-info position-absolute" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></i>
+                                            </div>
+                                            <h6 class="card-title mb-1">User Management</h6>
+                                            <p class="card-text text-muted small">Manage members and their permissions</p>
+                                            <a href="#" class="stretched-link"></a>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="col-md-6">
+                                    <div class="card h-100 border-0 shadow-sm">
+                                        <div class="card-body text-center">
+                                            <div class="position-relative mx-auto mb-3" style="height: 56px; width: 56px;">
+                                                <div class="rounded-circle bg-warning-subtle h-100 w-100"></div>
+                                                <i class="bi bi-gear fs-3 text-warning position-absolute" style="top: 50%; left: 50%; transform: translate(-50%, -50%);"></i>
+                                            </div>
+                                            <h6 class="card-title mb-1">System Settings</h6>
+                                            <p class="card-text text-muted small">Configure global system settings</p>
+                                            <a href="#" class="stretched-link"></a>
+                                        </div>
+                                    </div>
+                                </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Recent Activity Feed -->
+            <div class="row">
+                <div class="col-12 mb-4">
+                    <div class="card">
+                        <div class="card-header d-flex align-items-center justify-content-between">
+                            <h5 class="card-title mb-0">Recent Activities</h5>
+                            <button class="btn btn-sm btn-outline-secondary">View All</button>
+                        </div>
+                        <div class="card-body">
+                            <div class="activity-feed">
+                                {% for activity in recent_activities|slice:":4" %}
+                                <div class="feed-item d-flex">
+                                    <div class="avatar-xs me-3 bg-primary-subtle rounded-circle">
+                                        <span class="avatar-title text-primary">
+                                            {% if activity.member %}
+                                                {{ activity.member.user.first_name|first|upper }}{{ activity.member.user.last_name|first|upper }}
+                                            {% else %}
+                                                US
+                                            {% endif %}
+                                        </span>
+                                    </div>
+                                    <div class="feed-content">
+                                        <p class="mb-1">
+                                            {% if activity.member %}
+                                                <strong>{{ activity.member.user.get_full_name }}</strong> 
+                                                was assigned role <strong>"{{ activity.role.name }}"</strong> 
+                                                in <strong>"{{ activity.org.name }}"</strong>
+                                            {% else %}
+                                                Activity recorded
+                                            {% endif %}
+                                        </p>
+                                        <p class="text-muted small mb-0">{{ activity.created_at|date:"M d, Y" }}</p>
+                                    </div>
+                                </div>
+                                {% if not forloop.last %}
+                                <hr>
+                                {% endif %}
+                                {% empty %}
+                                <p class="text-center py-3">No recent activities found</p>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript for Charts -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js@3.9.1/dist/chart.min.js"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        // Current Date
+        const now = new Date();
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('currentDate').textContent = now.toLocaleDateString('en-US', options);
+        
+        // Organization Activity Chart
+        const activityCtx = document.getElementById('organizationActivityChart').getContext('2d');
+        const activityChart = new Chart(activityCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [{
+                    label: 'New Organizations',
+                    data: {{ monthly_org_counts|safe }},
+                    borderColor: '#4e73df',
+                    backgroundColor: 'rgba(78, 115, 223, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }, {
+                    label: 'New Projects',
+                    data: {{ monthly_project_counts|safe }},
+                    borderColor: '#1cc88a',
+                    tension: 0.4,
+                    borderDash: [5, 5]
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'top',
+                    }
+                },
+                scales: {
+                    x: {
+                        grid: {
+                            display: false
+                        }
+                    },
+                    y: {
+                        beginAtZero: true,
+                        grid: {
+                            borderDash: [2, 4],
+                            color: '#eee'
+                        }
+                    }
+                }
+            }
+        });
+        
+        // Organization Distribution Chart - Authors
+        const distributionCtx = document.getElementById('organizationDistributionChart').getContext('2d');
+        const distributionChart = new Chart(distributionCtx, {
+            type: 'doughnut',
+            data: {
+                labels: {{ author_labels|safe }},
+                datasets: [{
+                    data: {{ author_counts|safe }},
+                    backgroundColor: ['#4e73df', '#1cc88a', '#36b9cc', '#f6c23e', '#e74a3b'],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom'
+                    },
+                    tooltip: {
+                        callbacks: {
+                            label: function(context) {
+                                const label = context.label || '';
+                                const value = context.raw || 0;
+                                const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                const percentage = Math.round((value / total) * 100);
+                                return `${label}: ${value} (${percentage}%)`;
+                            }
+                        }
+                    }
+                },
+                cutout: '70%'
+            }
+        });
+        
+        // Initialize tooltips
+        var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+        var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl)
+        });
+    });
+</script>
+{% endblock content %}

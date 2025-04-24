@@ -15,5 +15,5 @@ urlpatterns = [
     path('permanent_deletion_organization/<int:organization_id>/', views_organization.permanent_deletion_organization, name='permanent_deletion_organization'),
     path('restore_organization/<int:organization_id>/', views_organization.restore_organization, name='restore_organization'),
     path('view_organization/<int:organization_id>/', views_organization.view_organization, name='view_organization'),
-    
+    path('dashboard_organizations/', views_organization.dashboard_organizations, name='dashboard_organizations'),
 ]
