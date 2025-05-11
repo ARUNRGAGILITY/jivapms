@@ -565,21 +565,28 @@
   <div class="row mt-2">
     <div class="col col md-4">
       <b class="">Project:</b>
-       <a href="{% url 'project_homepage' project.org.id project.id %}">{{project}}</a>
+      {{project}}
       <b class="">Project Board:</b>
       {{project_board}}
     </div>
 
     <div class="col col md-6 text-end">
 
-   
+      <div class="action-controls">
+        <a href="{% url 'board_card_settings' project_board.id %}"><i class="fas fa-edit"></i></a>
+        <a href="{% url 'list_project_boards' project.id %}"><i class="fas fa-cog"></i></a>
+      </div>
+      {% if page == 'custom' %}
+      <a href="{% url 'view_project_tree_board_smart_kanban' project.id %}" class="me-2">SMART</a>
+      <b>Custom</b>
+      {% else %}
+      <b>SMART</b>
+      <a href="{% url 'view_project_tree_board_custom' project.id %}" class="me-2">Custom</a>
+      {% endif %}
       
-      <b class="me-2">Kanban Board</b>
-     
-      
-      <a href="{% url 'list_project_boards' project.id %}" class="btn btn-sm btn-primary me-2">Board <i class="fas fa-edit"></i></a>
-      <a href="{% url 'board_card_settings' project_board.id %}" class="btn btn-sm btn-success me-2">Card <i class="fas fa-cog"></i></a>
-      <a href="{% url 'view_project_tree_backlog' project.id  %}?project_id={{ project.id }}" class="btn btn-sm btn-primary">
+      <a href="{% url 'list_project_boards' project.id %}" class="btn btn-sm btn-primary me-2">Board</a>
+      <a href="{% url 'board_card_settings' project_board.id %}" class="btn btn-sm btn-success me-2">Card</a>
+      <a href="" class="btn btn-sm btn-primary">
         <i class="bi bi-arrow-left"></i> Back to Backlog
       </a>
     </div>

@@ -585,7 +585,7 @@ def org_homepage(request,  org_id):
                 role__name=org_admin_str
             )
     is_org_admin = org_admin_role.exists()
-    logger.debug(f">>> === USER: {user} is an ORG ADMIN {is_org_admin} === <<<")
+    logger.debug(f">>> === USER: {user} is an ORG ADMIN {is_org_admin} in {org_admin_role} === <<<")
     if is_org_admin:
         projects = Project.objects.filter(org_id=org_id, active=True)
     #roadmap_items = organization.roadmap_items.all().delete()
@@ -628,11 +628,12 @@ def org_homepage(request,  org_id):
         'page_title': f'Organization Homepage',
     }
     context.update(role_context)
-    # editable = request.editable
-    # if editable:
-    #     template_file = f"{app_name}/{module_path}/organization_homepage.html"
-    # else:
-    #     template_file = f"{app_name}/{module_path}/viewer_organization_homepage.html"
+    # Editable flag comes from the decorator used
+    editable = request.editable
+    if editable:
+        template_file = f"{app_name}/{module_path}/organization_homepage.html"
+    else:
+        template_file = f"{app_name}/{module_path}/viewer_organization_homepage.html"
     template_file = f"{app_name}/{module_path}/organization_homepage.html"
     return render(request, template_file, context)
 

@@ -11,214 +11,212 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css" rel="stylesheet">
 
 <style>
+    :root {
+        --primary-color: #3498db;
+        --secondary-color: #2c3e50;
+        --success-color: #2ecc71;
+        --warning-color: #f39c12;
+        --danger-color: #e74c3c;
+        --light-color: #ecf0f1;
+        --dark-color: #34495e;
+        --border-color: #ddd;
+        --hover-color: #f8f9fa;
+        --font-main: 'Lato', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+    }
+
+    /* Clean, modern aesthetic */
+    body {
+        font-family: var(--font-main);
+        background-color: #f5f7fa;
+    }
+
+    .content-wrapper {
+        padding: 1.5rem;
+        background-color: white;
+        border-radius: 0.5rem;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+        margin-bottom: 2rem;
+    }
+
+    /* Floating action button for trash */
     .trash-icon {
-      position: fixed;
-      right: 10px;
-      bottom: 10px;
-      font-size: 24px;  /* Size of the icon */
-      cursor: pointer;
-      color: #707070;  /* Color of the icon */
+        position: fixed;
+        right: 20px;
+        bottom: 20px;
+        font-size: 24px;
+        cursor: pointer;
+        color: #707070;
+        width: 50px;
+        height: 50px;
+        background-color: white;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
     }
-    .display_items {
-      font-size: 11px;
-      color: #707070;
-      display: inline-block;
-    
+
+    .trash-icon:hover {
+        transform: scale(1.1);
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        color: var(--danger-color);
     }
 
+    /* Modern table styling */
+    .backlog_table {
+        width: 100%;
+        font-family: var(--font-main);
+        font-size: 13px;
+        border-collapse: separate;
+        border-spacing: 0;
+        margin-bottom: 2rem;
+        border-radius: 8px;
+        overflow: hidden;
+        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    }
 
+    .backlog_table tbody tr {
+        border-bottom: 1px solid var(--border-color);
+        transition: background-color 0.2s;
+    }
 
-</style>
+    .backlog_table tbody tr:hover {
+        background-color: var(--hover-color);
+    }
 
-<style>
+    .backlog_table tbody td {
+        padding: 10px;
+        vertical-align: middle;
+    }
 
-/* General table styling */
-.backlog_table {
-    width: 100%;
-    font-family: 'Lato', sans-serif;
-    font-size: 12px;
-    border-collapse: collapse;
-}
+    .backlog_table thead th {
+        background-color: var(--secondary-color);
+        color: white;
+        font-weight: 600;
+        text-align: center;
+        padding: 12px 10px;
+        font-size: 13px;
+        position: sticky;
+        top: 0;
+        z-index: 10;
+    }
 
-/* Add a border to each row (tr), not to individual cells (td) */
-.backlog_table tbody tr {
-    border: 1px solid #ccc;
-}
-.backlog_table thead tr {
-    border: 1px solid #ccc;
-}
+    /* Better alignment styles */
+    .ra { text-align: right !important; }
+    .la { text-align: left !important; }
+    .ca { text-align: center !important; }
 
-/* Remove borders from table cells */
-.backlog_table tbody td {
-    border: none;
-    padding: 4px; /* Add padding for better readability */
-}
+    /* Backlog count badge */
+    .display_backlog_count {
+        font-size: 12px;
+        background-color: var(--primary-color);
+        color: white;
+        padding: 2px 8px;
+        border-radius: 12px;
+        margin-left: 10px;
+        display: inline-block;
+    }
 
-/* Header styling */
-.backlog_table thead th {
-    background-color: #f5f5f5;
-    text-align: center;
-    border-bottom: 1px solid #ccc;
-    padding: 10px;
-}
+    /* Vertical navigation improvements */
+    .vertical-text-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: flex-start;
+        margin-right: 30px;
+    }
 
-/* Alignment styles */
-.ra { /* Right-aligned */
-    text-align: right;
-}
+    .vertical-text {
+        writing-mode: vertical-rl;
+        transform: rotate(360deg);
+        text-decoration: none;
+        color: var(--primary-color);
+        font-size: 16px;
+        font-weight: 600;
+        margin-bottom: 30px;
+        cursor: pointer;
+        background-color: white;
+        padding: 20px 10px;
+        border-radius: 8px;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        transition: all 0.3s ease;
+    }
 
-.la { /* Left-aligned */
-    text-align: left;
-}
+    .vertical-text:hover {
+        background-color: var(--primary-color);
+        color: white;
+        transform: rotate(360deg) translateX(-5px);
+    }
 
-.ca { /* Center-aligned */
-    text-align: center;
-}
+    .vertical-text-top {
+        margin-top: 60px
+    }
 
-/* General alignment styles */
-.la { /* Left-aligned */
-    text-align: left !important; /* Add !important to override any conflicting styles */
-}
-
-/* Specific to headers to ensure alignment */
-.backlog_table th.la {
-    text-align: left !important;
-}
-
-/* For body cells */
-.backlog_table td.la {
-    text-align: left !important;
-}
-
-.display_slno {
-    min-width: 50px;
-}
-
-
-
-.display_backlog_count {
-    font-size: 11px;
-    margin-left: 10px;
-    color: #707070;
-    display: inline-block;
-}
-
-</style>
-<style>
-    .d-flex {
-    display: flex;
-    align-items: flex-start;
-}
-
-.vertical-text-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    margin-right: 20px;
-}
-
-.vertical-text-top {
-    margin-top: 40px
-}
-
-.vertical-text {
-    writing-mode: vertical-rl; /* Vertical text top-down */
-    transform: rotate(360deg); /* Rotate to make text top-down */
-    text-decoration: none;
-    color: #007bff; /* Link color */
-    font-size: 16px;
-    font-weight: bold;
-    margin-bottom: 20px;
-    cursor: pointer;
-    text-decoration: none;
-    margin-left: 40px;
-    
-    background-color: #f1f1f1;
-}
-
-.vertical-text:hover {
-    text-decoration: underline;
-}
-
-</style>
-
-<style>
-     .select-item:hover {
-        background-color: #f8f9fa;
+    /* Modern selectable rows */
+    .select-item:hover {
+        background-color: rgba(52, 152, 219, 0.05);
     }
 
     .select-item.selected {
-        background-color: #007bff;
+        background-color: rgba(52, 152, 219, 0.15);
+        border-left: 4px solid var(--primary-color);
+    }
+
+    /* Sliding panels refinements */
+    .collection-panel, .version-panel {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 320px;
+        height: 100%;
+        background-color: white;
+        box-shadow: 2px 0 15px rgba(0, 0, 0, 0.1);
+        overflow-y: auto;
+        transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease;
+        z-index: 1100;
+        transform: translateX(-100%);
+        opacity: 0;
+        border-radius: 0 10px 10px 0;
+    }
+
+    .collection-panel.open, .version-panel.open {
+        transform: translateX(0);
+        opacity: 1;
+    }
+
+    .contentbar.shifted {
+        margin-left: 320px;
+        transition: margin-left 0.4s ease;
+    }
+
+    .collection-panel-header, .version-panel-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 15px;
+        background-color: var(--primary-color);
         color: white;
     }
-</style>
 
-<style>
-
-
-/* Collection Panel */
-.collection-panel, .version-panel {
-    position: absolute; /* Adjusted to align with the vertical text */
-    top: 0;
-    left: 0;
-    width: 300px;
-    height: 100%;
-    background-color: #f9f9f9;
-    box-shadow: 2px 0 5px rgba(0, 0, 0, 0.2);
-    overflow-y: auto;
-    transition: transform 0.8s cubic-bezier(0.4, 0, 0.2, 1); /* Adjusted for smoother animation */
-    z-index: 1100;
-    transform: translateX(-100%); /* Initially hidden */
-}
-
-/* Open State */
-.collection-panel.open, .version-panel.open {
-    transform: translateX(0); /* Slide in when open */
-}
-
-/* Contentbar Shift */
-.contentbar.shifted {
-    margin-left: 300px; /* Match the panel's width */
-    transition: margin-left 0.3s ease;
-}
-
-/* Panel Header */
-.collection-panel-header, .version-panel-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 10px;
-    background-color: #007bff;
-    color: white;
-}
-
-.collection-list, .version-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
-}
-
-.collection-list li, .version-list li {
-    padding: 10px;
-    cursor: pointer;
-    border-bottom: 1px solid #ddd;
-}
-
-.collection-list li:hover, .version-list li:hover {
-    background-color: #f1f1f1;
-}
-
-
-
-</style>
-
-<style>
     .collection-list, .version-list {
-        list-style-type: none;
+        list-style: none;
         padding: 0;
+        margin: 0;
     }
 
+    .collection-list li, .version-list li {
+        padding: 15px;
+        cursor: pointer;
+        border-bottom: 1px solid var(--border-color);
+        transition: background-color 0.2s;
+    }
+
+    .collection-list li:hover, .version-list li:hover {
+        background-color: var(--hover-color);
+    }
+
+    /* Collection and version items */
     .collection-item, .version-item {
         display: flex;
         justify-content: space-between;
@@ -229,28 +227,31 @@
 
     .action-buttons {
         display: flex;
-        gap: 4px;
+        gap: 8px;
     }
 
     .small-btn {
-        font-size: 10px;
-        padding: 3px 6px;
-        border: 1px solid #ccc;
-        background-color: #f9f9f9;
-        color: #333;
-        border-radius: 3px;
+        font-size: 12px;
+        padding: 5px 10px;
+        border: none;
+        background-color: #f0f0f0;
+        color: var(--dark-color);
+        border-radius: 4px;
         cursor: pointer;
         transition: all 0.2s ease-in-out;
+        display: flex;
+        align-items: center;
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
     }
 
     .small-btn:hover {
-        background-color: #e0e0e0;
-        border-color: #bbb;
+        transform: translateY(-2px);
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
     }
 
     .assign-btn {
         background-color: #d4edda;
-        border-color: #c3e6cb;
+        color: #155724;
     }
 
     .assign-btn:hover {
@@ -259,7 +260,7 @@
 
     .unassign-btn {
         background-color: #f8d7da;
-        border-color: #f5c6cb;
+        color: #721c24;
     }
 
     .unassign-btn:hover {
@@ -271,249 +272,354 @@
         border: none;
         font-size: 12px;
         cursor: pointer;
-        color: #007bff;
+        color: var(--primary-color);
         padding: 0;
+        transition: transform 0.2s;
     }
 
     .dropdown-btn:hover {
-        color: #0056b3;
+        color: var(--secondary-color);
+        transform: scale(1.2);
     }
 
     .details {
-        margin-top: 5px;
-        padding-left: 20px;
-        font-size: 12px;
+        margin-top: 10px;
+        padding: 10px;
+        font-size: 13px;
         color: #555;
+        background-color: var(--light-color);
+        border-radius: 4px;
     }
 
     .details.hidden {
         display: none;
     }
-</style>
 
-</style>
-<style>
-.display_details_small_text {
-    font-size: 12px;
-    color: #707070;
-    margin-top: 5px;
-    margin-bottom: 5px;
-}
-</style>
-
-<style>
-#collection-panel, #version-panel {
-    opacity: 0;
-    transform: translateX(-100%);
-    transition: all 0.3s ease;
-    display: none; /* Default hidden state */
-}
-
-#collection-panel.open, #version-panel.open {
-    opacity: 1;
-    transform: translateX(0);
-    display: block; /* Visible when open */
-}
-
-</style>
-
-<style>
-.add-backlog-container {
-    display: flex;
-    flex-wrap: wrap; /* Allows wrapping when space is limited */
-    align-items: center; /* Vertically align items */
-    gap: 10px; /* Add space between items */
-}
-
-.backlog-input {
-    flex: 1 1 auto; /* Input field grows to fill available space */
-    min-width: 200px; /* Prevents input from becoming too small */
-}
-
-.add-button-container {
-    display: flex;
-    flex-wrap: wrap; /* Allows buttons to wrap when needed */
-    gap: 10px; /* Add space between buttons */
-}
-
-.add-button-container input[type="submit"] {
-    flex: 0 1 auto; /* Buttons resize automatically but do not grow excessively */
-    min-width: 100px; /* Prevents buttons from shrinking too much */
-}
-.add-button-container input[type="submit"] {
-    font-size: 12px; /* Default text size for buttons */
-    font-weight: bold; /* Bold text for emphasis */
-    padding: 6px 12px; /* Adjust padding for smaller buttons */
-}
-
-@media (max-width: 768px) {
-    /* Smaller screens */
-    .add-button-container input[type="submit"] {
-        font-size: 10px; /* Smaller text size on narrow screens */
-        font-weight: bold; /* Bold text for emphasis */
-        padding: 4px 8px; /* Reduce padding to match smaller size */
+    /* Improved add backlog container */
+    .add-backlog-container {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: 10px;
+        background-color: var(--light-color);
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 15px;
+        box-shadow: 0 1px 5px rgba(0, 0, 0, 0.05);
     }
-}
 
-@media (max-width: 480px) {
-    /* Very small screens (e.g., mobile devices) */
-    .add-button-container input[type="submit"] {
-        font-size: 10px; /* Even smaller text size */
-        font-weight: bold; /* Bold text for emphasis */
-        padding: 3px 6px; /* Further reduce padding */
+    .backlog-input {
+        flex: 1 1 auto;
+        min-width: 200px;
+        padding: 10px;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        font-size: 14px;
+        transition: all 0.2s;
     }
-}
 
-</style>
+    .backlog-input:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.25);
+        outline: none;
+    }
 
-<style>
-.custom-select {
-    font-size: 12px;
-    width: auto;
-    padding: 4px 8px;
-    border: 1px solid #ccc; /* Light border */
-    border-radius: 4px;
-    background-color: #f8f9fa; /* Light gray background */
-}
+    .add-button-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+    }
 
-.custom-select:focus {
-    border-color: #007bff; /* Highlight border on focus */
-    box-shadow: 0 0 5px rgba(0, 123, 255, 0.5); /* Blue glow */
-}
+    .btn-add-top {
+        background-color: var(--success-color);
+        color: white;
+        border: none;
+    }
 
-.custom-select:hover {
-    background-color: #e9ecef; /* Slightly darker gray on hover */
-}
+    .btn-add-top:hover {
+        background-color: #27ae60;
+    }
 
-</style>
+    .btn-add-bottom {
+        background-color: var(--warning-color);
+        color: white;
+        border: none;
+    }
 
-<style>
-     /* ToDo Column */
-     .kanban-card.todo {
-        background-color: #bbdefb; /* Light Blue */
-        color: #0d47a1 !important;
+    .btn-add-bottom:hover {
+        background-color: #d35400;
+    }
+
+    /* Dynamic status pills */
+    .status-pill {
+        padding: 4px 10px;
+        border-radius: 20px;
+        font-size: 11px;
+        font-weight: 600;
+        display: inline-block;
+        text-align: center;
+        min-width: 80px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+
+    .status-todo {
+        background-color: #bbdefb;
+        color: #0d47a1;
+    }
+
+    .status-in-progress, .status-wip {
+        background-color: #fff59d;
+        color: #f57f17;
+    }
+
+    .status-blocked {
+        background-color: #ffcdd2;
+        color: #c62828;
+    }
+
+    .status-done {
+        background-color: #c8e6c9;
+        color: #2e7d32;
+    }
+    
+    .status-backlog {
+        background-color: #e0e0e0;
+        color: #424242;
+    }
+
+    /* ID display */
+    .bi-id-display {
+        font-size: 10px;
+        color: #606060;
+        font-family: monospace;
+        background-color: #f5f5f5;
+        padding: 2px 6px;
+        border-radius: 4px;
+        display: inline-block;
+    }
+
+    /* Size display */
+    .bi-size-display {
+        font-size: 11px;
+        font-weight: bold;
+        color: #606060;
+        background-color: #f1f1f1;
+        padding: 2px 8px;
+        border-radius: 12px;
+        border: 1px solid #ddd;
+        display: inline-block;
+        min-width: 30px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .bi-size-display:hover {
+        background-color: #e1e1e1;
+        transform: scale(1.1);
+    }
+
+    /* Improved select dropdown */
+    .custom-select {
+        font-size: 13px;
+        padding: 8px 12px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        background-color: white;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+
+    .custom-select:focus {
+        border-color: var(--primary-color);
+        box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.25);
+        outline: none;
+    }
+
+    /* Modern breadcrumb */
+    .breadcrumb {
+        background-color: transparent;
+        padding: 15px 0;
+    }
+
+    .breadcrumb-item a {
+        color: var(--primary-color);
+        font-weight: 500;
+        transition: color 0.2s;
+    }
+
+    .breadcrumb-item a:hover {
+        color: var(--secondary-color);
+        text-decoration: none;
+    }
+
+    /* Type icons styling */
+    .type-icon {
+        font-size: 14px;
+        width: 28px;
+        height: 28px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 4px;
+        background-color: #f0f0f0;
+        color: var(--dark-color);
+    }
+
+    /* Summary styling */
+    .summary_of_bi {
+        font-weight: 500;
+        color: var(--dark-color);
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .vertical-text-container {
+            margin-right: 15px;
+        }
         
+        .vertical-text {
+            font-size: 14px;
+            padding: 15px 8px;
+        }
+        
+        .add-button-container input[type="submit"] {
+            font-size: 11px;
+            padding: 6px 10px;
+        }
+        
+        .collection-panel, .version-panel {
+            width: 280px;
+        }
     }
 
-    /* In Progress Column */
-    .kanban-card.in-progress {
-        background-color: #fff59d; /* Light Yellow */
-        color: #f57f17 !important; /* Dark Yellow Text */
+    @media (max-width: 480px) {
+        .vertical-text-container {
+            margin-right: 10px;
+        }
+        
+        .vertical-text {
+            font-size: 12px;
+            padding: 12px 6px;
+        }
+        
+        .add-button-container input[type="submit"] {
+            font-size: 10px;
+            padding: 5px 8px;
+        }
+        
+        .collection-panel, .version-panel {
+            width: 250px;
+        }
     }
 
-    /* Blocked Column */
-    .kanban-card.blocked {
-        background-color: lightcoral; /* Red */
-        color: #ffffff !important ;/* White Text */
+    /* Checkbox styling */
+    .checkbox-wrapper {
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
-    /* Done Column */
-    .kanban-card.done {
-        background-color: #81c784; /* Light Green */
-        color: #1b5e20 !important; /* Dark Green Text */
+    .custom-checkbox {
+        cursor: pointer;
+        appearance: none;
+        width: 18px;
+        height: 18px;
+        border: 2px solid #ccc;
+        border-radius: 3px;
+        position: relative;
+        transition: all 0.2s;
+        background-color: white;
     }
-</style>
 
-<style>
-.bi-id-display {
-    font-size: 9px;
-    color: #707070;
-}
+    .custom-checkbox:checked {
+        background-color: var(--primary-color);
+        border-color: var(--primary-color);
+    }
 
-.bi-size-display {
-    font-size: 9px;
-    font-weight: bold;
-    color: #707070;
-    background-color: #f1f1f1;
-    border-radius: 5px;
-    border: 1px solid #ccc;
-}
-.small-font-display {
-    font-size: 9px;
-    color: #707070;
-    background-color: #f1f1f1;
-}
-</style>
+    .custom-checkbox:checked::after {
+        content: '✓';
+        position: absolute;
+        color: white;
+        font-size: 12px;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+    }
 
+    /* Drag handle styling */
+    .drag-handle {
+        cursor: grab;
+        color: #ccc;
+        transition: color 0.2s;
+    }
 
-<style>
-.info-display-current-iteration {
-    font-size: 10px;
-    color: #707070;
+    .drag-handle:hover {
+        color: var(--primary-color);
+    }
 
-}
-.info-display-next-iteration {
-    font-size: 10px;
-    color: #707070;
+    /* Button close panel */
+    .close-panel-btn {
+        background: none;
+        border: none;
+        color: white;
+        font-size: 20px;
+        cursor: pointer;
+        transition: transform 0.2s;
+    }
 
-}
-.display-current-iteration {
-    font-size: 10px;
-    color: #707070;
-    background-color: #f1f1f1;
-    border-radius: 5px;
-}
-.display-next-iteration {
-    font-size: 10px;
-    color: #707070;
-    background-color: #f1f1f1;
-    border-radius: 5px;
-}
+    .close-panel-btn:hover {
+        transform: scale(1.2);
+    }
 </style>
 
 <div class="content-wrapper mb-5">
-
     <div class="breadcrumb">
-        <nav aria-label="breadcrumb"> <!-- Inline style for demonstration -->
+        <nav aria-label="breadcrumb">
             <ol class="breadcrumb">
                 <li class="breadcrumb-item">
-                    <a href="{% url 'project_homepage' pro.org.id pro_id   %}">
+                    <a href="{% url 'project_homepage' pro.org.id pro_id %}">
                         <i class="bi bi-house"></i> Home
                     </a>
                 </li>
                 <li class="breadcrumb-item">
-                    <a href="{% url 'project_homepage' pro.org.id pro_id   %}">
+                    <a href="{% url 'project_homepage' pro.org.id pro_id %}">
                         {{project}}
                     </a>
                 </li>
-
                 <li class="breadcrumb-item me-2" aria-current="page">
-                    Backlog
-                   
+                    <strong>Backlog</strong>
                 </li>
-
             </ol>
         </nav>
     </div>
+    
     {% include 'app_organization/mod_project/sidebar_menu.html' %}
+    
     <div class="d-flex">
-        <!-- Vertical Text Section -->
+        <!-- Vertical Text Navigation -->
         <div class="vertical-text-container">
-            <a href="#" class="vertical-text vertical-text-top" id="collection-link"
-            onclick="toggleCollectionPanel()"
-            >Collections</a>
-            <a href="#" class="vertical-text" id="version-link"
-            onclick="toggleVersionPanel()"
-            >Release-Versions-Iterations</a>           
+            <a href="#" class="vertical-text vertical-text-top" id="collection-link" onclick="toggleCollectionPanel()">
+                <i class="fas fa-layer-group me-2"></i> Collections
+            </a>
+            <a href="#" class="vertical-text" id="version-link" onclick="toggleVersionPanel()">
+                <i class="fas fa-code-branch me-2"></i> Release-Versions
+            </a>           
         </div>
 
-        
-
-        <!-- Sliding Panel -->
-        <!-- FIRST COLLECTION-->
+        <!-- Collections Panel -->
         <div id="collection-panel" class="collection-panel">
             <div class="collection-panel-header">
-                <h4>Collections</h4>
-                &nbsp;
-                <a href="{% url 'list_backlogs' project.id 0 %}" class="btn btn-sm btn-primary">Manage</a>
-               
-                <button onclick="toggleCollectionPanel()">Close</button>
+                <h4><i class="fas fa-layer-group me-2"></i> Collections</h4>
+                <a href="{% url 'list_backlogs' project.id 0 %}" class="btn btn-sm btn-light">Manage</a>
+                <button onclick="toggleCollectionPanel()" class="close-panel-btn">&times;</button>
             </div>
             <ul class="collection-list">
                 <li>
                     <div class="collection-item">
-                        <span id="filter_unmapped" onclick="filterBacklog('all_items')">All Items</span>
-                       
+                        <span id="filter_unmapped" onclick="filterBacklog('all_items')">
+                            <i class="fas fa-list-ul me-2"></i> All Items
+                        </span>
                     </div>
                     <div id="others" class="details hidden">
                         <p>List all the backlog items.</p>
@@ -524,295 +630,334 @@
                 {% for collection in epics_in_backlog %}               
                 <li>
                     <div class="collection-item">
-                        <span id="filter_{{collection.id}}" onclick="filterBacklog('filter_{{collection.id}}')">{{collection.name}}</span>
+                        <span id="filter_{{collection.id}}" onclick="filterBacklog('filter_{{collection.id}}')">
+                            <i class="fas fa-folder me-2"></i> {{collection.name}}
+                        </span>
                         <div class="action-buttons">
-                            <button class="small-btn assign-btn" onclick="assignToCollection('{{collection.id}}')">&lt;&lt; &nbsp; Map</button>
-                            <button class="small-btn unassign-btn me-2" onclick="unassignFromCollection('{{collection.id}}')">Unmap &nbsp; &gt;&gt;</button>
-                            <button class="dropdown-btn" onclick="toggleDetails('{{collection.id}}-details')">▼</button>
+                            <button class="small-btn assign-btn" onclick="assignToCollection('{{collection.id}}')">
+                                <i class="fas fa-arrow-left me-1"></i> Map
+                            </button>
+                            <button class="small-btn unassign-btn me-2" onclick="unassignFromCollection('{{collection.id}}')">
+                                Unmap <i class="fas fa-arrow-right ms-1"></i>
+                            </button>
+                            <button class="dropdown-btn" onclick="toggleDetails('{{collection.id}}-details')">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
                         </div>
                     </div>
                     <div id="{{collection.id}}-details" class="details hidden">
-                        <p class="display_details_small_text">{{collection.description|display_if_not_none}}</p>
+                        <p class="mb-0">{{collection.description|display_if_not_none}}</p>
                     </div>
                 </li>
                 {% endfor %}
                 
                 <li>
                     <div class="collection-item">
-                        <span id="filter_unmapped" onclick="filterBacklog('unmapped')">Unmapped Items</span>
+                        <span id="filter_unmapped" onclick="filterBacklog('unmapped')">
+                            <i class="fas fa-unlink me-2"></i> Unmapped Items
+                        </span>
                         <div class="action-buttons">
-                            <button class="small-btn assign-btn" onclick="assignToCollection('Others')">&lt;&lt; &nbsp; Map</button>
-                            <button class="small-btn unassign-btn" onclick="unassignFromCollection('Others')">Unmap &nbsp; &gt;&gt;</button>
-                            <button class="dropdown-btn" onclick="toggleDetails('Others')">▼</button>
+                            <button class="small-btn assign-btn" onclick="assignToCollection('Others')">
+                                <i class="fas fa-arrow-left me-1"></i> Map
+                            </button>
+                            <button class="small-btn unassign-btn" onclick="unassignFromCollection('Others')">
+                                Unmap <i class="fas fa-arrow-right ms-1"></i>
+                            </button>
+                            <button class="dropdown-btn" onclick="toggleDetails('Others')">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
                         </div>
                     </div>
                     <div id="others" class="details hidden">
-                        <p>These are backlog items that are not part of any collection yet.</p>
+                        <p class="mb-0">These are backlog items that are not part of any collection yet.</p>
                     </div>
                 </li>
+                
                 <li>
                     <div class="collection-item">
-                        <span id="filter_deleted" onclick="filterBacklog('deleted')">Deleted Items</span>
+                        <span id="filter_deleted" onclick="filterBacklog('deleted')">
+                            <i class="fas fa-trash-alt me-2"></i> Deleted Items
+                        </span>
                         <div class="action-buttons">
-                            <button class="small-btn assign-btn" onclick="assignToCollection('deleted')">&lt;&lt; &nbsp; Delete</button>
-                            <button class="small-btn unassign-btn" onclick="unassignFromCollection('deleted')">Restore &nbsp; &gt;&gt;</button>
-                            <button class="dropdown-btn" onclick="toggleDetails('deleted')">▼</button>
+                            <button class="small-btn assign-btn" onclick="assignToCollection('deleted')">
+                                <i class="fas fa-trash-alt me-1"></i> Delete
+                            </button>
+                            <button class="small-btn unassign-btn" onclick="unassignFromCollection('deleted')">
+                                Restore <i class="fas fa-undo ms-1"></i>
+                            </button>
+                            <button class="dropdown-btn" onclick="toggleDetails('deleted')">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
                         </div>
                     </div>
                     <div id="others" class="details hidden">
-                        <p>These are backlog items that are Deleted.</p>
+                        <p class="mb-0">These are backlog items that are Deleted.</p>
                     </div>
                 </li>
             </ul>
         </div>
 
-        <!-- Sliding Panel -->
+        <!-- Version Panel -->
         <div id="version-panel" class="version-panel">
             <div class="version-panel-header">
-                <h4>Release Versions</h4>
-                &nbsp;
-                <a href="{% url 'list_org_releases' org_id %}" class="btn btn-sm btn-primary">Setup</a>
-               
-                <button onclick="toggleVersionPanel()">Close</button>
+                <h4><i class="fas fa-code-branch me-2"></i> Release Versions</h4>
+                <a href="{% url 'list_org_releases' org_id %}" class="btn btn-sm btn-light">Setup</a>
+                <button onclick="toggleVersionPanel()" class="close-panel-btn">&times;</button>
             </div>
-            <ul class="version-list">
+            <ul class="version-list p-3">
                 <li>
-                    <div class="version-item">
-                        <span id="filter_unmapped" onclick="filterBacklog('all_items')">All Release Versions <p>
-                             </p></span>
-                       
+                    <div class="version-item mb-3">
+                        <span id="filter_unmapped" onclick="filterBacklog('all_items')">
+                            <i class="fas fa-tags me-2"></i> All Release Versions
+                        </span>
                     </div>
                     <div id="others" class="details hidden">
-                        <p>List all versions.</p>
-                        
+                        <p class="mb-0">List all versions.</p>
                     </div>
                 </li>
 
                 <!-- COLLECTION FOR VERSIONS FOR BACKLOG -->
+                <div class="form-group mb-3">
+                    <label for="id_release" class="form-label"><i class="fas fa-tag me-1"></i> Release</label>
+                    <select id="id_release" name="release" class="form-select custom-select">
+                        <option value="">-- Select Release --</option>
+                        {% for release in org_releases %}
+                            <option value="{{ release.id }}">{{ release }}</option>
+                        {% endfor %}
+                    </select>   
+                </div>
                 
-                <select id="id_release" name="release" class="form-select form-select-sm" aria-label=".form-select-sm example">
-                    <option value="">-- Select Release --</option>
-                    {% for release in org_releases %}
-                        <option value="{{ release.id }}">{{ release }}</option>
-                    {% endfor %}
-                </select>   
+                <div class="form-group mb-4">
+                    <label for="id_iteration" class="form-label"><i class="fas fa-sync-alt me-1"></i> Iteration</label>
+                    <select id="id_iteration" name="iteration" class="form-select custom-select">
+                        <option value="">-- Select Iteration --</option>
+                    </select>
+                </div>
                 
-                
-                <select id="id_iteration" name="iteration" class="form-select form-select-sm" aria-label=".form-select-sm example">
-                    <option value="">-- Select Iteration --</option>
-                </select>
-                <br>
-                <button id="assignBtn" class="small-btn assign-btn" onclick="assignToVersion()">&lt;&lt; &nbsp; Map</button>
-                <button id="unassignBtn" class="small-btn unassign-btn" onclick="unassignFromVersion()">Unmap &nbsp; &gt;&gt;</button>
+                <div class="d-flex gap-2 mb-4">
+                    <button id="assignBtn" class="btn btn-sm btn-success" onclick="assignToVersion()">
+                        <i class="fas fa-arrow-left me-1"></i> Map to Version
+                    </button>
+                    <button id="unassignBtn" class="btn btn-sm btn-danger" onclick="unassignFromVersion()">
+                        Unmap <i class="fas fa-arrow-right ms-1"></i>
+                    </button>
+                </div>
                 
                 <li>
                     <div class="collection-item">
-                        <span id="filter_unmapped" onclick="filterBacklog('unmapped')">Unmapped Items</span>
+                        <span id="filter_unmapped" onclick="filterBacklog('unmapped')">
+                            <i class="fas fa-unlink me-2"></i> Unmapped Items
+                        </span>
                         <div class="action-buttons">
-                            <button class="small-btn assign-btn" onclick="assignToVersion('Others')">&lt;&lt; &nbsp; Map</button>
-                            <button class="small-btn unassign-btn" onclick="unassignFromVersion('Others')">Unmap &nbsp; &gt;&gt;</button>
-                            <button class="dropdown-btn" onclick="toggleDetails('Others')">▼</button>
+                            <button class="small-btn assign-btn" onclick="assignToVersion('Others')">
+                                <i class="fas fa-arrow-left me-1"></i> Map
+                            </button>
+                            <button class="small-btn unassign-btn" onclick="unassignFromVersion('Others')">
+                                Unmap <i class="fas fa-arrow-right ms-1"></i>
+                            </button>
+                            <button class="dropdown-btn" onclick="toggleDetails('Others')">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
                         </div>
                     </div>
                     <div id="others" class="details hidden">
-                        <p>These are backlog items that are not part of any collection yet.</p>
+                        <p class="mb-0">These are backlog items that are not mapped to any version.</p>
                     </div>
                 </li>
+                
                 <li>
                     <div class="collection-item">
-                        <span id="filter_deleted" onclick="filterBacklog('deleted')">Deleted Items</span>
+                        <span id="filter_deleted" onclick="filterBacklog('deleted')">
+                            <i class="fas fa-trash-alt me-2"></i> Deleted Items
+                        </span>
                         <div class="action-buttons">
-                            <button class="small-btn assign-btn" onclick="assignToVersion('deleted')">&lt;&lt; &nbsp; Delete</button>
-                            <button class="small-btn unassign-btn" onclick="unassignFromVersion('deleted')">Restore &nbsp; &gt;&gt;</button>
-                            <button class="dropdown-btn" onclick="toggleDetails('deleted')">▼</button>
+                            <button class="small-btn assign-btn" onclick="assignToVersion('deleted')">
+                                <i class="fas fa-trash-alt me-1"></i> Delete
+                            </button>
+                            <button class="small-btn unassign-btn" onclick="unassignFromVersion('deleted')">
+                                Restore <i class="fas fa-undo ms-1"></i>
+                            </button>
+                            <button class="dropdown-btn" onclick="toggleDetails('deleted')">
+                                <i class="fas fa-chevron-down"></i>
+                            </button>
                         </div>
                     </div>
                     <div id="others" class="details hidden">
-                        <p>These are backlog items that are Deleted.</p>
+                        <p class="mb-0">These are backlog items that are Deleted.</p>
                     </div>
                 </li>
             </ul>
         </div>
 
-
-
-    <div class="contentbar mb-5" id="contentbar">
-        <div class="backlog_header">
-            <!-- HEADER of the backlog DISPLAY-->
-            <div class="container-fluid">
-
-                <div class="row">
-                    <div class="col col-md-12">
-                        <!-- Header section -->
-                        <div class="container-fluid-width">
-                            <div class="row">
-                                <div class="col col-md-3">
-                                    
-                                    <b>Backlog</b>
-                                </div>
-                                <div class="col col-md-3 text-end">
-                                    
-                                    
-                                </div>
-
-                                
-                                <div class="col col-md-6 text-end">   
-                                    <!-- Story Mapping -->
-                                    <a href="{% url 'create_project_story_map' org_id project.id %}" 
-                                    class="btn btn-sm btn-primary me-5 mb-1" style="font-size: 12px;"><b>Story Mapping</b></a> 
-                                   
-                                      
-                                    {% if project_detail.template.name != None %}  
-                                        <!-- 
-                                   
-                                        Scrum Based Projects
-                                        --> 
-                                        <!-- display project template -->
-                                        <span class="small-font" style="font-size: 12px;">Practice: <b>{{project_detail.template|display_if_not_none}}</b></span>
-
-                                        {% if project.project_release_mapped_flag == False %}               
-                                            <a href="{% url 'view_iteration_kanban' org_id project.id %}" class="btn btn-sm btn-primary me-5 mb-1" style="font-size: 12px;">
-                                            <b class="bi-size-display display-next-iteration">Iteration Planning</b></a>   
-                                        {% else %}        
-
-                                        <a href="{% url 'view_iteration_kanban' org_id project.id %}" class="btn btn-sm btn-primary me-5 mb-1" style="font-size: 12px;">
-                                            <b class="bi-size-display display-next-iteration">{{project.project_release|display_if_not_none}}/{{project.project_iteration|display_if_not_none}}</b></a>   
-                                        {% endif %}
-
-                                    {% elif project_detail.template.name != None and project_detail.template.name == 'Kanban1' %}   
-                                        <!-- display project template -->
-                                         <!--
-                                            Kanban Based Projects
-                                         -->
-                                        <span class="small-font" style="font-size: 12px;">Practice: <b>{{project_detail.template|display_if_not_none}}</b></span>
-                                        <a href="{% url 'project_tree_board_settings' project.id %}" class="btn btn-sm btn-primary me-5 mb-1" style="font-size: 12px;">
-                                            <b class="bi-size-display display-next-iteration">Board Settings</b></a> 
-
-                                    {% endif %}
-                                </div>
-                                
-                            </div>
+        <!-- Main Content Area -->
+        <div class="contentbar mb-5" id="contentbar">
+            <div class="backlog_header mb-4">
+                <div class="container-fluid">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h4 class="d-flex align-items-center">
+                                <i class="fas fa-clipboard-list me-2"></i> Backlog
+                            </h4>
                         </div>
+                        <div class="col-md-6 text-end">   
+                            <!-- Header Actions -->
+                            <a href="{% url 'create_project_story_map' org_id project.id %}" 
+                               class="btn btn-sm btn-primary me-2">
+                                <i class="fas fa-sitemap me-1"></i> Story Mapping
+                            </a> 
+                                  
+                            {% if project_detail.template.name != None %}  
+                                <!-- Scrum Based Projects --> 
+                                <span class="badge bg-secondary me-2">
+                                    <i class="fas fa-book me-1"></i> {{project_detail.template|display_if_not_none}}
+                                </span>
 
-                        <!-- Header section -->
+                                {% if project.project_release_mapped_flag == False %}               
+                                    <a href="{% url 'view_iteration_kanban' org_id project.id %}" 
+                                       class="btn btn-sm btn-info">
+                                        <i class="fas fa-tasks me-1"></i> Iteration Planning
+                                    </a>   
+                                {% else %}        
+                                    <a href="{% url 'view_iteration_kanban' org_id project.id %}" 
+                                       class="btn btn-sm btn-info">
+                                        <i class="fas fa-tasks me-1"></i> {{project.project_release|display_if_not_none}}/{{project.project_iteration|display_if_not_none}}
+                                    </a>   
+                                {% endif %}
+
+                            {% elif project_detail.template.name != None and project_detail.template.name == 'Kanban1' %}   
+                                <!-- Kanban Based Projects -->
+                                <span class="badge bg-secondary me-2">
+                                    <i class="fas fa-columns me-1"></i> {{project_detail.template|display_if_not_none}}
+                                </span>
+                                <a href="{% url 'project_tree_board_settings' project.id %}" 
+                                   class="btn btn-sm btn-info">
+                                    <i class="fas fa-cog me-1"></i> Board Settings
+                                </a> 
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>          
+            </div>
+            
+            <!-- Add Backlog Item Form -->
+            <form action="" method="POST">
+                {% csrf_token %}
+                <input type="hidden" name="add_action" value="add">
+                <input type="hidden" id="form-seq-list-data" name="seq_list_data" value="">
+                
+                <div class="add-backlog-container">
+                    <input type="text" id="backlog_summary" name="backlog_summary" placeholder="Enter backlog item" class="backlog-input">
+                    
+                    <select name="type" id="type-select" class="custom-select">                                
+                        {% for backlog_type in backlog_types %}
+                            <option value="{{ backlog_type.id }}"
+                                {% if backlog_type.name == 'User Story' %}selected{% endif %}>
+                                {{ backlog_type }}
+                            </option>
+                        {% endfor %}
+                    </select>
+                    
+                    <div class="add-button-container">
+                        <button type="submit" name="add_to_top" class="btn btn-add-top" onclick="submitWithOrder('add_to_top')">
+                            <i class="fas fa-arrow-up me-1"></i> Add to Top
+                        </button>
+                        <button type="submit" name="add_to_bottom" class="btn btn-add-bottom" onclick="submitWithOrder('add_to_bottom')">
+                            Add to Bottom <i class="fas fa-arrow-down ms-1"></i>
+                        </button>
+                        {% if backlog_deleted %}
+                            <a href="?filter_by=deleted" class="btn btn-sm btn-outline-secondary">
+                                <i class="fas fa-trash-alt"></i>
+                            </a>
+                        {% endif %}
                     </div>
                 </div>
-               
-            </div>
-            <!-- HEADER of the backlog DISPLAY-->           
-        </div>
-        <form action="" method="POST">
-            {% csrf_token %}
-    <table class="table backlog_table sortable_table mb-5" id="backlog_table">
-        <thead class="add_backlog_item_row">
-            <tr class="add_backlog_item">
-               
-                    <input type="hidden" name="add_action" value="add">
-                    <td id="input_summary" width="80%" class="input_summary la" colspan="8">
-                        <div class="add-backlog-container">
-                            <input type="text" id="backlog_summary" name="backlog_summary" placeholder="Enter backlog item" class="backlog-input me-2">
-                            <select name="type" id="type-select" class=" custom-select">                                
-                                {% for backlog_type in backlog_types %}
-                                    <option value="{{ backlog_type.id }}"
-                                        {% if backlog_type.name == 'User Story' %}selected{% endif %}
-                                    >
-                                         {{ backlog_type }}
-                                    </option>
-                                {% endfor %}
-                            </select>
-                            <input type="hidden" id="form-seq-list-data" name="seq_list_data" value="">
-                            <div class="add-button-container">
-                                <!-- <input type="submit" name="add_to_top" value="Add to Top" class="btn btn-sm btn-primary me-2">
-                                <input type="submit" name="add_to_bottom" value="Add to Bottom" class="btn btn-sm btn-primary me-2">
-                                 -->
-                                 <button type="submit" name="add_to_top" class="btn btn-sm btn-success me-2"  onclick="submitWithOrder('add_to_top')">
-                                    <i class="bi bi-arrow-up"></i> Add to Top
-                                </button>
-                                <button type="submit" name="add_to_bottom" class="btn btn-sm btn-warning me-2" onclick="submitWithOrder('add_to_bottom')">
-                                     Add to Bottom <i class="bi bi-arrow-down"></i>
-                                </button>
-                                  {% if backlog_deleted %}
-                                  <a href="?filter_by=deleted"><i class="bi bi-trash-fill" style="font-size: 14px;"></i></a>
-                                  {% endif %}
-                            </div>
-                        </div>
-                    </td>
-                
-            </tr>
             
+                <!-- Backlog Table -->
+                <table class="table backlog_table sortable_table mb-5" id="backlog_table">
+                    <thead>
+                        <tr class="header">
+                            <th width="2%"><i class="fas fa-grip-vertical"></i></th>
+                            <th width="1%" class="ca">#</th>
+                            <th width="2%" class="ca">Type</th>                
+                            <th width="30%" class="la">Backlog Item 
+                                <div class="display_backlog_count">{{backlog_items_count}}</div>
+                            </th>
+                            <th width="14%" class="la">Collection</th>
+                            <th width="10%" class="la">Release</th>
+                            <th width="8%" class="la">Iteration</th>
+                            <th width="6%" class="ra">ID</th>
+                            <th width="4%" class="ca">Size</th>
+                            <th width="8%" class="ca">Status</th>
+                            <th width="2%" class="ca">
+                                <div class="checkbox-wrapper">
+                                    <input type="checkbox" class="custom-checkbox select-all-checkbox">
+                                </div>
+                            </th>       
+                        </tr>
+                    </thead>
+                    
+                    <tbody class="backlog_body sortable-tbody" id="sortable">           
+                        {% for item in display_backlog_items %}
+                        <tr class="backlog_item select-item" id="{{item.id}}_{{forloop.counter}}" data-backlog-item-id="{{item.id}}" onclick="toggleItemSelection(this)">
+                            <td class="drag-handle" width="2%">
+                                <i class="fas fa-grip-vertical"></i>
+                            </td>
+                            <td width="1%" style="text-align: center;">{{forloop.counter}}</td>
+                            <td width="2%" class="ca display_type" data-type="{{item.type}}">
+                                <!-- Type icon will be inserted by JS -->
+                            </td>                
+                            <td width="30%" class="la"
+                                ondblclick="makeEditable(this);"
+                                onblur="save_element_text(this, '{{item.id}}', 'app_organization', 'backlog', 'name');">
+                                <span class="summary_of_bi">{{item.name|display_if_not_none}}</span>
+                            </td>
+                            <td width="14%" class="la">
+                                {% if item.parent %}
+                                    <span class="badge bg-light text-dark">{{item.parent}}</span>
+                                {% endif %}
+                            </td>
+                            <td width="10%" class="la">
+                                {% if item.release %}
+                                    <span class="badge bg-light text-dark">{{item.release}}</span>
+                                {% endif %}
+                            </td>
+                            <td width="8%" class="la">
+                                {% if item.iteration %}
+                                    <span class="badge bg-light text-dark">{{item.iteration}}</span>
+                                {% endif %}
+                            </td>
+                            <td width="6%" class="ca">
+                                <a href="{% url 'edit_project_tree_backlog_item' project.id item.id %}" class="bi-id-display">
+                                    <i class="fas fa-edit me-1"></i>BI-{{item.id}}
+                                </a>
+                            </td>
+                            <td width="4%" class="ca"> 
+                                <div class="bi-size-display"
+                                    onclick="makeEditable(this);"
+                                    onblur="save_element_text(this, '{{item.id}}', 'app_organization', 'Backlog', 'size');">
+                                    {% if item.size != '0' and item.size != None %}{{item.size}}{% endif %}&nbsp;
+                                </div>
+                            </td>
+                            <td width="8%" class="ca">
+                                <span class="status-pill status-{% if item.status == 'To Do' %}todo{% elif item.status == 'WIP' or item.status == 'In Progress' %}in-progress{% elif item.status == 'Blocked' %}blocked{% elif item.status == 'Done' %}done{% else %}backlog{% endif %}">
+                                    {% if item.status == 'WIP' %}In Progress{% else %}{{item.status|default:"Backlog"}}{% endif %}
+                                </span>
+                            </td>
+                            <td width="2%" class="ca">
+                                <div class="checkbox-wrapper">
+                                    <input type="checkbox" name="selected_items" value="{{item.id}}" class="custom-checkbox select-item-checkbox">
+                                </div>
+                            </td> 
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </form>
-        </thead>
-        <thead>
-            <tr class="header">
-                <th width="2%"><i class="bi bi-grip-vertical"></i></th>
-                <th id="header_slno" width="1%"style="text-align: center;">#</th>
-                <th id="header_type" width="2%" class="header_type ca">Type</th>                
-                <th id="header_summary" width="30%" class="header_summary la">Backlog Item 
-                    <div class="display_backlog_count">{{backlog_items_count}} items</div></th>
-                <th id="header_parent" width="14%" class="header_parent la">Collection</th>
-                <th id="header_release" width="10%" class="header_release la">Release</th>
-                <th id="header_iteration" width="8%" class="header_iteration la">Iteration</th>
-                <th id="header_key" width="6%" class="header_key ra">ID</th>
-                <th id="header_size" width="4%" class="header_size ca">Size</th>
-                <th id="header_status" width="8%" class="header_status ca">Status</th>
-                <th id="header_select" width="2%" class="header_select ca">
-                    <input type="checkbox" name="select_all" class="select-all-checkbox">
-                </th>       
-            </tr>
-        </thead>
-        <!-- Row for adding a new backlog item -->
-       
-       
-        <tbody class="backlog_body sortable-tbody" id="sortable">           
-            {% for item in display_backlog_items %}
-            <tr class="backlog_item select-item" id="{{item.id}}_{{forloop.counter}}" data-backlog-item-id="{{item.id}}" onclick="toggleItemSelection(this)">
-                <td class="drag-handle" width="2%">
-                    <i class="bi bi-grip-vertical"></i>
-                </td>
-                <td id="display_slno" width="1%" style="text-align: end;">{{forloop.counter}}</td>
-                <td id="display_type" width="2%" class="display_type ca" data-type="{{item.type}}">
-                </td>                
-                <td id="display_summary" width="30%" class="display_summary la"
-                ondblclick="makeEditable(this);"
-                onblur="save_element_text(this, '{{item.id}}', 'app_organization', 'backlog', 'name');"
-                ><b class="summary_of_bi">{{item.name|display_if_not_none}}</b></td>
-                <td id="display_parent" width="14%" class="display_parent la">{{item.parent|display_if_not_none}}</td>
-                <td id="display_release" width="10%" class="display_release la">{{item.release|display_if_not_none}}</td>
-                <td id="display_iteration" width="8%" class="display_iteration la">{{item.iteration|display_if_not_none}}</td>
-                <td id="display_key" width="6%" class="display_key ca bi-id-display me-2">
-                    <a href="{% url 'edit_project_tree_backlog_item' project.id item.id %}"><i class="bi bi-pencil"></i></a>
-                        &nbsp;<a href="{% url 'edit_project_tree_backlog_item' project.id item.id %}">BI-{{item.id}}</a>
-                    &nbsp;&nbsp;
-                </td>
-                <td id="display_size" width="4%" class="display_size ca "> <div class="bi-size-display ca" style="font-weight: bolder; width: 40px;"
-                onclick="makeEditable(this);"
-                onblur="save_element_text(this, '{{item.id}}', 'app_organization', 'Backlog', 'size');"
-                >{% if item.size != '0'  and item.size != None %}{{item.size|display_if_not_none}}{% endif %}&nbsp;</div></td>
-                <td id="display_status" width="8%" class="display_status ca">
-                    <button 
-                    {% if item.status == 'To Do' or item.status == 'ToDo' %}class="btn btn-sm btn-primary" style="margin: 0; padding: 0; font-size:10px; max-height: 15px;"
-                    {% elif item.status == 'WIP' or item.status == 'In Progress' %}class="btn btn-sm btn-warning" style="margin: 0; padding: 0; font-size:10px; max-height: 15px;"
-                    {% elif item.status == 'Blocked' %}class="btn btn-sm btn-danger" style="margin: 0; padding: 0; font-size:10px; max-height: 15px;"
-                    {% elif item.status == 'Done' %}class="btn btn-sm btn-success" style="margin: 0; padding: 0; font-size:10px; max-height: 15px;"
-                    {% elif item.status == 'Backlog' %}class="btn btn-sm btn-secondary" style="margin: 0; padding: 0; font-size:10px; max-height: 15px;"
-                    {% endif %}
-                    >{{item.status|display_if_not_none}} 
-                  
-                </button>
-                </td>
-                <td id="display_select" width="2%" class="display_select ca">
-                    <input type="checkbox" name="selected_items" value="{{item.id}}" class="select-item-checkbox">
-                </td> 
-            </tr>
-            {% endfor %}
-        </tbody>
-        </form> 
-    </table>
-
-     
+        </div>
     </div>
 </div>
-<!-- Hidden Form -->
+
+<!-- Hidden Forms for POST actions -->
 <form id="dynamic-form" method="POST" style="display: none;">
     {% csrf_token %}
     <input type="hidden" name="read_action" id="form-action">
@@ -826,10 +971,10 @@
     <input type="hidden" name="version_id" id="form-version-id">
     <input type="hidden" name="selected_version_items" id="form-selected-version-items">
 </form>
-</div>
 
-
+<!-- JavaScript -->
 <script>
+// Size field tabindex and navigation
 document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll(".bi-size-display").forEach(function (element) {
         element.setAttribute("tabindex", "0"); // Make div focusable
@@ -849,6 +994,12 @@ document.addEventListener("DOMContentLoaded", function () {
             stripWhitespace(this); // Remove whitespace on blur
         });
     });
+    
+    // Initialize type icons
+    initializeTypeIcons();
+    
+    // Focus on the backlog summary input field on page load
+    document.getElementById('backlog_summary').focus();
 });
 
 function moveToNextRow(currentElement) {
@@ -887,13 +1038,8 @@ function stripWhitespace(element) {
     element.textContent = element.textContent.trim(); // Remove leading & trailing whitespace
 }
 
-
-</script>
-
-
-
-<script>
-    function submitWithOrder(actionName) {
+// Order submission
+function submitWithOrder(actionName) {
     // Get the current order of items
     const arrayOrder = $('#sortable').sortable('toArray');
     const sortedListData = JSON.stringify(arrayOrder);
@@ -901,9 +1047,8 @@ function stripWhitespace(element) {
     // Set the serialized order in the hidden input field
     document.getElementById('form-seq-list-data').value = sortedListData;
 
-    // Debug: alert or log the serialized order
-    console.log(sortedListData);
-    //alert(sortedListData);
+    // Debug: console log the serialized order
+    console.log("Submitting with order:", sortedListData);
 
     // Create a hidden form element for the action
     const actionInput = document.createElement('input');
@@ -912,88 +1057,79 @@ function stripWhitespace(element) {
     actionInput.value = 'true';
 
     // Append the action input to the form and submit it
-    const form = document.querySelector('.add-backlog-container form') || document.querySelector('.add-backlog-container');
+    const form = document.querySelector('form');
     form.appendChild(actionInput);
     form.submit();
 }
 
-</script>
-
-<script>
-    $(".sortable_table").find("tbody").sortable({
-        items: "> tr",
-        handle: ".drag-handle",
-        appendTo: "parent",
-        cancel: "[contenteditable]",
-        update: function(event, ui) {
-                var serialOrder = $('#sortable').sortable('serialize');
-                var arrayOrder = $('#sortable').sortable('toArray');
-                //alert(arrayOrder);
-                $.ajax({
-                url: '/common/common_ajax/ajax_update_model_list_sorted/',
-                type: 'POST',
-                data : {
-                    'csrfmiddlewaretoken': "{{ csrf_token }}",
-                    'model_name': 'Backlog',
-                    'app_name': 'app_organization',
-                    'sorted_list_data': JSON.stringify(arrayOrder),
-                    
-                },
-                dataType: 'json',
-                success: function(data) {
-                    console.log(data);
-                }
-                })
+// Initialize sortable
+$(".sortable_table").find("tbody").sortable({
+    items: "> tr",
+    handle: ".drag-handle",
+    appendTo: "parent",
+    cancel: "[contenteditable]",
+    update: function(event, ui) {
+        var arrayOrder = $('#sortable').sortable('toArray');
+        $.ajax({
+            url: '/common/common_ajax/ajax_update_model_list_sorted/',
+            type: 'POST',
+            data: {
+                'csrfmiddlewaretoken': "{{ csrf_token }}",
+                'model_name': 'Backlog',
+                'app_name': 'app_organization',
+                'sorted_list_data': JSON.stringify(arrayOrder),
+            },
+            dataType: 'json',
+            success: function(data) {
+                console.log("Sort order updated successfully:", data);
+            },
+            error: function(error) {
+                console.error("Error updating sort order:", error);
             }
-    });
-</script>
+        });
+    }
+});
 
-
-<script>
-    // Focus on the backlog summary input field on page load
-    document.addEventListener('DOMContentLoaded', () => {
-        document.getElementById('backlog_summary').focus();
-    });
-</script>
-
-<script>
+// Filter backlog
 function filterBacklog(collectionId) {
     const currentUrl = new URL(window.location.href);
-    currentUrl.searchParams.set('filter_by', collectionId); // Add or update the 'filter_by' parameter
-    window.location.href = currentUrl.href; // Redirect to the updated URL
+    currentUrl.searchParams.set('filter_by', collectionId);
+    window.location.href = currentUrl.href;
 }
 
-</script>
+// Select all checkboxes
+document.addEventListener('DOMContentLoaded', () => {
+    const selectAllCheckbox = document.querySelector('.select-all-checkbox');
+    const itemCheckboxes = document.querySelectorAll('.select-item-checkbox');
 
-
-<script>
-    document.addEventListener('DOMContentLoaded', () => {
-        const selectAllCheckbox = document.querySelector('.select-all-checkbox');
-        const itemCheckboxes = document.querySelectorAll('.select-item-checkbox');
-
-        selectAllCheckbox.addEventListener('change', () => {
-            const isChecked = selectAllCheckbox.checked;
-            itemCheckboxes.forEach(checkbox => {
-                checkbox.checked = isChecked;
-                toggleItemSelection(checkbox);
-            });
+    selectAllCheckbox.addEventListener('change', () => {
+        const isChecked = selectAllCheckbox.checked;
+        itemCheckboxes.forEach(checkbox => {
+            checkbox.checked = isChecked;
+            const row = checkbox.closest('tr');
+            if (row) {
+                if (isChecked) {
+                    row.classList.add('selected');
+                    selectedItems.add(checkbox.value);
+                } else {
+                    row.classList.remove('selected');
+                    selectedItems.delete(checkbox.value);
+                }
+            }
         });
     });
-</script>
-<script>
-  function toggleCollectionPanel() {
+});
+
+// Toggle panels
+function toggleCollectionPanel() {
     const panel = document.getElementById('collection-panel');
     const contentbar = document.getElementById('contentbar');
     const isOpen = panel.classList.contains('open');
 
-
-
     if (isOpen) {
-
         panel.classList.remove('open');
         contentbar.classList.remove('shifted');
     } else {
-
         const collectionLink = document.getElementById('collection-link');
         const linkRect = collectionLink.getBoundingClientRect();
 
@@ -1001,22 +1137,40 @@ function filterBacklog(collectionId) {
         panel.style.left = `${linkRect.right}px`;
         panel.classList.add('open');
         contentbar.classList.add('shifted');
+        
+        // Close the other panel if open
+        document.getElementById('version-panel').classList.remove('open');
     }
-    
 }
 
+function toggleVersionPanel() {
+    const panel = document.getElementById('version-panel');
+    const contentbar = document.getElementById('contentbar');
+    const isOpen = panel.classList.contains('open');
+
+    if (isOpen) {
+        panel.classList.remove('open');
+        contentbar.classList.remove('shifted');
+    } else {
+        const versionLink = document.getElementById('version-link');
+        const linkRect = versionLink.getBoundingClientRect();
+
+        panel.style.top = `${linkRect.top}px`;
+        panel.style.left = `${linkRect.right}px`;
+        panel.classList.add('open');
+        contentbar.classList.add('shifted');
+        
+        // Close the other panel if open
+        document.getElementById('collection-panel').classList.remove('open');
+    }
+}
+
+// Assign to collection
 function assignToCollection(collectionId) {
     if (selectedItems.size === 0) {
-        //alert("No items selected!");
+        alert("Please select at least one item to map to this collection.");
         return;
     }
-
-    // Convert selected items to an array for display
-    const selectedItemsArray = Array.from(selectedItems);
-
-    // Log or alert the assignment for simulation
-    console.log(`Assigned items: ${selectedItemsArray.join(', ')} to ${collectionId}`);
-    //alert(`Assigned items: ${selectedItemsArray.join(', ')} to ${collectionName}`);
 
     // Populate form data
     const form = document.getElementById('dynamic-form');
@@ -1024,24 +1178,14 @@ function assignToCollection(collectionId) {
     document.getElementById('form-collection-id').value = collectionId;
     document.getElementById('form-selected-items').value = Array.from(selectedItems).join(',');
     
-
     // Submit the form
     form.submit();
-   
-
-    // // Close the panel
-    toggleCollectionPanel();
-
-    // // Clear selection (optional)
-    // clearSelection();
-
 }
 
-
+// Unassign from collection
 function unassignFromCollection(collectionId) {
-    //alert(`Unassigned from ${collectionId}`);
     if (selectedItems.size === 0) {
-        //alert("No items selected!");
+        alert("Please select at least one item to unmap from this collection.");
         return;
     }
 
@@ -1052,54 +1196,31 @@ function unassignFromCollection(collectionId) {
     document.getElementById('form-selected-items').value = Array.from(selectedItems).join(',');
 
     // Submit the form
-    
     form.submit();
-    
 }
 
-
-</script>
-
-<script>
-
-
-    // Function to handle form submission dynamically
-    function submitForm(action, collectionId) {
-        if (selectedItems.size === 0) {
-            alert("No items selected!");
-            return;
-        }
-
-        // Populate form data
-        const form = document.getElementById('dynamic-form');
-        document.getElementById('form-action').value = action; // Action: 'assign' or 'unassign'
-        document.getElementById('form-collection-id').value = collectionId;
-        document.getElementById('form-selected-items').value = Array.from(selectedItems).join(',');
-
-        // Submit the form
-        form.submit();
-    }
-
-    // Assign function
-    function assignToCollection1(collectionId) {
-        submitForm('assign', collectionId);
-    }
-
-    // Unassign function
-    function unassignFromCollection1(collectionId) {
-        submitForm('unassign', collectionId);
-    }
-</script>
-<script>
-
+// Toggle details
 function toggleDetails(id) {
     const details = document.getElementById(id);
     if (details) {
         details.classList.toggle('hidden');
+        
+        // Find the dropdown button that triggered this and rotate the chevron
+        const btn = event.currentTarget;
+        const icon = btn.querySelector('i');
+        if (icon) {
+            if (details.classList.contains('hidden')) {
+                icon.classList.remove('fa-chevron-up');
+                icon.classList.add('fa-chevron-down');
+            } else {
+                icon.classList.remove('fa-chevron-down');
+                icon.classList.add('fa-chevron-up');
+            }
+        }
     }
 }
 
-
+// Clear selection
 function clearSelection() {
     // Clear the selection state
     selectedItems.clear();
@@ -1113,73 +1234,106 @@ function clearSelection() {
     checkboxes.forEach(checkbox => (checkbox.checked = false));
 }
 
-</script>
-
-<script>
-    // Global set for selected items
+// Global set for selected items
 let selectedItems = new Set();
 
 // Toggle selection state for a row
-function toggleItemSelection(checkboxElement) {
-    const rowElement = checkboxElement.closest('tr'); // Find the row containing the checkbox
-    const itemId = checkboxElement.value; // Use the value of the checkbox as the item ID
-
-    if (checkboxElement.checked) {
+function toggleItemSelection(element) {
+    // Check if this was triggered by clicking on a checkbox
+    if (event && event.target.classList.contains('custom-checkbox')) {
+        // Let the checkbox's own change handler deal with this
+        return;
+    }
+    
+    // If we clicked on an editable area, don't toggle selection
+    if (event && (event.target.contentEditable === 'true' || 
+                 event.target.classList.contains('bi-size-display') ||
+                 event.target.tagName === 'A')) {
+        return;
+    }
+    
+    const row = element.closest('tr');
+    const checkbox = row.querySelector('.select-item-checkbox');
+    const itemId = checkbox.value;
+    
+    // Toggle checkbox
+    checkbox.checked = !checkbox.checked;
+    
+    if (checkbox.checked) {
         // Add the item to the selected set and highlight the row
         selectedItems.add(itemId);
-        rowElement.classList.add('selected');
+        row.classList.add('selected');
     } else {
         // Remove the item from the selected set and remove highlight
         selectedItems.delete(itemId);
-        rowElement.classList.remove('selected');
+        row.classList.remove('selected');
     }
 }
 
-// Initialize checkbox listeners on page load
+// Initialize checkbox listeners
 document.addEventListener('DOMContentLoaded', () => {
     const checkboxes = document.querySelectorAll('.select-item-checkbox');
     checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', function () {
-            toggleItemSelection(this); // Pass the changed checkbox to the toggle function
+        checkbox.addEventListener('change', function() {
+            const row = this.closest('tr');
+            const itemId = this.value;
+            
+            if (this.checked) {
+                selectedItems.add(itemId);
+                row.classList.add('selected');
+            } else {
+                selectedItems.delete(itemId);
+                row.classList.remove('selected');
+            }
         });
     });
 });
 
-</script>
+// Make element editable
+function makeEditable(element) {
+    element.contentEditable = true;
+    element.focus();
+}
 
-<script>
-    function makeEditable(element) {
-        element.contentEditable = true;
-        element.focus();
-    }
-
-
-    function save_element_text(element, id,  appName, modelName, fieldName) {
-        element.contentEditable = false;
-        check1 = element.textContent.trim();
-        //alert(`>>${check1}<<`);
-        $.ajax({
-            url: '/common/common_ajax/ajax_save_element_text/',
-            type: 'POST',
-            data : {
+// Save edited text
+function save_element_text(element, id, appName, modelName, fieldName) {
+    element.contentEditable = false;
+    const text = element.textContent.trim();
+    
+    $.ajax({
+        url: '/common/common_ajax/ajax_save_element_text/',
+        type: 'POST',
+        data: {
             'csrfmiddlewaretoken': "{{ csrf_token }}",
             'model_name': modelName,
             'app_name': appName,
             'field_name': fieldName,
-            'text': check1, 
+            'text': text, 
             'id': id,
-            },
-            dataType: 'json',
-            success: function(data) {
-            console.log(data);
-            }
-        })
-    }
-</script>
-<script>
-    // Define the dictionary with keys in ALL CAPS
+        },
+        dataType: 'json',
+        success: function(data) {
+            console.log("Text saved successfully:", data);
+            // Optionally add visual feedback for success
+            const originalBg = element.style.backgroundColor;
+            element.style.backgroundColor = '#d4edda';
+            setTimeout(() => {
+                element.style.backgroundColor = originalBg;
+            }, 500);
+        },
+        error: function(error) {
+            console.error("Error saving text:", error);
+            // Provide visual feedback for error
+            element.style.backgroundColor = '#f8d7da';
+            setTimeout(() => {
+                element.style.backgroundColor = '';
+            }, 500);
+        }
+    });
+}
 
-FLAT_BACKLOG_NAME_ICONS = {
+// Type icons mapping
+const BACKLOG_TYPE_ICONS = {
     "USER STORY": {"name": "User Story", "icon": "fas fa-user"},
     "RETROSPECTIVE": {"name": "Retrospective", "icon": "fas fa-search-plus"},
     "TASK": {"name": "Task", "icon": "fas fa-tasks"},
@@ -1197,55 +1351,35 @@ FLAT_BACKLOG_NAME_ICONS = {
     "TEST": {"name": "Test", "icon": "fas fa-vial"},
     "DOC": {"name": "Doc", "icon": "fas fa-file-alt"},
     "SPIKE": {"name": "Spike", "icon": "fas fa-search"},
-}
-    document.addEventListener('DOMContentLoaded', () => {
+};
+
+// Initialize type icons
+function initializeTypeIcons() {
     const typeCells = document.querySelectorAll('td[data-type]');
     
-        typeCells.forEach(cell => {
-            // Convert `type` to uppercase before lookup
-            const type = cell.getAttribute('data-type').toUpperCase();
-            const typeInfo = FLAT_BACKLOG_NAME_ICONS[type]; // Access the dictionary
+    typeCells.forEach(cell => {
+        const type = cell.getAttribute('data-type').toUpperCase();
+        const typeInfo = BACKLOG_TYPE_ICONS[type];
 
-            if (typeInfo) {
-                // Add the tooltip as the `title` attribute
-                cell.setAttribute('title', typeInfo.name);
-
-                // Create an icon element
-                const iconElement = document.createElement('i');
-                iconElement.className = typeInfo.icon; // Add the icon class
-                
-                // Append the icon to the cell
-                cell.appendChild(iconElement);
-            }
-        });
+        if (typeInfo) {
+            // Clear existing content
+            cell.innerHTML = '';
+            
+            // Create the type icon element with styling
+            const iconElement = document.createElement('div');
+            iconElement.className = 'type-icon';
+            iconElement.title = typeInfo.name;
+            
+            const icon = document.createElement('i');
+            icon.className = typeInfo.icon;
+            
+            iconElement.appendChild(icon);
+            cell.appendChild(iconElement);
+        }
     });
+}
 
-</script>
-
-
-<!-- VERSION RELATED js -->
-<script>
-    function toggleVersionPanel() {
-      const panel = document.getElementById('version-panel');
-      const contentbar = document.getElementById('contentbar');
-      const isOpen = panel.classList.contains('open');
-  
-      if (isOpen) {  
-          panel.classList.remove('open');
-          contentbar.classList.remove('shifted');
-      } else {
-  
-          const collectionLink = document.getElementById('version-link');
-          const linkRect = collectionLink.getBoundingClientRect();
-  
-          panel.style.top = `${linkRect.top}px`;
-          panel.style.left = `${linkRect.right}px`;
-          panel.classList.add('open');
-          contentbar.classList.add('shifted');
-      }
-      
-  }
-
+// Get iterations for selected release
 $(document).ready(function(){
     $("#id_release").change(function(){
         var releaseID = $(this).val();
@@ -1267,7 +1401,7 @@ $(document).ready(function(){
                     });
                 },
                 error: function(xhr, textStatus, errorThrown) {
-                    console.log("Error fetching iterations:", textStatus, errorThrown);
+                    console.error("Error fetching iterations:", textStatus, errorThrown);
                 }
             });
         } else {
@@ -1276,6 +1410,8 @@ $(document).ready(function(){
         }
     });
 });
+
+// Assign to version
 function assignToVersion() {
     var releaseID = $("#id_release").val();
     var iterationID = $("#id_iteration").val();
@@ -1284,8 +1420,11 @@ function assignToVersion() {
         alert("Please select a Release and an Iteration.");
         return;
     }
-
-    console.log(`Assigned to Release: ${releaseID}, Iteration: ${iterationID}`);
+    
+    if (selectedItems.size === 0) {
+        alert("Please select at least one item to map to this version.");
+        return;
+    }
 
     const form = document.getElementById('dynamic-form-version');
     document.getElementById('form-version-action').value = 'assign';
@@ -1293,11 +1432,9 @@ function assignToVersion() {
     document.getElementById('form-selected-version-items').value = Array.from(selectedItems).join(',');
 
     form.submit();
-
-    // Remove items from 'Others' list if they were unmapped before
-    moveItemsBetweenLists(selectedItems, 'Others', false);
 }
 
+// Unassign from version
 function unassignFromVersion() {
     var releaseID = $("#id_release").val();
     var iterationID = $("#id_iteration").val();
@@ -1306,8 +1443,11 @@ function unassignFromVersion() {
         alert("Please select a Release and an Iteration.");
         return;
     }
-
-    console.log(`Unassigned from Release: ${releaseID}, Iteration: ${iterationID}`);
+    
+    if (selectedItems.size === 0) {
+        alert("Please select at least one item to unmap from this version.");
+        return;
+    }
 
     const form = document.getElementById('dynamic-form-version');
     document.getElementById('form-version-action').value = 'unassign';
@@ -1315,28 +1455,6 @@ function unassignFromVersion() {
     document.getElementById('form-selected-version-items').value = Array.from(selectedItems).join(',');
 
     form.submit();
-
-    // Move unassigned items to "Others"
-    moveItemsBetweenLists(selectedItems, 'Others', true);
 }
-
-// Function to move items between lists
-function moveItemsBetweenLists(items, targetList, moveToTarget) {
-    items.forEach(item => {
-        var itemElement = document.getElementById(item);
-        if (itemElement) {
-            if (moveToTarget) {
-                document.getElementById('others').appendChild(itemElement); // Move to 'Others'
-            } else {
-                document.getElementById(targetList).removeChild(itemElement); // Remove from 'Others'
-            }
-        }
-    });
-}
-
 </script>
-
-
 {% endblock content %}
-
-

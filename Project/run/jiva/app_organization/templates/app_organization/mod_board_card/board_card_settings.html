@@ -33,7 +33,7 @@
                             <a href="{% url 'view_project_tree_board' project_id  %}?project_id={{ project_id }}" 
                             class="btn btn-sm btn-primary me-2"><b><i class="bi bi-arrow-left"></i>Back to Board</b></a>
                             {% else %}
-                            <a href="{% url 'view_project_tree_board_custom' project_id  %}?project_id={{ project_id }}" 
+                            <a href="{% url 'view_project_tree_board_smart_kanban' project_id  %}?project_id={{ project_id }}" 
                             class="btn btn-sm btn-primary me-2"><b><i class="bi bi-arrow-left"></i>Back to Board</b></a>
                             {% endif %}
                              <a href="{% url 'list_project_boards' project.id %}"

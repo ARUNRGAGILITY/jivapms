@@ -52,13 +52,6 @@
     </div>
     <div class="col-md-6 d-flex justify-content-md-end mt-3 mt-md-0">
       <div class="d-flex align-items-center">
-        <select name="bulk_operations" id="bulk_operations" class="form-select form-select-sm w-auto me-2" onchange="this.form.submit()">
-          <option value="none" {% if 'none' in selected_bulk_operations %}selected{% endif %}>Bulk Actions</option>
-          <option value="bulk_done" {% if 'bulk_done' in selected_bulk_operations %}selected{% endif %}>Mark Done</option>
-          <option value="bulk_not_done" {% if 'bulk_not_done' in selected_bulk_operations %}selected{% endif %}>Mark Not Done</option>
-          <option value="bulk_blocked" {% if 'bulk_blocked' in selected_bulk_operations %}selected{% endif %}>Mark Blocked</option>
-          <option value="bulk_delete" {% if 'bulk_delete' in selected_bulk_operations %}selected{% endif %}>Delete</option>
-        </select>
         <label class="me-2 text-nowrap">Show:</label>
         <select name="pagination" id="paginationselect" class="form-select form-select-sm">
           <option value="none" {% if selected_pagination == 'none' %}selected{% endif %}>-Page-</option>
@@ -107,7 +100,24 @@
   <form action="" method="POST">
     {% csrf_token %}
     
-   
+    <!-- Bulk Actions -->
+    <div class="row mb-3">
+      <div class="col-12">
+        <div class="d-flex align-items-center">
+          <div class="form-check me-3">
+            <input type="checkbox" class="form-check-input" name="select_all" id="select_all" onclick='checkUncheck(this)'>
+            <label class="form-check-label" for="select_all">Select All</label>
+          </div>
+          <select name="bulk_operations" id="bulk_operations" class="form-select form-select-sm w-auto" onchange="this.form.submit()">
+            <option value="none" {% if 'none' in selected_bulk_operations %}selected{% endif %}>Bulk Actions</option>
+            <option value="bulk_done" {% if 'bulk_done' in selected_bulk_operations %}selected{% endif %}>Mark Done</option>
+            <option value="bulk_not_done" {% if 'bulk_not_done' in selected_bulk_operations %}selected{% endif %}>Mark Not Done</option>
+            <option value="bulk_blocked" {% if 'bulk_blocked' in selected_bulk_operations %}selected{% endif %}>Mark Blocked</option>
+            <option value="bulk_delete" {% if 'bulk_delete' in selected_bulk_operations %}selected{% endif %}>Delete</option>
+          </select>
+        </div>
+      </div>
+    </div>
     
     <!-- Table -->
     <div class="card shadow-sm">

@@ -1,4 +1,3 @@
-
 {% extends 'app_common/common_files/base_template.html' %}
 {% load static %}
 {% load crispy_forms_tags %}
@@ -14,87 +13,420 @@
     });
 </script>
 <style>
-.value, .delay, .arrow-box {
-    font-size: 12px;
-}
-
-.arrow-box {
-    padding-left: 10px;
-}
-.step-box {
-    width: 120px;
-    height: 50px;
-    background-color: white;
-    border: 2px solid black;
-    color: black;
-    text-align: center;
-    line-height: 50px;
-    border-radius: 10px;
-    font-weight: bold;
-}
-
-
-/* General responsive adjustments */
-@media (max-width: 768px) {
-    .step-box, .container {
-        width: 90px; /* Smaller width for mobile devices */
-        height: 40px; /* Smaller height for mobile devices */
-        font-size: 12px; /* Smaller font size for better readability */
+    /* Base styles with improved colors and typography */
+    :root {
+        --primary-color: #3498db;
+        --secondary-color: #2c3e50;
+        --success-color: #27ae60;
+        --danger-color: #e74c3c;
+        --warning-color: #f39c12;
+        --light-color: #ecf0f1;
+        --dark-color: #34495e;
+        --border-radius: 8px;
+        --box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
 
-    .step, .dvs-container {
-        flex-direction: column; /* Stack elements vertically on smaller screens */
+    /* OVS Header styling */
+    .ovs-header {
+        background-color: var(--light-color);
+        border-radius: var(--border-radius);
+        padding: 15px;
+        margin-bottom: 20px;
+        box-shadow: var(--box-shadow);
     }
 
-    .arrow, .short_arrow {
-        width: 50px; /* Shorter arrows on smaller screens */
+    .ovs-title {
+        font-weight: 600;
+        color: var(--secondary-color);
     }
 
-    .ovs-wrapper, .dvs-wrapper {
-        flex-direction: column;
-        align-items: center; /* Center-align the elements */
+    .ovs-metrics {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-top: 8px;
     }
-}
 
-/* SVG responsiveness */
-svg {
-    width: 100%;
-    height: auto;
-}
-
-.step {
-    font-size: .6vw; /* Adjust based on what looks good across different devices */
-}
-.ovs-wrapper, .dvs-wrapper {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); /* Creates a responsive number of columns */
-    gap: 10px;
-    justify-content: center;
-}
-
-@media (max-width: 768px) {
-    .ovs-wrapper, .dvs-wrapper {
-        grid-template-columns: 1fr; /* Stack elements in a single column on small screens */
+    .ovs-metric {
+        background-color: white;
+        padding: 5px 10px;
+        border-radius: 4px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+        font-weight: 500;
     }
-}
-.ovs-wrapper, .dvs-wrapper {
-    display: flex;
-    flex-wrap: wrap; /* Allows items to wrap as needed on smaller screens */
-    justify-content: center;
-    gap: 20px;
-}
 
-@media (max-width: 768px) {
-    .ovs-wrapper, .dvs-wrapper {
-        flex-direction: column;
+    .metric-va {
+        border-left: 3px solid var(--success-color);
     }
-    .step, .dvs-container, .step-box {
-        width: 100%; /* Full width on smaller screens */
-        box-sizing: border-box; /* Includes padding and border in the element's width */
-    }
-}
 
+    .metric-nva {
+        border-left: 3px solid var(--danger-color);
+    }
+
+    .metric-lt {
+        border-left: 3px solid var(--primary-color);
+    }
+
+    .metric-eff {
+        border-left: 3px solid var(--warning-color);
+    }
+
+    .metric-rpa {
+        border-left: 3px solid var(--dark-color);
+    }
+
+    /* Action buttons */
+    .action-buttons {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+    }
+
+    .btn-action {
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        padding: 6px 12px;
+        border-radius: 4px;
+        font-weight: 500;
+        transition: all 0.2s;
+        text-decoration: none;
+        display: inline-flex;
+        align-items: center;
+    }
+
+    .btn-action:hover {
+        background-color: #2980b9;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        transform: translateY(-1px);
+        color: white;
+    }
+
+    .btn-action i {
+        margin-right: 5px;
+    }
+
+    /* Value, delay, and arrow styling - UPDATED for horizontal layout */
+    .value-delay-container {
+        display: flex;
+        justify-content: center;
+        width: 100%;
+        margin-bottom: 10px;
+        position: relative;
+        z-index: 5;
+    }
+
+    .value, .delay {
+        font-size: 11px;
+        color: white;
+        text-align: center;
+        border-radius: 4px;
+        font-weight: 500;
+        padding: 4px 8px;
+        box-sizing: border-box;
+        width: 80px; /* Fixed width for each box */
+        margin: 0 2px; /* Small margin between boxes */
+    }
+
+    .value {
+        background-color: var(--success-color);
+    }
+
+    .delay {
+        background-color: var(--danger-color);
+    }
+
+    .value_empty, .delay_empty {
+        font-size: 10px;
+        color: transparent;
+        padding: 4px;
+        visibility: hidden;
+    }
+
+    /* Step wrapper and accuracy styling */
+    .step-wrapper {
+        position: relative;
+        display: inline-block;
+        margin: 0 -15px; /* Match the step margin to maintain flow */
+    }
+
+    .accuracy {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 70%;
+        background-color: var(--warning-color);
+        font-size: 8px;
+        color: white;
+        text-align: center;
+        padding: 2px;
+        transform: translateY(-100%);
+        box-sizing: border-box;
+        border-radius: 4px 4px 0 0;
+        z-index: 10;
+        font-weight: 500;
+    }
+
+    /* Chevron step styling */
+    .step {
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        width: 150px;
+        height: 60px;
+        background-color: var(--primary-color);
+        color: white;
+        text-align: center;
+        padding: 0 20px;
+        clip-path: polygon(75% 0%, 100% 50%, 75% 100%, 0% 100%, 25% 50%, 0% 0%);
+        font-weight: bold;
+        font-size: 14px;
+        line-height: 1.3;
+        z-index: 1;
+        box-shadow: var(--box-shadow);
+        transition: all 0.2s;
+    }
+
+    .step:hover {
+        filter: brightness(1.1);
+        transform: translateY(-2px);
+    }
+
+    .step a {
+        color: white;
+        text-decoration: none;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
+        white-space: normal;
+        max-width: 80%;
+        text-align: center;
+    }
+
+    .step a:hover {
+        text-decoration: underline;
+    }
+
+    /* First and last steps with different colors */
+    .step.first-step, .step.last-step {
+        background-color: var(--secondary-color);
+    }
+
+    /* OVS and DVS Wrappers */
+    .ovs-wrapper {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        flex-wrap: wrap;
+        margin: 40px 0;
+        position: relative;
+        padding: 25px 0; /* Increased padding to accommodate value/delay boxes */
+        overflow-x: auto;
+    }
+
+    .dvs-wrapper {
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        margin-top: 80px;
+        position: relative;
+        gap: 20px;
+        padding: 30px 0;
+    }
+
+    /* Scroll indicator for mobile */
+    .scroll-indicator {
+        display: none;
+        text-align: center;
+        padding: 8px;
+        color: #666;
+        font-size: 12px;
+        background-color: #f8f9fa;
+        border-radius: 4px;
+        margin-bottom: 10px;
+    }
+
+    /* DVS Container styling */
+    .dvs-container {
+        padding: 15px;
+        border: 2px solid var(--secondary-color);
+        border-radius: var(--border-radius);
+        margin: 10px;
+        background-color: white;
+        box-shadow: var(--box-shadow);
+        transition: all 0.2s;
+        min-width: 200px;
+        position: relative;
+    }
+
+    .dvs-container:hover {
+        box-shadow: 0 8px 15px rgba(0, 0, 0, 0.15);
+        transform: translateY(-2px);
+    }
+    
+    .dvs-container a {
+        color: var(--primary-color);
+        text-decoration: none;
+        font-weight: 600;
+    }
+
+    .dvs-container a:hover {
+        text-decoration: underline;
+    }
+
+    .dvs-container li {
+        margin: 5px 0;
+        list-style-type: circle;
+    }
+    .trigger  {
+        font-weight: 600;
+        color: var(--primary-color);
+        width: 160px;
+        height: 60px;
+        margin-top: 20px;
+        text-align: bottom;
+        padding: 5px;
+    }
+     .outcome {
+        font-weight: 600;
+        color: var(--primary-color);
+        width: 200px;
+        height: 60px;
+        margin-top: 20px;
+        margin-left: 50px;
+        text-align: bottom;
+        padding: 5px;
+    }
+    /* SVG Styling for rounded connectors */
+    svg {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+        z-index: -1;
+    }
+
+    /* Responsive styles */
+    @media (max-width: 1200px) {
+        .step {
+            width: 130px;
+            height: 55px;
+            font-size: 13px;
+            padding: 0 15px;
+        }
+        
+        .value, .delay {
+            width: 70px;
+            font-size: 10px;
+        }
+    }
+
+    @media (max-width: 992px) {
+        .ovs-header {
+            padding: 10px;
+        }
+
+        .ovs-metrics {
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .ovs-metric {
+            font-size: 12px;
+        }
+
+        .action-buttons {
+            margin-top: 10px;
+            justify-content: flex-start;
+        }
+        
+        .step {
+            width: 110px;
+            height: 50px;
+            font-size: 12px;
+            padding: 0 12px;
+        }
+        
+        .value, .delay {
+            width: 60px;
+            font-size: 9px;
+            padding: 3px 6px;
+        }
+        
+        .scroll-indicator {
+            display: block;
+        }
+    }
+
+    @media (max-width: 768px) {
+        .step {
+            width: 100px;
+            height: 45px;
+            font-size: 11px;
+            padding: 0 10px;
+        }
+
+        .ovs-wrapper {
+            justify-content: flex-start;
+            overflow-x: auto;
+            flex-wrap: nowrap;
+            padding: 25px 10px;
+        }
+        
+        .ovs-wrapper::-webkit-scrollbar {
+            height: 8px;
+        }
+        
+        .ovs-wrapper::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        .ovs-wrapper::-webkit-scrollbar-thumb {
+            background: #bbb;
+            border-radius: 10px;
+        }
+
+        .dvs-container {
+            min-width: 150px;
+            padding: 10px;
+        }
+        
+        .value, .delay {
+            width: 50px;
+            font-size: 8px;
+            padding: 3px 4px;
+        }
+    }
+
+    @media (max-width: 576px) {
+        .step {
+            width: 85px;
+            height: 40px;
+            font-size: 10px;
+            padding: 0 8px;
+        }
+
+        .dvs-container {
+            min-width: 120px;
+            font-size: 11px;
+        }
+        
+        .accuracy {
+            font-size: 8px;
+            padding: 1px;
+        }
+        
+        .value, .delay {
+            width: 45px;
+            font-size: 7px;
+            padding: 2px;
+        }
+    }
 </style>
+
 <div class="container-fluid">
     <div class="row">
         <div class="col col-md-12">
@@ -102,293 +434,133 @@ svg {
         </div>
     </div>
 </div>
-<!--
-   # add all the calculated fields here    
-    total_time = models.PositiveIntegerField(default=0)
-    value_time = models.PositiveIntegerField(default=0)
-    delay_time = models.PositiveIntegerField(default=0)
-    efficiency = models.FloatField(default=0)
-    rolled_percentage_avg = models.FloatField(default=0)
--->
+
 <!-- Begin: Content -->
 <form method="post">
     {% csrf_token %}
     <div class="container-fluid">
         <div class="row">
             <div class="col col-md-12">
-                <div class="container-fluid-width">
-                    <div class="row">
-                        <div class="col col-md-8">
-                            <b>Operational Value Stream Display :: {{object}}</b>
-                            &nbsp;&nbsp;&nbsp;
-                            VA = {{object.value_time}} &nbsp;&nbsp;&nbsp;
-                            NVA = {{object.delay_time}} &nbsp;&nbsp;&nbsp;
-                            LT = {{object.total_time}} &nbsp;&nbsp;&nbsp;
-                            Eff = {{object.efficiency}} % &nbsp;&nbsp;&nbsp;
-                            RPA = {{object.rolled_percentage_avg}} %
+                <!-- OVS Header with metrics -->
+                <div class="ovs-header">
+                    <div class="row align-items-center">
+                        <div class="col-lg-8 col-md-7">
+                            <h5 class="ovs-title">Operational Value Stream: {{object}}</h5>
+                            <div class="ovs-metrics">
+                                <div class="ovs-metric metric-va" title="Value Added Time">
+                                    <i class="bi bi-clock-fill"></i> VA: {{object.value_time}}
+                                </div>
+                                <div class="ovs-metric metric-nva" title="Non-Value Added Time">
+                                    <i class="bi bi-hourglass-split"></i> NVA: {{object.delay_time}}
+                                </div>
+                                <div class="ovs-metric metric-lt" title="Lead Time">
+                                    <i class="bi bi-calendar-check"></i> LT: {{object.total_time}}
+                                </div>
+                                <div class="ovs-metric metric-eff" title="Efficiency">
+                                    <i class="bi bi-speedometer2"></i> Eff: {{object.efficiency}}%
+                                </div>
+                                <div class="ovs-metric metric-rpa" title="Rolled Percentage Average">
+                                    <i class="bi bi-percent"></i> RPA: {{object.rolled_percentage_avg}}%
+                                </div>
+                            </div>
                         </div>
-                        <div class="col col-md-4 text-end">
-                            <a href="{% url 'list_ops_value_streams' org_id %}"
-                             class="btn btn-sm btn-primary"><b>List OVS</b></a>
-                             &nbsp;&nbsp;&nbsp;
-                             <a href="{% url 'list_dev_value_streams' object.id %}"
-                             class="btn btn-sm btn-primary"><b>List DVS</b></a>
+                        <div class="col-lg-4 col-md-5">
+                            <div class="action-buttons">
+                                <a href="{% url 'list_ops_value_streams' org_id %}" class="btn-action">
+                                    <i class="bi bi-list-ul"></i> List OVS
+                                </a>
+                                <a href="{% url 'list_dev_value_streams' object.id %}" class="btn-action">
+                                    <i class="bi bi-diagram-3"></i> List DVS
+                                </a>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <!-- display the OVS -->
-                <!-- {{check_data}} -->
-               
-                <style>
-                    .ovs-container {
-                        display: flex;
-                        flex-wrap: wrap;
-                        justify-content: center;
-                        align-items: center;
-                        gap: 10px;
-                        padding: 20px;
-                    }
-                    .step-wrapper {
-                        position: relative;  /* Establish a positioning context */
-                        display: inline-block; /* Ensures that multiple steps can line up side by side if needed */
-                    
-                    }
-
-                    .accuracy {
-                        position: absolute;  /* Absolutely position this div within its relative parent */
-                        top: 0;  /* Align to the top of the step-wrapper */
-                        left: 0;  /* Align to the left of the step-wrapper */
-                        width: 100%;  /* Stretch across the entire width of the container */
-                        background-color: orange;
-                        font-size: 10px;
-                        color: black;
-                        text-align: center;
-                        padding: 1px;
-                        transform: translateY(-100%); /* Move it up by its own height */
-                        box-sizing: border-box;  /* Include padding in height calculation */
-                        border-radius: 2px;
-                        z-index: 1;
-                    }
-
-                    .step {
-                        display: flex;
-                        justify-content: center;
-                        align-items: center;
-                        width: 100px;
-                        min-height:50px;
-                        background-color: white;
-                        border: 2px solid black;
-                        border-radius: 10px;
-                        font-weight: bold;
-                        color: black;
-                        text-align: center;
-                        padding: 5px; /* Add padding for better appearance */
-                        word-wrap: break-word; /* Break words if they exceed the width */
-                        overflow-wrap: break-word; /* Ensure wrapping for long words */
-                        white-space: normal; /* Allow wrapping and multi-line text */
-                        line-height: 1.2; 
-                        z-index: 1; /* Ensure steps are above arrows */
-                        font-size: clamp(12px, 2vw, 16px);
-                    }
-            
-                    .arrow-container {
-                        display: flex;
-                        flex-direction: column;
-                        align-items: center;
-                        position: relative;
-                    }
-            
-                    .value {
-                        font-size: 10px;
-                        color: white;
-                        margin-bottom: 2px; /* Slight space between value and arrow */
-                        background-color: green;
-                        padding: 4px;
-                        z-index: 1;;
-                    }
-                    .delay {
-                        font-size: 10px;
-                        color: white;
-                        margin-top: 2px; /* Space between arrow and delay */
-                        background-color: red;
-                        padding: 4px;
-                        z-index: 1;
-                    }
-                    .value_empty {
-                        font-size: 10px;
-                        color: white;
-                        margin-bottom: 2px; /* Slight space between value and arrow */
-                        padding: 4px;
-                    }
-                    .delay_empty {
-                        font-size: 10px;
-                        color: white;
-                        margin-top: 2px; /* Space between arrow and delay */
-                        padding: 4px;
-                    }
-                    .arrow {
-                        position: relative;
-                        width: 80px; /* Length of the arrow */
-                        height: 2px;
-                        background-color: black;
-                    }
-                    .short_arrow {
-                        position: relative;
-                        width: 40px; /* Length of the arrow */
-                        height: 2px;
-                        background-color: black;
-                    }
-                    .arrow:after {
-                        content: '';
-                        position: absolute;
-                        right: 0;
-                        top: -4px;
-                        border-top: 5px solid transparent;
-                        border-bottom: 5px solid transparent;
-                        border-left: 10px solid black;
-                    }
-                    .short_arrow:after {
-                        content: '';
-                        position: absolute;
-                        right: 0;
-                        top: -6px;
-                        border-top: 7px solid transparent;
-                        border-bottom: 7px solid transparent;
-                        border-left: 8px solid black;
-                    }
-                </style>
-                 <style>
-                    /* Container for OVS steps */
-                    .ovs-wrapper {
-                        display: flex;
-                        justify-content: center;
-                        gap: 20px;
-                        margin-top: 20px;
-                        position: relative; /* For SVG positioning */
-                    }
-            
-                    /* Container for DVS */
-                    .dvs-wrapper {
-                        display: flex;
-                        justify-content: center;
-                        margin-top: 60px;
-                        position: relative; /* For SVG positioning */
-                    }
-            
-                    /* Common styles for steps and containers */
-                    .step,
-                    .container {
-                        width: 120px;
-                        height: 50px;
-                        background-color: #f9f9f9;
-                        border: 2px solid black;
-                        border-radius: 10px;
-                        display: flex;
-                        align-items: center;
-                        justify-content: center;
-                        text-align: center;
-                        font-weight: bold;
-                        position: relative;
-                    }
-            
-                    /* SVG Container for drawing lines */
-                    svg {
-                        position: absolute;
-                        top: 0;
-                        left: 0;
-                        width: 100%;
-                        height: 100%;
-                        pointer-events: none; /* Prevent interaction with SVG */
-                    }
-                    .dvs-container {
-                        padding: 10px;
-                        border: 2px solid black;
-                        border-radius: 10px;
-                        margin: 20px;
-                    }
-                </style>
-               <div class="ovs-wrapper">
                 
-                {% for step in check_data %}
-                <!-- Render each step -->
-                
-                {% if forloop.first %}
-                     <!-- First step displays the trigger -->
-                    <div class="step" >
-                        {{ object.trigger }} 
-                    </div>
-                    <div class="arrow-container">
-                        <div class="value_empty">&nbsp;</div>
-                        <div class="short_arrow"></div>
-                        <div class="delay_empty">&nbsp;</div>
-                    </div>
-                    <div class="step-wrapper">
-                        <!-- Accuracy Div -->
-                        <div class="accuracy" id="accuracy-step-{{ step.id }}">
-                            {{ step.percentage_accuracy }}%
-                        </div>
-                    
-                        <!-- Step Div -->
-                        <div class="step" id="ovs-step-{{ step.id }}">
-                            <a href="{% url 'list_ops_value_stream_steps' object.id %}" style="text-decoration: none;">{{ step.name }} </a>
-                        </div>
-                    </div>
-                {% else %}
-                    <div class="step-wrapper">
-                        <!-- Accuracy Div -->
-                        <div class="accuracy" id="accuracy-step-{{ step.id }}">
-                            {{ step.percentage_accuracy }}%
-                        </div>
-                    
-                        <!-- Step Div -->
-                        <div class="step" id="ovs-step-{{ step.id }}">
-                            <a href="{% url 'list_ops_value_stream_steps' object.id %}" style="text-decoration: none;">{{ step.name }} </a>
-                        </div>
-                    </div>
-                     <!-- Subsequent steps display their names -->
-                {% endif %}
-                
+                <!-- Scroll indicator for mobile -->
+                <div class="scroll-indicator">
+                    <i class="bi bi-arrow-left-right me-1"></i> Scroll horizontally to view the entire value stream
+                </div>
 
-                <!-- Render arrow container if next_id exists -->
-                {% if step.next_id %}
-                    <div class="arrow-container">
-                        <div class="value">Value: {{ step.value }}</div>
-                        <div class="arrow"></div>
-                        <div class="delay">Delay: {{ step.delay }}</div>
-                    </div>
-                {% endif %}
-
-                {% if forloop.last %}
-                    <div class="arrow-container">
-                        <div class="value">Value: {{ step.value }}</div>
-                        <div class="arrow"></div>
-                        <div class="delay">Delay: {{ step.delay }}</div>
-                    </div>
-                    <div class="step"  id="ovs-step-{{ step.id }}">
-                        {{ object.value }} <!-- Final step displays the object value -->
-                    </div>
-                {% endif %}
-            {% endfor %}
-                    
+                <!-- OVS Flow Diagram with Chevron Steps and horizontal value/delay boxes -->
+                <div class="ovs-wrapper">
+                    {% for step in check_data %}
+                        {% if forloop.first %}
+                            <!-- First step displays the trigger -->
+                            <div class="step-wrapper">
+                                <!-- This is the trigger step - no value/delay -->
+                                <div class="trigger">
+                                    <i class="fa fa-bolt"></i>
+                                    <br>
+                                    {{ object.trigger }} 
+                                </div>
+                            </div>
+                            
+                            <!-- First step after trigger - show value/delay above the accuracy -->
+                            <div class="step-wrapper">
+                             
+                                
+                              
+                            
+                                <!-- Step Div -->
+                                <div class="step" id="ovs-step-{{ step.id }}">
+                                    <a href="{% url 'list_ops_value_stream_steps' object.id %}">{{ step.name }}</a>
+                                </div>
+                            </div>
+                        {% else %}
+                            <!-- Subsequent steps - display previous step's value/delay above the accuracy -->
+                            <div class="step-wrapper">
+                             
+                                
+                            
+                            
+                                <!-- Step Div -->
+                                <div class="step" id="ovs-step-{{ step.id }}">
+                                    <a href="{% url 'list_ops_value_stream_steps' object.id %}">{{ step.name }}</a>
+                                </div>
+                            </div>
+                        {% endif %}
+                        
+                        <!-- Store current step as previous for next iteration -->
+                        {% with prev_step=step %}{% endwith %}
+                        
+                        {% if forloop.last %}
+                            <!-- Final step shows the object value with the last step's value/delay -->
+                            <div class="step-wrapper">
+                              
+                                
+                                <!-- Final step -->
+                                <div class="outcome" id="ovs-step-final">
+                                    <i class="fa fa-file"></i>
+                                    <br>
+                                    {{ object.value }}
+                                </div>
+                            </div>
+                        {% endif %}
+                    {% endfor %}
+                </div>
+                              
+                <!-- Render DVS and Steps -->
+                <div class="dvs-wrapper">
+                    {% for dvs in object.ops_dev_value_streams.all|filter_active %}
+                        <div class="dvs-container" id="dvs-container-{{ forloop.counter }}" data-dvs-id="{{forloop.counter}}"
+                            data-connect-steps="
+                                {% for ops_step in dvs.supporting_ops_steps.all|filter_active %}
+                                    ovs-step-{{ ops_step.id }}{% if not forloop.last %},{% endif %}
+                                {% endfor %}
+                            ">
+                            <b><a href="{% url 'edit_dev_value_stream' object.id dvs.id %}?back_to=view_ovs&org_id={{org_id}}&ops_id={{object.id}}">{{ dvs.name }}</a></b>
+                            <ul class="ps-3 mt-2 mb-0">
+                                {% for ops_step in dvs.supporting_ops_steps.all|filter_active %}
+                                    <li>{{ ops_step.name }}</li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    {% endfor %}
+                </div>
             </div>
-              <!-- Render DVS and Steps -->
-           
-<div class="dvs-wrapper">
-    {% for dvs in object.ops_dev_value_streams.all|filter_active %}
-        <div class="dvs-container" id="dvs-container-{{ forloop.counter }}" data-dvs-id="{{forloop.counter}}"
-             data-connect-steps="
-                {% for ops_step in dvs.supporting_ops_steps.all|filter_active %}
-                    ovs-step-{{ ops_step.id }}{% if not forloop.last %},{% endif %}
-                {% endfor %}
-            ">
-            <b><a href="{% url 'edit_dev_value_stream' object.id dvs.id %}?back_to=view_ovs&org_id={{org_id}}&ops_id={{object.id}}">{{ dvs.name }}</a></b> &nbsp;&nbsp;
-            <br>
-            {% for ops_step in dvs.supporting_ops_steps.all|filter_active %}
-                <li>{{ ops_step.name }}</li>
-            {% endfor %}
         </div>
-    {% endfor %}
-</div>
+    </div>
 
     <!-- SVG for Connections -->
     <svg id="connections" xmlns="http://www.w3.org/2000/svg"></svg>

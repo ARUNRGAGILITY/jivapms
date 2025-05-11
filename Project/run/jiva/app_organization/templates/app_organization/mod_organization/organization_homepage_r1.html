@@ -3,7 +3,6 @@
 
 {% block content %}
 {% include 'app_common/common_files/navbar.html' %}
-
 {% include 'app_jivapms/mod_web/common_files/css.html' %}
 
 <style>
@@ -96,47 +95,49 @@
     }
 </style>
 
-    <div class="content-wrapper">
-        <!-- Breadcrumb navigation -->
-        <nav aria-label="breadcrumb" class="breadcrumb">
-            <ol class="breadcrumb">
-                <li class="breadcrumb-item"><a href="/">Home</a></li>
-                <li class="breadcrumb-item"><a href="{% url 'list_organizations' %}">Organization</a></li>
-                <li class="breadcrumb-item active" aria-current="page">{{organization}}</li>
-            </ol>
-        </nav>
+<div class="content-wrapper">
+    <!-- Breadcrumb navigation - unchanged -->
+    <nav aria-label="breadcrumb" class="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="/">Home</a></li>
+            <li class="breadcrumb-item"><a href="{% url 'list_organizations' %}">Organization</a></li>
+            <li class="breadcrumb-item active" aria-current="page">{{organization}}</li>
+        </ol>
+    </nav>
 
-
-        <button class="toggle-btn" onclick="toggleSidebar()">
-            <i class="bi bi-list"></i>
-        </button>
-        <div class="sidebar" id="sidebar">
-            <!-- Scrollable menu section -->
-            <div class="sidebar-menu">
-                <a href="#" class="nav-link" >
-                    <i class="bi bi-grid"></i>
-                    <span>Organization Administration</span>
-                </a>
-                <a href="#" class="nav-link" >
-                    <i class="bi bi-collection"></i>
-                    <span>Dashboard</span>
-                </a>
-                <a href="{% url 'list_organizations' %}" class="nav-link">
-                    <i class="bi bi-calendar"></i>
-                    <span>Organizations</span>
-                </a>
-            </div>
-
-            <!-- Sticky settings section -->
-            <div class="settings">
-                <a href="#" class="nav-link" >
-                    <i class="bi bi-gear"></i>
-                    <span>Settings</span>
-                </a>
-            </div>
+    <!-- Sidebar toggle - unchanged -->
+    <button class="toggle-btn" onclick="toggleSidebar()">
+        <i class="bi bi-list"></i>
+    </button>
+    
+    <!-- Sidebar - completely unchanged -->
+    <div class="sidebar" id="sidebar">
+        <!-- Scrollable menu section -->
+        <div class="sidebar-menu">
+            <a href="#" class="nav-link" >
+                <i class="bi bi-grid"></i>
+                <span>Organization Administration</span>
+            </a>
+            <a href="#" class="nav-link" >
+                <i class="bi bi-collection"></i>
+                <span>Dashboard</span>
+            </a>
+            <a href="{% url 'list_organizations' %}" class="nav-link">
+                <i class="bi bi-calendar"></i>
+                <span>Organizations</span>
+            </a>
         </div>
 
-        <!-- Content area - improved -->
+        <!-- Sticky settings section -->
+        <div class="settings">
+            <a href="#" class="nav-link" >
+                <i class="bi bi-gear"></i>
+                <span>Settings</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- Content area - improved -->
     <div class="contentbar mb-5" id="contentbar">
         <div class="container mt-4">
             <h1 class="mb-4">Organization: {{ organization.name }}</h1>
@@ -267,70 +268,23 @@
             </div>
         </div>
     </div>
-
+    
+    <!-- Simple save confirmation toast -->
     <div id="saveToast" class="save-toast">
         <i class="bi bi-check-circle me-2"></i>
         <span>Changes saved!</span>
     </div>
-    <script>
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            sidebar.classList.toggle('open');  // Toggle the 'open' class
-        }
-    </script>
-    <script>
-        function makeEditable(element) {
-            element.contentEditable = true;
-            element.focus();
-        }
-        
-    
-        function save_element_text(element, id,  appName, modelName, fieldName) {
-            element.contentEditable = false;
-            $.ajax({
-                url: '/common/common_ajax/ajax_save_element_text/',
-                type: 'POST',
-                data : {
-                'csrfmiddlewaretoken': "{{ csrf_token }}",
-                'model_name': modelName,
-                'app_name': appName,
-                'field_name': fieldName,
-                'text': element.textContent, 
-                'id': id,
-                },
-                dataType: 'json',
-                success: function(data) {
-                console.log(data);
-                }
-            })
-        }
-    
-        function save_related_element_text(element, appName, parentModelName, parentId, parentModelKey, childModelName, fieldName) {
-            element.contentEditable = false;
-            $.ajax({
-                url: '/common/common_ajax/ajax_save_related_model/',
-                type: 'POST',
-                data : {
-                'csrfmiddlewaretoken': "{{ csrf_token }}",
-                'app_name': appName,
-                'parent_model': parentModelName,
-                'parent_id': parentId,
-                'parent_model_key': parentModelKey,
-                'child_model': childModelName,
-                'field_name': fieldName,
-                'text': element.textContent, 
-    
-                },
-                dataType: 'json',
-                success: function(data) {
-                console.log(data);
-                showSaveToast();
-                }
-            })
-        }
+</div>
 
-
-        // Edit mode state
+<!-- Scripts -->
+<script>
+    // Toggle sidebar - unchanged
+    function toggleSidebar() {
+        const sidebar = document.getElementById('sidebar');
+        sidebar.classList.toggle('open');
+    }
+    
+    // Edit mode state
     let editModeActive = false;
     
     // Toggle edit mode
@@ -373,6 +327,84 @@
             });
         }
     }
+    
+    // Make element editable
+    function makeEditable(element) {
+        // Only allow editing if edit mode is active
+        if (!editModeActive) {
+            alert('Please enable edit mode first by clicking the edit button.');
+            return;
+        }
+        
+        element.contentEditable = true;
+        element.focus();
+        
+        // Store original content in case we need to revert
+        element.dataset.originalContent = element.innerHTML;
+    }
+    
+    // Save element text
+    function save_element_text(element, id, appName, modelName, fieldName) {
+        element.contentEditable = false;
+        $.ajax({
+            url: '/common/common_ajax/ajax_save_element_text/',
+            type: 'POST',
+            data : {
+                'csrfmiddlewaretoken': "{{ csrf_token }}",
+                'model_name': modelName,
+                'app_name': appName,
+                'field_name': fieldName,
+                'text': element.textContent, 
+                'id': id,
+            },
+            dataType: 'json',
+            success: function(data) {
+                console.log(data);
+                showSaveToast();
+            },
+            error: function(error) {
+                console.error('Error saving:', error);
+                // Restore original content on error
+                if (element.dataset.originalContent) {
+                    element.innerHTML = element.dataset.originalContent;
+                }
+                alert('Error saving changes. Please try again.');
+            }
+        });
+    }
+    
+    // Save related element
+    function save_related_element_text(element, appName, parentModelName, parentId, parentModelKey, childModelName, fieldName) {
+        element.contentEditable = false;
+        $.ajax({
+            url: '/common/common_ajax/ajax_save_related_model/',
+            type: 'POST',
+            data : {
+                'csrfmiddlewaretoken': "{{ csrf_token }}",
+                'app_name': appName,
+                'parent_model': parentModelName,
+                'parent_id': parentId,
+                'parent_model_key': parentModelKey,
+                'child_model': childModelName,
+                'field_name': fieldName,
+                'text': element.textContent, 
+            },
+            dataType: 'json',
+            success: function(data) {
+                console.log(data);
+                showSaveToast();
+            },
+            error: function(error) {
+                console.error('Error saving:', error);
+                // Restore original content on error
+                if (element.dataset.originalContent) {
+                    element.innerHTML = element.dataset.originalContent;
+                }
+                alert('Error saving changes. Please try again.');
+            }
+        });
+    }
+    
     // Show save toast
     function showSaveToast() {
         const toast = document.getElementById('saveToast');
@@ -382,12 +414,11 @@
             toast.style.display = 'none';
         }, 3000);
     }
-    </script>
-    
-    <script src="https://code.jquery.com/jquery-1.12.4.js"></script>
-    <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.16/jstree.min.js" integrity="sha512-ekwRoEshEqHU64D4luhOv/WNmhml94P8X5LnZd9FNOiOfSKgkY12cDFz3ZC6Ws+7wjMPQ4bPf94d+zZ3cOjlig==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jstree/3.3.16/jstree.min.js" integrity="sha512-ekwRoEshEqHU64D4luhOv/WNmhml94P8X5LnZd9FNOiOfSKgkY12cDFz3ZC6Ws+7wjMPQ4bPf94d+zZ3cOjlig==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
-    
-<!-- End: Content -->
+</script>
+
+<!-- Include necessary scripts -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@9.1.7/dist/mermaid.min.js"></script>
+<script>mermaid.initialize({startOnLoad: true});</script>
 {% endblock content %}

@@ -1,171 +1,162 @@
-
 {% extends 'app_common/common_files/base_template.html' %}
 {% load static %}
 {% load crispy_forms_tags %}
 {% load custom_tags %}
 {% load app_web_my_filters %}
-{% load markdown_extras  %}
+{% load markdown_extras %}
+
 {% block content %}
-
 {% include 'app_common/common_files/navbar.html' %}
-<style>
-  .trash-icon {
-    position: fixed;
-    right: 10px;
-    bottom: 10px;
-    font-size: 24px;  /* Size of the icon */
-    cursor: pointer;
-    color: #707070;  /* Color of the icon */
-  }
-</style>
-<!-- Begin: Content -->
-<form action="" method="POST">
-{% csrf_token %}
-<div class="container-fluid">
-    <div class="row">
-        <div class="col col-md-12">
-            {% include 'app_organization/mod_ops_value_stream/breadcrumb_ops_value_streams.html' %}
-        </div>
-    </div>
-</div>
-<div class="container-fluid">
-    <div class="row">
-        <div class="col col-md-12">           
-            <!-- display -->
-            
-            <div class="row">
-                <div class="col col-md-12">
-                    <div class="container-fluid-width">
-                        <div class="row pb-2">
-                            <div class="col col-md-5">
-                                <b class="h2">
-                                    <a href="{% url 'list_organizations' %}">{{organization}}</a>
-                                </b>
-                                &nbsp;&nbsp;
-                                Ops Value Stream List
-                               
-                            </div>
-                            <div class="col col-md-4">
-                                <form method="get">
-                                    <input type="text" name="search" placeholder="Search" value="{{ search }}">
-                                    &nbsp;&nbsp;  
-                                    <button type="submit" class="btn btn-sm btn-primary">Search</button> 
-                                    &nbsp;&nbsp;  
-                                    <button type="submit" class="btn btn-sm btn-info">Clear</button>   
-                                </form>
-                            </div>
-                            <div class="col col-md-3 text-end">
-                                <span class="display_count">{{objects_count}} ops_value_stream(s)</span>
-                                &nbsp;&nbsp;
-                                <a href="{% url 'create_ops_value_stream' org_id  %}" 
-                                class="btn btn-sm btn-success"><b>+ Create Ops Value Stream</b></a>
-                            </div>
-                        </div>
-                    </div>
-                    <table class="new_excel table table-bordered sortable_table">
-                        <thead>
-                            <tr>
-                                <th width="2%"><i class="bi bi-grip-vertical"></i></th>
-                                <th width="2%">
-                                    <input type="checkbox" name="select_all" id="select_all" onclick='checkUncheck(this)'>
-                                </th>                                
-                                <th width="2%">#</th>
-                                <th>Ops Value Stream</th>
-                                <th width="20%">Description</th>
-                                <th width="10%">Configure</th>
-                                <th width="50%">                                    
-                                    Actions
-                                    &nbsp;&nbsp;
-                                    <select name="pagination" id="paginationselect">
-                                        <option value="none" {% if selected_pagination == 'none' %}selected{% endif %}>-Page-</option>
-                                        {% for option in pagination_options %}
-                                            <option value="{{ option }}" {% if show_all|lower == option|lower|stringformat:"s" %}selected{% endif %}>
-                                                {{ option|capfirst }}
-                                            </option>
-                                        {% endfor %}
-                                    </select>
-                                    
-                                    &nbsp;&nbsp;
-                                    <b>Bulk:</b>&nbsp;&nbsp; 
-                                    <select name="bulk_operations" id="bulk_operations"  onchange="this.form.submit()">
-                                        <option value="none" {% if 'none' in selected_bulk_operations %}selected{% endif %}>-- Ops --</option>
-                                        <option value="bulk_done" {% if 'bulk_done' in selected_bulk_operations %}selected{% endif %}>Done</option>
-                                        <option value="bulk_not_done" {% if 'bulk_not_done' in selected_bulk_operations %}selected{% endif %}>Not Done</option>
-                                        <option value="bulk_blocked" {% if 'bulk_blocked' in selected_bulk_operations %}selected{% endif %}>Blocked</option>
-                                        <option value="bulk_delete" {% if 'bulk_delete' in selected_bulk_operations %}selected{% endif %}>Delete</option>
-                                    </select>
-                                                         
-                                </th>
-                            </tr>
-                        </thead>
 
-                        <tbody  id="sortable" class="sortable-tbody">
-                            {% for tobject in page_obj %}
-                            <tr id="{{tobject.id}}_{{ forloop.counter }}" class="sortable-row display_tr">
-                                <td class="drag-handle">
-                                    <i class="bi bi-grip-vertical"></i>
-                                </td>
-                                <td width="2%">
-                                    <input type="checkbox" name="selected_item" id="selected_item_ids" value="{{tobject.id}}">
-                                </td>
-                                <td>{{forloop.counter}}
-                                    <!-- {{tobject.value_time}} {{tobject.delay_time}} -- {{tobject.total_time}}, {{tobject.rolled_percentage_avg}} {{tobject.efficiency}} -->
-                                </td>
-                                <td width="20%" ondblclick="makeEditable(this)"
-                                 onblur="save_element_text(this, '{{ tobject.id }}',  'app_organization', 'OpsValueStream', 'name')"
-                                ><strong>{{tobject.name}}</strong></td>
-                                <td width="" ondblclick="makeEditable(this)"
-                                onblur="save_element_text(this, '{{ tobject.id }}',  'app_organization', 'OpsValueStream', 'description')"
-                                >{% if tobject.description != None %}{{tobject.description}}{% endif %}</td>
-                                <td width="20%">
-                                    <a href="{% url 'view_ovs' org_id tobject.id %}">View</a>
-                                    &nbsp;&nbsp;                                    
-                                    <a href="{% url 'list_ops_value_stream_steps' tobject.id %}">Steps</a>
-                                    &nbsp;&nbsp;
-                                    <a href="{% url 'list_dev_value_streams' tobject.id %}">DVS</a>
-                                </td>
-                                <td width="50%">
-                                    <a href="{% url 'view_ops_value_stream' org_id  tobject.id  %}"
-                                    class="btn btn-sm btn-primary"><i class="bi bi-eye"></i></a>
-                                    &nbsp;&nbsp;
-                                    <a href="{% url 'edit_ops_value_stream' org_id  tobject.id %}"
-                                    class="btn btn-sm btn-warning"><i class="bi bi-pencil-square"></i></a>
-                                    &nbsp;&nbsp;
-                                    <a href="{% url 'delete_ops_value_stream' org_id  tobject.id %}"
-                                    class="btn btn-sm btn-danger"><i class="bi bi-x-square"></i></a>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                            <tr>
-                                <td colspan="7">
-                                    {% include 'app_common/common_files/pagination.html' %}
-                                </td>
-                            </tr>                        
-                    </table>
-                <!-- end display -->
-        </div>
+<div class="container-fluid py-4">
+  <!-- Breadcrumb -->
+  <div class="row mb-4">
+    <div class="col-12">
+      {% include 'app_organization/mod_ops_value_stream/breadcrumb_ops_value_streams.html' %}
     </div>
-  
+  </div>
+
+  <!-- Header -->
+  <div class="row align-items-center mb-4">
+    <div class="col-md-6">
+      <h2 class="mb-0">
+        <a href="{% url 'list_organizations' %}" class="text-decoration-none">{{organization}}</a>
+        <span class="text-muted fs-5 ms-2">Ops Value Stream List</span>
+      </h2>
+    </div>
+    <div class="col-md-6 d-flex justify-content-md-end mt-3 mt-md-0">
+      <span class="badge bg-secondary align-self-center me-3">{{objects_count}} value stream(s)</span>
+      <a href="{% url 'create_ops_value_stream' org_id %}" class="btn btn-success">
+        <i class="bi bi-plus-lg me-1"></i>Create Value Stream
+      </a>
+    </div>
+  </div>
+
+  <!-- Search and Filters -->
+  <div class="row mb-4">
+    <div class="col-md-6">
+      <form method="get" class="d-flex">
+        <div class="input-group">
+          <input type="text" name="search" class="form-control" placeholder="Search" value="{{ search }}">
+          <button type="submit" class="btn btn-primary">
+            <i class="bi bi-search"></i>
+          </button>
+          <button type="submit" class="btn btn-outline-secondary">Clear</button>
+        </div>
+      </form>
+    </div>
+    <div class="col-md-6 d-flex justify-content-md-end mt-3 mt-md-0">
+      <div class="d-flex align-items-center">
+        <select name="bulk_operations" id="bulk_operations" class="form-select form-select-sm w-auto me-2" onchange="this.form.submit()">
+            <option value="none" {% if 'none' in selected_bulk_operations %}selected{% endif %}>Bulk Actions</option>
+            <option value="bulk_done" {% if 'bulk_done' in selected_bulk_operations %}selected{% endif %}>Mark Done</option>
+            <option value="bulk_not_done" {% if 'bulk_not_done' in selected_bulk_operations %}selected{% endif %}>Mark Not Done</option>
+            <option value="bulk_blocked" {% if 'bulk_blocked' in selected_bulk_operations %}selected{% endif %}>Mark Blocked</option>
+            <option value="bulk_delete" {% if 'bulk_delete' in selected_bulk_operations %}selected{% endif %}>Delete</option>
+          </select>
+        <label class="me-2 text-nowrap">Show:</label>
+        <select name="pagination" id="paginationselect" class="form-select form-select-sm">
+          <option value="none" {% if selected_pagination == 'none' %}selected{% endif %}>-Page-</option>
+          {% for option in pagination_options %}
+            <option value="{{ option }}" {% if show_all|lower == option|lower|stringformat:"s" %}selected{% endif %}>
+              {{ option|capfirst }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <form action="" method="POST">
+    {% csrf_token %}
+    
+    
+    <!-- Table -->
+    <div class="card shadow-sm">
+      <div class="card-body p-0">
+        <div class="table-responsive">
+          <table class="table table-hover mb-0">
+            <thead class="table-light">
+              <tr>
+                <th width="40px" class="text-center"><i class="bi bi-grip-vertical text-muted"></i></th>
+                <th width="40px" class="text-center"><input type="checkbox" class="" name="select_all" id="select_all" onclick='checkUncheck(this)'></th>
+                <th width="40px" class="text-center">#</th>
+                <th>Ops Value Stream</th>
+                <th>Description</th>
+                <th width="20%" class="text-center">Configure</th>
+                <th width="15%" class="text-center">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="sortable" class="sortable-tbody">
+              {% for tobject in page_obj %}
+              <tr id="{{tobject.id}}_{{ forloop.counter }}" class="sortable-row">
+                <td class="drag-handle">
+                    &nbsp;<i class="bi bi-grip-vertical"></i>
+                </td>
+                <td width="2%">
+                    &nbsp;<input type="checkbox" name="selected_item" id="selected_item_ids" value="{{tobject.id}}">
+                </td>
+                <td class="text-center">{{forloop.counter}}</td>
+                <td ondblclick="makeEditable(this)" 
+                    onblur="save_element_text(this, '{{ tobject.id }}', 'app_organization', 'OpsValueStream', 'name')">
+                  <strong>{{tobject.name}}</strong>
+                </td>
+                <td ondblclick="makeEditable(this)"
+                    onblur="save_element_text(this, '{{ tobject.id }}', 'app_organization', 'OpsValueStream', 'description')">
+                  {% if tobject.description != None %}{{tobject.description}}{% endif %}
+                </td>
+                <td>
+                  <div class="d-flex justify-content-center gap-2">
+                    <a href="{% url 'view_ovs' org_id tobject.id %}" class="btn btn-sm btn-outline-secondary">View</a>
+                    <a href="{% url 'list_ops_value_stream_steps' tobject.id %}" class="btn btn-sm btn-outline-secondary">Steps</a>
+                    <a href="{% url 'list_dev_value_streams' tobject.id %}" class="btn btn-sm btn-outline-secondary">DVS</a>
+                  </div>
+                </td>
+                <td>
+                  <div class="d-flex justify-content-center gap-2">
+                    <a href="{% url 'view_ops_value_stream' org_id tobject.id %}" class="btn btn-sm btn-primary" title="View">
+                      <i class="bi bi-eye"></i>
+                    </a>
+                    <a href="{% url 'edit_ops_value_stream' org_id tobject.id %}" class="btn btn-sm btn-warning" title="Edit">
+                      <i class="bi bi-pencil"></i>
+                    </a>
+                    <a href="{% url 'delete_ops_value_stream' org_id tobject.id %}" class="btn btn-sm btn-danger" title="Delete">
+                      <i class="bi bi-trash"></i>
+                    </a>
+                  </div>
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div class="card-footer">
+        {% include 'app_common/common_files/pagination.html' %}
+      </div>
+    </div>
+  </form>
+
+  <!-- Trash Icon -->
+  {% if deleted_count > 0 %}
+  <a href="{% url 'list_deleted_ops_value_streams' org_id %}" class="position-fixed bottom-0 end-0 m-4 btn btn-outline-secondary">
+    <i class="bi bi-trash"></i>
+    <span class="badge bg-danger">{{ deleted_count }}</span>
+  </a>
+  {% endif %}
 </div>
- <div class="trash-icon">
-    {% if deleted_count > 0 %}
-    <a href="{% url 'list_deleted_ops_value_streams' org_id %}"><i class="bi bi-trash-fill"></i></a>    
-    {% endif %}
-</div>
-</form>
+
 <script>
 // Select all / checkbox
 function checkUncheck(checkBox) {
-    get = document.getElementsByName('selected_item');
-    for(var i=0; i<get.length; i++) {
-        get[i].checked = checkBox.checked;
-    }
+  get = document.getElementsByName('selected_item');
+  for(var i=0; i<get.length; i++) {
+    get[i].checked = checkBox.checked;
+  }
 }
-</script>
 
-<script>
-    // pagination select
+// Pagination select
 document.addEventListener("DOMContentLoaded", function () {
   const redirectSelect = document.getElementById("paginationselect");
   redirectSelect.addEventListener("change", function () {
@@ -187,68 +178,60 @@ document.addEventListener("DOMContentLoaded", function () {
     } else if (selectedValue === "all") {
       window.location.href = "{% url 'list_ops_value_streams' org_id %}?page=1&all=all";
     } 
-    // Add more conditions for other options as needed
   });
 });
-</script>
 
-<script>
-    $(".sortable_table").find("tbody").sortable({
-      items: "> tr",
-      handle: ".drag-handle",
-      appendTo: "parent",
-      cancel: "[contenteditable]",
-      update: function(event, ui) {
-              var serialOrder = $('#sortable').sortable('serialize');
-              var arrayOrder = $('#sortable').sortable('toArray');
-              //alert(arrayOrder);
-              $.ajax({
-                url: '/common/common_ajax/ajax_update_model_list_sorted/',
-                type: 'POST',
-                data : {
-                  'csrfmiddlewaretoken': "{{ csrf_token }}",
-                  'model_name': 'OpsValueStream',
-                  'app_name': 'app_organization',
-                  'sorted_list_data': JSON.stringify(arrayOrder),
-                  
-                },
-                dataType: 'json',
-                success: function(data) {
-                  console.log(data);
-                }
-              })
-            }
-    });
-</script>
+// Sortable
+$(".table").find("tbody").sortable({
+  items: "> tr",
+  handle: ".drag-handle",
+  appendTo: "parent",
+  cancel: "[contenteditable]",
+  update: function(event, ui) {
+    var serialOrder = $('#sortable').sortable('serialize');
+    var arrayOrder = $('#sortable').sortable('toArray');
+    $.ajax({
+      url: '/common/common_ajax/ajax_update_model_list_sorted/',
+      type: 'POST',
+      data: {
+        'csrfmiddlewaretoken': "{{ csrf_token }}",
+        'model_name': 'OpsValueStream',
+        'app_name': 'app_organization',
+        'sorted_list_data': JSON.stringify(arrayOrder),
+      },
+      dataType: 'json',
+      success: function(data) {
+        console.log(data);
+      }
+    })
+  }
+});
 
+// Make editable
+function makeEditable(element) {
+  element.contentEditable = true;
+  element.focus();
+}
 
-<script>
-    function makeEditable(element) {
-        element.contentEditable = true;
-        element.focus();
+// Save edited text
+function save_element_text(element, id, appName, modelName, fieldName) {
+  element.contentEditable = false;
+  $.ajax({
+    url: '/common/common_ajax/ajax_save_element_text/',
+    type: 'POST',
+    data: {
+      'csrfmiddlewaretoken': "{{ csrf_token }}",
+      'model_name': modelName,
+      'app_name': appName,
+      'field_name': fieldName,
+      'text': element.textContent, 
+      'id': id,
+    },
+    dataType: 'json',
+    success: function(data) {
+      console.log(data);
     }
-
-
-    function save_element_text(element, id,  appName, modelName, fieldName) {
-        element.contentEditable = false;
-        $.ajax({
-            url: '/common/common_ajax/ajax_save_element_text/',
-            type: 'POST',
-            data : {
-            'csrfmiddlewaretoken': "{{ csrf_token }}",
-            'model_name': modelName,
-            'app_name': appName,
-            'field_name': fieldName,
-            'text': element.textContent, 
-            'id': id,
-            },
-            dataType: 'json',
-            success: function(data) {
-            console.log(data);
-            }
-        })
-    }
+  })
+}
 </script>
-
-<!-- End: Content -->
 {% endblock content %}
