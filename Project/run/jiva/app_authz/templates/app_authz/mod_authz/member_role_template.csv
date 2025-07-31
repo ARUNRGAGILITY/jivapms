@@ -1,0 +1,5 @@
+username/email,role_name/role_id,organization_id,active
+john.doe@example.com,Editor,1,true
+jane.smith@example.com,Reviewer,1,true
+robert.jones@example.com,Organization Admin,2,true
+alice.white@example.com,Site Admin,,true

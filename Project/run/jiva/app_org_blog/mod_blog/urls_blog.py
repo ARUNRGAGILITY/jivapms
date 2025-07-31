@@ -3,7 +3,7 @@ from django.urls import path, include
 
 from app_org_blog.mod_blog import views_blog
 
-
+app_name = "app_org_blog"
 urlpatterns = [
     # Administration URLs
     path('list_blogs/<int:organization_id>/', views_blog.list_blogs, name='list_blogs'),

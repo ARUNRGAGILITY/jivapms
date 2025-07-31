@@ -119,7 +119,8 @@ def list_blogs(request, organization_id):
                                 organization_id=organization_id,
                                **viewable_dict).order_by('position')
         deleted_count = deleted.count()
-    
+    blogs = Blog.objects.filter(active=True, organization_id=organization_id)
+    print(f">>> === BLOGS: {blogs} === <<<")
     if show_all == 'all':
         # No pagination, show all records
         page_obj = tobjects

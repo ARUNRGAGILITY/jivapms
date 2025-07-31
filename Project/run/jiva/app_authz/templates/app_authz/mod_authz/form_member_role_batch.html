@@ -1,0 +1,72 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2>Batch Assign Member Roles</h2>
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{% url 'app_authz:member_role_list' org_id=organization.id %}">Member Roles</a></li>
+                    <li class="breadcrumb-item active">Batch Assign</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Upload Member Roles CSV</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" enctype="multipart/form-data">
+                {% csrf_token %}
+                
+                <div class="mb-3">
+                    <label for="{{ form.csv_file.id_for_label }}" class="form-label">CSV File</label>
+                    {{ form.csv_file }}
+                    {% if form.csv_file.errors %}
+                    <div class="text-danger">
+                        {{ form.csv_file.errors }}
+                    </div>
+                    {% endif %}
+                    <div class="form-text">{{ form.csv_file.help_text }}</div>
+                </div>
+                
+                <div class="mb-3">
+                    <label for="{{ form.organization.id_for_label }}" class="form-label">Default Organization</label>
+                    {{ form.organization }}
+                    {% if form.organization.errors %}
+                    <div class="text-danger">
+                        {{ form.organization.errors }}
+                    </div>
+                    {% endif %}
+                    <div class="form-text">{{ form.organization.help_text }}</div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <h6>CSV Format</h6>
+                    <p>The CSV file should have the following columns:</p>
+                    <ul>
+                        <li><strong>username/email</strong> (required): Username or email of existing user</li>
+                        <li><strong>role_name/role_id</strong> (required): Name or ID of the role to assign</li>
+                        <li><strong>organization_id</strong> (optional): Organization ID (will use default if not specified)</li>
+                        <li><strong>active</strong> (optional): 'true' or 'false' (defaults to 'true')</li>
+                    </ul>
+                    <p>Example:</p>
+                    <pre>username/email,role_name/role_id,organization_id,active
+john.doe@example.com,Reviewer,123,true
+janedoe,Editor,456,true
+user@example.com,Site Admin,,true</pre>
+                </div>
+                
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary">Upload and Process</button>
+                    <a href="{% url 'app_authz:member_role_list' org_id=organization.id %}" class="btn btn-outline-secondary ms-2">Cancel</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

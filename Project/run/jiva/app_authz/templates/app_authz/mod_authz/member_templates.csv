@@ -1,0 +1,4 @@
+username/email,organization_id,description,active
+john.doe@example.com,1,"Marketing team member",true
+jane.smith@example.com,1,"IT department",true
+robert.jones@example.com,2,"Finance team",true
