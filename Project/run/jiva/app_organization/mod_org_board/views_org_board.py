@@ -604,7 +604,7 @@ def view_project_tree_board(request, project_id):
         
         # Fetch the project backlog items state
         state_items = {state.name: [] for state in project_board.board_states.filter(active=True)}
-        #logger.debug(f">>> === state_items: {state_items} === <<<")
+        logger.debug(f">>> === state_items: {state_items} === <<<")
         # Get the card / backlog item from the ProjectBoardStateTransition
         for state in project_board_states:
             state_items[state.name] = ProjectBoardCard.objects.filter(
@@ -737,99 +737,128 @@ def update_project_board_state_transition(board_id, card, from_state_id, to_stat
                 
 
 
-# def column_to_column_updatex1(positions, board_id, card_id, from_column, from_state_id, dest_column, to_state_id):    
-#     pbc = ProjectBoardCard.objects.filter(id=card_id).first()
-#     for pos in positions:
-#         card_id = pos.get('card_id')
-#         position = pos.get('position')      
-#         ProjectBoardCard.objects.filter(id=card_id).update(position=position, state_id=to_state_id, board_id=board_id)  
-#     if pbc != None:   
-#         update_project_board_state_transition(board_id, pbc, from_state_id, to_state_id)
-#     return JsonResponse({"success": True})
-
 def column_to_column_update(positions, board_id, card_id, from_column, from_state_id, dest_column, to_state_id):    
-    pbc = ProjectBoardCard.objects.filter(id=card_id).first()
-    print(f">>> === landing CHECK CARD: CARD_ID {card_id} {pbc} {positions} === <<<")
-    # Sort positions before updating (ensure correct order)
-    #sorted_positions = sorted(positions, key=lambda x: x.get('position'))
+    try:
+        # Get the specific ProjectBoardCard being moved
+        pbc = ProjectBoardCard.objects.filter(id=card_id, active=True).first()
+        logger.debug(f">>> === Moving card: {pbc} from {from_state_id} to {to_state_id} === <<<")
+        
+        if not pbc:
+            logger.error(f">>> === ProjectBoardCard with id {card_id} not found === <<<")
+            return JsonResponse({"success": False, "error": "Card not found"})
 
-    for pos in positions:
-        pos_card_id  = pos.get('card_id')
-        position = pos.get('position')    
-        check_card = ProjectBoardCard.objects.filter(id=pos_card_id )
-        print(f">>> === POSITIONS CHECK CARD: CARD_ID {card_id} {check_card} === <<<")  
-        ProjectBoardCard.objects.filter(id=pos_card_id ).update(position=position, state_id=to_state_id, board_id=board_id)  
+        # Update positions for all cards in the destination column
+        for pos in positions:
+            pos_card_id = pos.get('card_id')
+            position = pos.get('position')    
+            
+            # Update the card's position and state
+            ProjectBoardCard.objects.filter(
+                id=pos_card_id,
+                active=True
+            ).update(position=position, state_id=to_state_id, board_id=board_id)
 
-    if pbc is not None:   
+        # Create audit trail entry (this SHOULD create a new transition record)
         update_project_board_state_transition(board_id, pbc, from_state_id, to_state_id)
+        return JsonResponse({"success": True})
+        
+    except Exception as e:
+        logger.error(f">>> === Error in column_to_column_update: {str(e)} === <<<")
+        return JsonResponse({"success": False, "error": str(e)})
 
-    return JsonResponse({"success": True})
+
 
 
 def column_to_backlog_update(positions, board_id, this_card_id, from_column, from_state_id, dest_column, to_state_id):  
     try:
-        # Update the card to have no state (move to backlog)
-        card = ProjectBoardCard.objects.filter(id=this_card_id).first()
+        # Get the ProjectBoardCard being moved back to backlog
+        card = ProjectBoardCard.objects.filter(id=this_card_id, active=True).first()
+        
+        if not card:
+            logger.error(f">>> === ProjectBoardCard with id {this_card_id} not found === <<<")
+            return JsonResponse({"success": False, "error": "Card not found"})
+            
+        # Move card back to backlog (set state to None)
         card.state = None
-        card.position = 0  # Reset position in column
+        card.position = 0
         card.save()
-        logger.debug(f">>> === {card}{card.id} moved to Backlog === <<<")
-        logger.debug(f">>> === {card}{card.backlog.id}{positions} moved to Backlog === <<<")
-        # Update positions in the Backlog
+        
+        logger.debug(f">>> === Card {card.id} moved back to backlog === <<<")
+        
+        # Update backlog item positions
         for pos in positions:
             backlog_card_id = pos.get('card_id')
             position = pos.get('position')
-            if backlog_card_id == card.id:
-                logger.debug(f">>> === {card}{backlog_card_id}=={card.backlog.id} moved to Backlog === <<<")
-                # Update position of the moved backlog item
-                Backlog.objects.filter(id=card.backlog.id).update(position=position)
+            
+            if backlog_card_id == card.backlog.id:
+                # Update position of the backlog item that was moved
+                Backlog.objects.filter(id=card.backlog.id, active=True).update(position=position)
             else:
                 # Update positions of other backlog items
-                Backlog.objects.filter(id=backlog_card_id).update(position=position)
+                Backlog.objects.filter(id=backlog_card_id, active=True).update(position=position)
 
+        # Create audit trail entry (this SHOULD create a new transition record)
         update_project_board_state_transition(board_id, card, from_state_id, to_state_id)
         return JsonResponse({"success": True})
 
     except Exception as e:
-        print(f"Error: {str(e)}")
+        logger.error(f">>> === Error in column_to_backlog_update: {str(e)} === <<<")
         return JsonResponse({"success": False, "error": str(e)})
-
 
 
 def backlog_to_column_update(positions, board_id, this_card_id, from_column, from_state_id, dest_column, to_state_id):
     logger.debug(f">>> === BACKLOG_TO_COLUMN: {positions} {board_id} {this_card_id} {from_column} {from_state_id} {dest_column} {to_state_id}=== <<<") 
     try:
-        # Fetch or create the ProjectBoardCard for the backlog item
-
-        card, created = ProjectBoardCard.objects.get_or_create(
+        # Look for existing ProjectBoardCard for this backlog item on this board
+        # regardless of current state - we want only ONE card per backlog item per board
+        card = ProjectBoardCard.objects.filter(
             board_id=board_id,
             backlog_id=this_card_id,
-            defaults={ "state_id": to_state_id, "position": 0}
-        )
-
-        if not created:
-            card.state_id = to_state_id  # Move to column
+            active=True
+        ).first()
+        
+        if card:
+            # Update existing card to new state
+            card.state_id = to_state_id
+            card.position = 0
             card.save()
+            logger.debug(f">>> === Updated existing card to new state: {card} === <<<")
+        else:
+            # Create new card only if none exists for this backlog item on this board
+            card = ProjectBoardCard.objects.create(
+                board_id=board_id,
+                backlog_id=this_card_id,
+                state_id=to_state_id,
+                position=0
+            )
+            logger.debug(f">>> === Created new card: {card} === <<<")
+
         # Update positions for all cards in the destination column
         for pos in positions:
             card_id = pos.get('card_id')
             position = pos.get('position')            
             if card_id == this_card_id:
-                # Update the moved card
-                ProjectBoardCard.objects.filter(backlog_id=this_card_id).update(position=position, state_id=to_state_id, board_id=board_id)
-                updated_pbc = ProjectBoardCard.objects.filter(backlog_id=card_id).first()
-                logger.debug(f">>> === BACKLOG_TO_COLUMN_UPDATED: {updated_pbc} {updated_pbc.board} {updated_pbc.state} {updated_pbc.swimlane}=== <<<")
+                # Update the moved card (by backlog_id since it came from backlog)
+                ProjectBoardCard.objects.filter(
+                    backlog_id=this_card_id, 
+                    board_id=board_id,
+                    active=True
+                ).update(position=position, state_id=to_state_id)
             else:
-                # Update other cards in the column
-                ProjectBoardCard.objects.filter(id=card_id).update(position=position, board_id=board_id)      
-                updated_pbc = ProjectBoardCard.objects.filter(id=card_id).first()
-                logger.debug(f">>> === BACKLOG_TO_COLUMN_UPDATED: {updated_pbc} {updated_pbc.board}=== <<<") 
+                # Update other cards in the column (by card ID)
+                ProjectBoardCard.objects.filter(
+                    id=card_id,
+                    active=True
+                ).update(position=position)
+                
+        # Create audit trail entry (this SHOULD create multiple entries)
         update_project_board_state_transition(board_id, card, from_state_id, to_state_id)
         return JsonResponse({"success": True})
 
     except Exception as e:
-        print(f"***************************** Error *****************************: {str(e)}")
+        logger.error(f">>> === Error in backlog_to_column_update: {str(e)} === <<<")
         return JsonResponse({"success": False, "error": str(e)})
+
 
 def within_column_update(positions, board_id, card_id, dest_column, to_state_id):   
     pbc = ProjectBoardCard.objects.get(id=card_id)    
@@ -866,6 +895,54 @@ def update_movement(project_id, board_id, card_id, from_state_id, to_state_id, f
     to_column = ProjectBoardState.objects.filter(id=to_state_id).first()
 
 
+
+
+# Utility function to find and fix duplicate ProjectBoardCard entries
+def find_and_fix_duplicate_board_cards(board_id=None):
+    """
+    Find and fix duplicate ProjectBoardCard entries.
+    Keep the most recent card for each backlog item on each board.
+    NOTE: This does NOT touch ProjectBoardStateTransition - those are audit trails and should remain.
+    """
+    try:
+        from django.db.models import Count
+        
+        query = ProjectBoardCard.objects.filter(active=True)
+        if board_id:
+            query = query.filter(board_id=board_id)
+            
+        # Find backlog items that have multiple active cards on the same board
+        duplicates = query.values('board_id', 'backlog_id').annotate(
+            count=Count('id')
+        ).filter(count__gt=1)
+        
+        fixed_count = 0
+        
+        for duplicate in duplicates:
+            board_id = duplicate['board_id']
+            backlog_id = duplicate['backlog_id']
+            
+            # Get all cards for this backlog item on this board, ordered by creation time
+            cards = ProjectBoardCard.objects.filter(
+                board_id=board_id,
+                backlog_id=backlog_id,
+                active=True
+            ).order_by('-created_at')  # Most recent first
+            
+            # Keep the first (most recent) card, deactivate the rest
+            cards_to_deactivate = cards[1:]  # Skip the first one
+            for card in cards_to_deactivate:
+                card.active = False
+                card.save()
+                logger.debug(f">>> === Deactivated duplicate ProjectBoardCard: {card.id} === <<<")
+                fixed_count += 1
+                
+        logger.info(f">>> === Fixed {fixed_count} duplicate ProjectBoardCard entries === <<<")
+        return fixed_count
+        
+    except Exception as e:
+        logger.error(f">>> === Error fixing duplicates: {str(e)} === <<<")
+        return 0
 
 
 @login_required
@@ -1253,28 +1330,37 @@ def _COMMON_for_kanban(request, project_id):
         ).order_by('position', '-created_at')  
     # Step8: Collect the state/column items
     # Fetch the project backlog items state
-    state_items = {
-        state.id: ProjectBoardCard.objects.filter(
+    if project_board:
+        find_and_fix_duplicate_board_cards(project_board.id)
+    
+    # Database-agnostic approach to get unique cards per state
+    state_items = {}
+    state_items_list = []
+    
+    for state in project_board.board_states.filter(active=True):
+        # Get all cards for this state
+        all_cards = ProjectBoardCard.objects.filter(
             board=project_board,
             state=state,
             active=True,
             backlog__type__in=backlog_types,
-            backlog__active=True  # Exclude cards linked to soft-deleted Backlog items
-        ).select_related('backlog').order_by('position', '-created_at')
-        for state in project_board.board_states.filter(active=True)
-    }
-    #logger.debug(f">>> === state_items: {state_items} === <<<")
-    #logger.debug(f">>> === PROJECT BOARD COLUMNS: {project_board_states} === <<<")
-    state_items_list = [
-        (state, ProjectBoardCard.objects.filter(
-            board=project_board,
-            state=state,
-            active=True,
-            backlog__type__in=backlog_types,
-            backlog__active=True  # Exclude cards linked to soft-deleted Backlog items
-        ).select_related('backlog').order_by('position', '-created_at'))
-        for state in project_board.board_states.filter(active=True)
-    ]
+            backlog__active=True
+        ).select_related('backlog').order_by('-created_at')
+        
+        # Deduplicate in Python by backlog_id (keep most recent card for each backlog item)
+        seen_backlog_ids = set()
+        unique_cards = []
+        for card in all_cards:
+            if card.backlog_id not in seen_backlog_ids:
+                unique_cards.append(card)
+                seen_backlog_ids.add(card.backlog_id)
+        
+        # Sort by position for proper display order
+        unique_cards.sort(key=lambda x: (x.position or 0, -x.created_at.timestamp()))
+        
+        state_items[state.id] = unique_cards
+        state_items_list.append((state, unique_cards))
+    
     # IT HAS TO BE ITERATED -- see REFERENCE_01
     # Step9: Check the swimlane
     board_swimlanes = ProjectBoardSwimLane.objects.filter(board=project_board, active=True)
@@ -1374,7 +1460,7 @@ def view_project_tree_board_smart_kanban(request, project_id):
     context = _COMMON_for_kanban(request, project_id)
     context["page"] = "smart"
     project_type = context.get('project_type')
-    if project_type == 'Kanban':
+    if project_type in ['Kanban', 'Scrum', 'Agile']:
         template_file = f"{app_name}/{module_path}/project/view_project_tree_board_smart_kanban.html"
     else:
         template_file = f"{app_name}/{module_path}/project/view_project_tree_board.html"

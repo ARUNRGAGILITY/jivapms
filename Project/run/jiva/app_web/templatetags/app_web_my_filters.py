@@ -258,3 +258,28 @@ def get_dict_item(dictionary, key):
     if not dictionary:
         return 0
     return dictionary.get(key, 0)
+
+# 01-08-2025
+
+@register.filter
+def filter_by_story_id(story_maps, story_id):
+    """Filter story maps by story_id"""
+    return story_maps.filter(story_id=story_id)
+
+@register.filter  
+def is_mapped(backlog_item, story_maps):
+    """Check if a backlog item is mapped to any story map"""
+    return story_maps.filter(story_id=backlog_item.id, active=True).exists()
+
+@register.filter
+def get_mapping_info(backlog_item, story_maps):
+    """Get mapping information for a backlog item"""
+    mapping = story_maps.filter(story_id=backlog_item.id, active=True).first()
+    if mapping:
+        return {
+            'activity': mapping.activity.name if mapping.activity else 'No Activity',
+            'step': mapping.step.name if mapping.step else 'No Step',
+            'release': mapping.release.name if mapping.release else 'No Release',
+            'iteration': mapping.iteration.name if mapping.iteration else 'No Iteration'
+        }
+    return None

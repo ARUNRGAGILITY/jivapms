@@ -208,48 +208,6 @@
     }
 </style>
 
-<style>
-    /* Drag and Drop Visual Feedback */
-.dragging {
-    opacity: 0.5;
-    transform: rotate(5deg);
-}
-
-.drag-over {
-    background-color: #e3f2fd !important;
-    border: 2px dashed #2196f3 !important;
-}
-
-.release-drop-zone {
-    min-height: 60px;
-    padding: 5px;
-    transition: background-color 0.2s, border 0.2s;
-}
-
-.backlog-source-zone {
-    min-height: 100px;
-    transition: background-color 0.2s, border 0.2s;
-}
-
-/* Ensure draggable elements have proper cursor */
-.draggable-backlog {
-    cursor: grab;
-}
-
-.draggable-backlog:active {
-    cursor: grabbing;
-}
-
-/* Make sure mapped items are also draggable */
-.step-item.draggable-backlog {
-    cursor: grab;
-}
-
-.step-item.draggable-backlog:active {
-    cursor: grabbing;
-}
-</style>
-
 <div class="page-container">
     <!-- Custom Top Menu -->
     <div class="top-menu-container">
@@ -471,394 +429,273 @@
 </div>
 
 <script>
- // Add keyboard shortcuts
-document.addEventListener('keydown', function(event) {
-    if (event.ctrlKey && event.key === 'a') {
-        event.preventDefault();
-        document.getElementById('activity').focus();
-    } else if (event.ctrlKey && event.key === 's') {
-        event.preventDefault();
-        document.getElementById('step_input').focus();
-    } else if (event.ctrlKey && event.key === 'b') {
-        event.preventDefault();
-        document.getElementById('detail').focus();
-    }
-});
+    // Add keyboard shortcuts
+    document.addEventListener('keydown', function(event) {
+        if (event.ctrlKey && event.key === 'a') {
+            event.preventDefault();
+            document.getElementById('activity').focus();
+        } else if (event.ctrlKey && event.key === 's') {
+            event.preventDefault();
+            document.getElementById('step_input').focus();
+        } else if (event.ctrlKey && event.key === 'b') {
+            event.preventDefault();
+            document.getElementById('detail').focus();
+        }
+    });
 
-// Function to handle adding new backlog items via AJAX
-function addBacklogItem(event) {
-    event.preventDefault();
-    
-    const form = event.target;
-    const detailInput = form.querySelector('input[name="detail"]');
-    
-    if (!detailInput.value.trim()) {
-        alert('Please enter a backlog item name');
+    // Function to handle adding new backlog items via AJAX
+    function addBacklogItem(event) {
+        event.preventDefault();
+        
+        const form = event.target;
+        const detailInput = form.querySelector('input[name="detail"]');
+        
+        if (!detailInput.value.trim()) {
+            alert('Please enter a backlog item name');
+            return false;
+        }
+
+        // Use jQuery AJAX instead of fetch for better compatibility
+        $.ajax({
+            url: window.location.href,
+            type: 'POST',
+            data: {
+                'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val(),
+                'detail': detailInput.value,
+                'submit_detail': 'submit_detail',
+                'project_id': '{{ pro_id }}',
+                'persona_id': '{{ persona.id }}'
+            },
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+            dataType: 'json',
+            success: function(data) {
+                if (data.status === 'success') {
+                    // Create new backlog item element
+                    const newItem = $(`
+                        <div class="backlog-item post-it draggable-backlog" draggable="true" id="backlog-${data.backlog_id}"
+                             data-backlog-id="${data.backlog_id}"
+                             ondblclick="makeEditable(this);" 
+                             onblur="save_element_text(this, '${data.backlog_id}', 'app_organization', 'Backlog', 'name')">
+                            ${data.backlog_name}
+                        </div>
+                    `);
+                    
+                    // Add to container
+                    $('#backlog-items-container').append(newItem);
+                    
+                    // Clear the form
+                    detailInput.value = '';
+                    
+                    console.log('Backlog item added successfully');
+                } else {
+                    alert('Error: ' + (data.message || 'Unknown error'));
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('AJAX Error:', status, error);
+                console.error('Response:', xhr.responseText);
+                alert('Error adding backlog item. Check console for details.');
+            }
+        });
+        
         return false;
     }
 
-    // Use jQuery AJAX instead of fetch for better compatibility
-    $.ajax({
-        url: window.location.href,
-        type: 'POST',
-        data: {
-            'csrfmiddlewaretoken': $('[name=csrfmiddlewaretoken]').val(),
-            'detail': detailInput.value,
-            'submit_detail': 'submit_detail',
-            'project_id': '{{ pro_id }}',
-            'persona_id': '{{ persona.id }}'
-        },
-        headers: {
-            'X-Requested-With': 'XMLHttpRequest',
-        },
-        dataType: 'json',
-        success: function(data) {
-            if (data.status === 'success') {
-                // Create new backlog item element
-                const newItem = $(`
-                    <div class="backlog-item post-it draggable-backlog" draggable="true" id="backlog-${data.backlog_id}"
-                         data-backlog-id="${data.backlog_id}"
-                         ondblclick="makeEditable(this);" 
-                         onblur="save_element_text(this, '${data.backlog_id}', 'app_organization', 'Backlog', 'name')">
-                        ${data.backlog_name}
-                    </div>
-                `);
-                
-                // Add to container
-                $('#backlog-items-container').append(newItem);
-                
-                // Clear the form
-                detailInput.value = '';
-                
-                console.log('Backlog item added successfully');
-            } else {
-                alert('Error: ' + (data.message || 'Unknown error'));
+        
+    // Enhanced drag and drop functionality
+    $(document).ready(function() {
+        // Make sure drag events work for dynamically added elements
+        $(document).on('dragstart', '.draggable-backlog', function(e) {
+            e.originalEvent.dataTransfer.setData("text/plain", this.id);
+            console.log('Drag started for:', this.id);
+        });
+    });
+
+    // Event Delegation for dragstart
+    document.addEventListener('dragstart', function(event) {
+        if (event.target.classList.contains('draggable-backlog')) {
+            event.dataTransfer.setData("text/plain", event.target.id);
+        }
+    });
+
+    function makeEditable(element) {
+        element.contentEditable = true;
+        element.focus();
+    }
+
+    function save_element_text(element, id, appName, modelName, fieldName) {
+        element.contentEditable = false;
+        $.ajax({
+            url: '/common/common_ajax/ajax_save_element_text/',
+            type: 'POST',
+            data: {
+                'csrfmiddlewaretoken': "{{ csrf_token }}",
+                'model_name': modelName,
+                'app_name': appName,
+                'field_name': fieldName,
+                'text': element.textContent, 
+                'id': id,
+            },
+            dataType: 'json',
+            success: function(data) {
+                console.log("Success:");
+            },
+            error: function(xhr, status, error) {
+                console.error('SAVE ELEMENT Error:', status, error);
             }
-        },
-        error: function(xhr, status, error) {
-            console.error('AJAX Error:', status, error);
-            console.error('Response:', xhr.responseText);
-            alert('Error adding backlog item. Check console for details.');
+        });
+    }
+
+    // Allow drop by preventing default behavior
+    function allowDrop(event) {
+        event.preventDefault();
+    }
+    
+    function drop(event) {
+        event.preventDefault();
+
+        // Get the dragged element's ID
+        const draggedId = event.dataTransfer.getData("text/plain");
+        const draggedElement = document.getElementById(draggedId);
+
+        if (!draggedElement) {
+            console.error('Dragged element not found.');
+            return;
         }
-    });
-    
-    return false;
-}
 
-// Enhanced drag and drop functionality
-$(document).ready(function() {
-    // Make sure drag events work for dynamically added elements
-    $(document).on('dragstart', '.draggable-backlog', function(e) {
-        e.originalEvent.dataTransfer.setData("text/plain", this.id);
-        $(this).addClass('dragging');
-        console.log('Drag started for:', this.id);
-    });
-    
-    // Handle drag end
-    $(document).on('dragend', '.draggable-backlog', function(e) {
-        $(this).removeClass('dragging');
-    });
-    
-    // Handle drag over for release drop zones
-    $(document).on('dragover', '.release-drop-zone', function(e) {
-        e.preventDefault();
-        $(this).addClass('drag-over');
-    });
-    
-    // Handle drag leave for release drop zones
-    $(document).on('dragleave', '.release-drop-zone', function(e) {
-        $(this).removeClass('drag-over');
-    });
-    
-    // Handle drop for release drop zones
-    $(document).on('drop', '.release-drop-zone', function(e) {
-        e.preventDefault();
-        $(this).removeClass('drag-over');
-        drop(e.originalEvent);
-    });
-    
-    // Handle drag over for backlog source zone
-    $(document).on('dragover', '.backlog-source-zone', function(e) {
-        e.preventDefault();
-        $(this).addClass('drag-over');
-    });
-    
-    // Handle drag leave for backlog source zone
-    $(document).on('dragleave', '.backlog-source-zone', function(e) {
-        $(this).removeClass('drag-over');
-    });
-    
-    // Handle drop for backlog source zone
-    $(document).on('drop', '.backlog-source-zone', function(e) {
-        e.preventDefault();
-        $(this).removeClass('drag-over');
-        dropToBacklog(e.originalEvent);
-    });
-});
+        // Extract the backlog ID
+        const backlogId = draggedId.split('-')[1];
 
-// Event Delegation for dragstart (backup for non-jQuery elements)
-document.addEventListener('dragstart', function(event) {
-    if (event.target.classList.contains('draggable-backlog')) {
-        event.dataTransfer.setData("text/plain", event.target.id);
+        // Get the drop zone's data attributes
+        const dropZone = event.target.closest('.release-drop-zone');
+        const releaseId = dropZone.getAttribute('data-release-id');
+        const iterationId = dropZone.getAttribute('data-iteration-id');
+        const activityId = dropZone.getAttribute('data-activity-id');
+        const stepId = dropZone.getAttribute('data-step-id');
+
+        // Prepare the AJAX payload
+        const payload = {
+            project_id: {{ pro_id }},
+            story_id: backlogId,
+            release_id: releaseId,
+            iteration_id: iterationId,
+            activity_id: activityId,
+            step_id: stepId,
+            persona_id: {{ persona.id }},
+        };
+
+        // Send the AJAX request to the backend
+        fetch("{% url 'ajax_recieve_story_mapped_details' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: JSON.stringify(payload),
+        })
+        .then((response) => {
+            if (!response.ok) {
+                return response.json().then((err) => {
+                    throw new Error(err.message || 'Server Error');
+                });
+            }
+            return response.json();
+        })
+        .then((data) => {
+            if (data.status === 'success') {
+                // Move the dragged element to the drop zone
+                const clonedElement = draggedElement.cloneNode(true);
+                clonedElement.classList.remove('backlog-item');
+                clonedElement.classList.add('step-item', 'card');
+                clonedElement.id = 'mapped-backlog-' + backlogId;
+                dropZone.appendChild(clonedElement);
+                
+                // Remove the element from the source container
+                draggedElement.remove();
+                
+                console.log('Backlog item successfully mapped to story map.');
+            } else {
+                throw new Error(data.message);
+            }
+        })
+        .catch((error) => {
+            console.error('Error mapping story:', error.message);
+        });
     }
-});
 
-function makeEditable(element) {
-    element.contentEditable = true;
-    element.focus();
-}
+    // Function to handle dropping items back to backlog
+    function dropToBacklog(event) {
+        event.preventDefault();
 
-function save_element_text(element, id, appName, modelName, fieldName) {
-    element.contentEditable = false;
-    $.ajax({
-        url: '/common/common_ajax/ajax_save_element_text/',
-        type: 'POST',
-        data: {
-            'csrfmiddlewaretoken': "{{ csrf_token }}",
-            'model_name': modelName,
-            'app_name': appName,
-            'field_name': fieldName,
-            'text': element.textContent, 
-            'id': id,
-        },
-        dataType: 'json',
-        success: function(data) {
-            console.log("Success:");
-        },
-        error: function(xhr, status, error) {
-            console.error('SAVE ELEMENT Error:', status, error);
+        // Get the dragged element's ID
+        const draggedId = event.dataTransfer.getData("text/plain");
+        const draggedElement = document.getElementById(draggedId);
+
+        if (!draggedElement) {
+            console.error('Dragged element not found.');
+            return;
         }
-    });
-}
 
-// Allow drop by preventing default behavior (keep this for inline event handlers)
-function allowDrop(event) {
-    event.preventDefault();
-}
-
-function drop(event) {
-    event.preventDefault();
-
-    // Get the dragged element's ID
-    const draggedId = event.dataTransfer.getData("text/plain");
-    const draggedElement = document.getElementById(draggedId);
-
-    if (!draggedElement) {
-        console.error('Dragged element not found:', draggedId);
-        return;
-    }
-
-    console.log('Dropping element:', draggedId);
-
-    // Extract the backlog ID (handle both formats)
-    let backlogId;
-    if (draggedId.startsWith('mapped-backlog-')) {
-        backlogId = draggedId.split('-')[2];
-    } else if (draggedId.startsWith('backlog-')) {
-        backlogId = draggedId.split('-')[1];
-    } else {
-        console.error('Invalid dragged element ID format:', draggedId);
-        return;
-    }
-
-    // Get the drop zone's data attributes
-    const dropZone = event.target.closest('.release-drop-zone');
-    if (!dropZone) {
-        console.error('Drop zone not found');
-        return;
-    }
-
-    const releaseId = dropZone.getAttribute('data-release-id');
-    const iterationId = dropZone.getAttribute('data-iteration-id');
-    const activityId = dropZone.getAttribute('data-activity-id');
-    const stepId = dropZone.getAttribute('data-step-id');
-
-    console.log('Drop zone data:', {
-        releaseId, iterationId, activityId, stepId, backlogId
-    });
-
-    // Store original element data before removing it
-    const originalParent = draggedElement.parentNode;
-    const originalText = draggedElement.textContent || draggedElement.innerText;
-    const originalClasses = draggedElement.className;
-    
-    // Add visual feedback - disable the element temporarily
-    draggedElement.style.opacity = '0.5';
-    draggedElement.style.pointerEvents = 'none';
-
-    // Prepare the AJAX payload
-    const payload = {
-        project_id: parseInt('{{ pro_id }}'),
-        story_id: parseInt(backlogId),
-        release_id: parseInt(releaseId),
-        iteration_id: parseInt(iterationId),
-        activity_id: parseInt(activityId),
-        step_id: parseInt(stepId),
-        persona_id: parseInt('{{ persona.id }}'),
-    };
-
-    console.log('Sending payload:', payload);
-
-    // Send the AJAX request to the backend
-    fetch("{% url 'ajax_recieve_story_mapped_details' %}", {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}',
-        },
-        body: JSON.stringify(payload),
-    })
-    .then((response) => {
-        console.log('Response status:', response.status);
-        if (!response.ok) {
-            return response.text().then((text) => {
-                console.error('Response text:', text);
-                throw new Error(`Server Error: ${response.status} - ${text}`);
-            });
-        }
-        return response.json();
-    })
-    .then((data) => {
-        console.log('Response data:', data);
-        if (data.status === 'success') {
-            // ONLY NOW update the UI after server confirms success
-            
-            // First, remove the original element
-            draggedElement.remove();
-            
-            // Then create new element for the drop zone
-            const newElement = document.createElement('div');
-            newElement.className = 'step-item post-it card draggable-backlog';
-            newElement.draggable = true;
-            newElement.id = 'mapped-backlog-' + backlogId;
-            newElement.setAttribute('ondblclick', 'makeEditable(this);');
-            newElement.setAttribute('onblur', `save_element_text(this, '${backlogId}', 'app_organization', 'Backlog', 'name')`);
-            newElement.textContent = originalText;
-            
-            // Add to the drop zone
-            dropZone.appendChild(newElement);
-            
-            console.log('Backlog item successfully mapped to story map.');
+        // Extract the backlog ID (handle both 'backlog-X' and 'mapped-backlog-X' formats)
+        let backlogId;
+        if (draggedId.startsWith('mapped-backlog-')) {
+            backlogId = draggedId.split('-')[2];
         } else {
-            throw new Error(data.message || 'Unknown error from server');
+            backlogId = draggedId.split('-')[1];
         }
-    })
-    .catch((error) => {
-        console.error('Error mapping story:', error.message);
-        console.error('Full error:', error);
-        
-        // Restore the original element state on error
-        draggedElement.style.opacity = '1';
-        draggedElement.style.pointerEvents = 'auto';
-        
-        console.log('Error mapping story: ' + error.message);
-    });
-}
 
-// Function to handle dropping items back to backlog
-function dropToBacklog(event) {
-    event.preventDefault();
+        // Define the AJAX payload
+        const payload = {
+            project_id: {{ pro_id }},
+            backlog_id: backlogId,
+            persona_id: {{ persona.id }},
+            release_id: null, // Remove release association
+        };
 
-    // Get the dragged element's ID
-    const draggedId = event.dataTransfer.getData("text/plain");
-    const draggedElement = document.getElementById(draggedId);
+        // Send the AJAX request to the backend
+        fetch("{% url 'ajax_update_backlog_release' %}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token }}',
+            },
+            body: JSON.stringify(payload),
+        })
+        .then((response) => {
+            if (!response.ok) {
+                return response.json().then((err) => {
+                    throw new Error(err.message || 'Server Error');
+                });
+            }
+            return response.json();
+        })
+        .then((data) => {
+            if (data.status === 'success') {
+                // Append the dragged element back to the backlog container
+                const backlogContainer = document.getElementById('backlog-items-container');
+                const clonedElement = draggedElement.cloneNode(true);
+                
+                // Remove release-related classes and restore backlog classes
+                clonedElement.classList.remove('step-item', 'card');
+                clonedElement.classList.add('backlog-item');
+                clonedElement.id = 'backlog-' + backlogId;
+                
+                backlogContainer.appendChild(clonedElement);
 
-    if (!draggedElement) {
-        console.error('Dragged element not found.');
-        return;
+                // Remove the dropped element from its previous release zone
+                draggedElement.remove();
+
+                console.log('Backlog item successfully moved back.');
+            } else {
+                throw new Error(data.message);
+            }
+        })
+        .catch((error) => {
+            console.error('Error moving backlog item back:', error.message);
+        });
     }
-
-    console.log('Dropping to backlog:', draggedId);
-
-    // Extract the backlog ID (handle both 'backlog-X' and 'mapped-backlog-X' formats)
-    let backlogId;
-    if (draggedId.startsWith('mapped-backlog-')) {
-        backlogId = draggedId.split('-')[2];
-    } else if (draggedId.startsWith('backlog-')) {
-        backlogId = draggedId.split('-')[1];
-    } else {
-        console.error('Invalid element ID format:', draggedId);
-        return;
-    }
-
-    // Store original element data before modifying it
-    const originalText = draggedElement.textContent || draggedElement.innerText;
-    
-    // Add visual feedback - disable the element temporarily
-    draggedElement.style.opacity = '0.5';
-    draggedElement.style.pointerEvents = 'none';
-
-    // Define the AJAX payload
-    const payload = {
-        project_id: parseInt('{{ pro_id }}'),
-        backlog_id: parseInt(backlogId),
-        persona_id: parseInt('{{ persona.id }}'),
-        release_id: null, // Remove release association
-    };
-
-    console.log('Sending backlog payload:', payload);
-
-    // Send the AJAX request to the backend
-    fetch("{% url 'ajax_update_backlog_release' %}", {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRFToken': '{{ csrf_token }}',
-        },
-        body: JSON.stringify(payload),
-    })
-    .then((response) => {
-        console.log('Backlog response status:', response.status);
-        if (!response.ok) {
-            return response.text().then((text) => {
-                console.error('Backlog response text:', text);
-                throw new Error(`Server Error: ${response.status} - ${text}`);
-            });
-        }
-        return response.json();
-    })
-    .then((data) => {
-        console.log('Backlog response data:', data);
-        if (data.status === 'success') {
-            // ONLY NOW update the UI after server confirms success
-            
-            // Get the backlog container
-            const backlogContainer = document.getElementById('backlog-items-container');
-            
-            // First, remove the original element
-            draggedElement.remove();
-            
-            // Then create new backlog element
-            const newElement = document.createElement('div');
-            newElement.className = 'backlog-item post-it draggable-backlog';
-            newElement.draggable = true;
-            newElement.id = 'backlog-' + backlogId;
-            newElement.setAttribute('data-backlog-id', backlogId);
-            newElement.setAttribute('ondblclick', 'makeEditable(this);');
-            newElement.setAttribute('onblur', `save_element_text(this, '${backlogId}', 'app_organization', 'Backlog', 'name')`);
-            newElement.textContent = originalText;
-            
-            // Add to backlog container
-            backlogContainer.appendChild(newElement);
-
-            console.log('Backlog item successfully moved back.');
-        } else {
-            throw new Error(data.message || 'Unknown error from server');
-        }
-    })
-    .catch((error) => {
-        console.error('Error moving backlog item back:', error.message);
-        console.error('Full error:', error);
-        
-        // Restore the original element state on error
-        draggedElement.style.opacity = '1';
-        draggedElement.style.pointerEvents = 'auto';
-        
-        alert('Error moving item back: ' + error.message);
-    });
-}
-
-   
 </script>
 
 {% endblock content %}

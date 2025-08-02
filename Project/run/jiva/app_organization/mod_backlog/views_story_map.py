@@ -26,12 +26,12 @@ def create_story_map(request, org_id):
     personae_count = Persona.objects.filter(organization_id=org_id, project=project).count()
     if request.method == 'POST':
         selected_project_id = request.POST.get('project')
-        selected_story_map_option = request.POST.get('story_mapping_name')      
+        selected_story_map_option = request.POST.get('story_mapping_name', '').strip()     
         project = Project.objects.get(pk=selected_project_id, active=True)
         
         story_maps = StoryMapping.objects.filter(pro_id=project.id, active=True)
         story_maps_count = story_maps.count()
-        #print(f"====> {selected_project_id} ===> {selected_story_map_option}")
+        print(f"====> {selected_project_id} ===> {selected_story_map_option}")
         
         if selected_story_map_option == '2':
             return redirect('create_story_map_from_backlog', pro_id=selected_project_id)
@@ -227,23 +227,201 @@ def create_backlog_from_story_map(request, pro_id, persona_id):
 
 @login_required
 def create_story_map_from_backlog(request, pro_id):    
-    pro = Project.objects.get(pk=pro_id)
+    pro = get_object_or_404(Project, pk=pro_id)
     organization = pro.org
-    # send outputs info, template,
+    
+    # Get or create a default persona for this project
+    try:
+        # Try to get an existing persona for this project
+        persona = Persona.objects.filter(
+            organization_id=organization.id,
+            project=pro,
+            active=True
+        ).first()
+        
+        # If no persona exists, create one
+        if not persona:
+            persona = Persona.objects.create(
+                name='Default Persona',
+                organization_id=organization.id,
+                project=pro,
+                active=True
+            )
+            created = True
+        else:
+            created = False
+            
+    except Exception as e:
+        # Fallback: create a new persona with a unique name
+        import uuid
+        persona = Persona.objects.create(
+            name=f'Default Persona {uuid.uuid4().hex[:8]}',
+            organization_id=organization.id,
+            project=pro,
+            active=True
+        )
+        created = True
+    
+    # Get project-specific configurations
+    project_id_str = f"{pro_id}_PROJECT_TREE"
+    root_project_type = BacklogType.objects.filter(name=project_id_str, active=True).first()
+    project_backlog_root = Backlog.objects.filter(pro=pro, name=project_id_str).first()
+    
+    # Get backlog type IDs
+    bt_tree_name_and_id = get_tree_name_id(root_project_type)
+    bug_type_id = bt_tree_name_and_id.get("Bug")
+    story_type_id = bt_tree_name_and_id.get("User Story")
+    tech_task_type_id = bt_tree_name_and_id.get("Technical Task")
+    feature_type_id = bt_tree_name_and_id.get("Feature")
+    component_type_id = bt_tree_name_and_id.get("Component")
+    capability_type_id = bt_tree_name_and_id.get("Capability")
+    include_types = [bug_type_id, story_type_id, tech_task_type_id, feature_type_id, component_type_id, capability_type_id]
+    
+    # Get activities for the persona
+    activities = Activity.objects.filter(persona_id=persona.id, active=True)
+    
+    # Get or create default activity if no activities exist
+    if not activities.exists():
+        default_activity = Activity.objects.create(
+            name='Default Activity', 
+            persona_id=persona.id,
+            active=True
+        )
+        activities = Activity.objects.filter(persona_id=persona.id, active=True)
+        request.session['default_activity_id'] = default_activity.id
+    else:
+        default_activity = activities.first()
+        request.session['default_activity_id'] = default_activity.id
+    
+    # Get releases for the organization
+    releases = OrgRelease.objects.filter(org_id=pro.org_id, active=True)
+    
+    # Get existing story mappings - DEFINE THIS FIRST
+    story_maps = StoryMapping.objects.filter(pro_id=pro_id, persona_id=persona.id, active=True)
+    
+    # Get existing backlog items for this project
+    existing_backlog = Backlog.objects.filter(
+        pro=pro, 
+        type__in=include_types, 
+        active=True
+    ).exclude(name=project_id_str)
+    
+    # Separate mapped and unmapped backlog items
+    mapped_story_ids = list(story_maps.values_list('story_id', flat=True)) if story_maps.exists() else []
+    unmapped_backlog = existing_backlog.exclude(id__in=mapped_story_ids) if mapped_story_ids else existing_backlog
+    
+    # Count mapped items for display purposes
+    mapped_items_count = len(mapped_story_ids) if mapped_story_ids else 0
+    
+    # Handle POST requests
+    if request.method == 'POST':
+        print(f">>> POST request received: {request.POST}")
+        print(f">>> Headers: {dict(request.headers)}")
+        
+        if 'submit_activity' in request.POST:
+            activity_input = request.POST.get('activity')
+            if activity_input:
+                activity = Activity.objects.create(
+                    name=activity_input,
+                    persona_id=persona.id,
+                    active=True
+                )
+                print(f">>> === ACTIVITY {activity} === <<<")
+            return redirect('create_story_map_from_backlog', pro_id=pro_id)
+        
+        elif 'submit_step' in request.POST:
+            step_input = request.POST.get('step_input')
+            def_activity_id_input = request.POST.get('default_activity_id')
+            if step_input:
+                step_save = Step.objects.create(
+                    name=step_input,
+                    persona_id=persona.id,
+                    activity_id=def_activity_id_input,
+                    active=True
+                )
+                step_save.save()
+                print(f">>> === STEP {step_save} for {def_activity_id_input} === <<<")
+            return redirect('create_story_map_from_backlog', pro_id=pro_id)
+        
+        elif 'submit_detail' in request.POST:
+            detail_input = request.POST.get('detail')
+            print(f">>> Detail input: '{detail_input}'")
+            print(f">>> Is AJAX: {request.headers.get('X-Requested-With')}")
+            
+            if detail_input and detail_input.strip():
+                try:
+                    # Create new backlog item
+                    new_backlog = Backlog.objects.create(
+                        name=detail_input.strip(),
+                        persona_id=persona.id,
+                        pro_id=pro_id,
+                        active=True,
+                        parent=project_backlog_root,
+                        type_id=story_type_id,
+                        collection=None,
+                    )
+                    print(f">>> === NEW BACKLOG ITEM {new_backlog} ID: {new_backlog.id} === <<<")
+                    
+                    # Check if this is an AJAX request
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        print(">>> Returning JSON response")
+                        from django.http import JsonResponse
+                        return JsonResponse({
+                            'status': 'success',
+                            'backlog_id': new_backlog.id,
+                            'backlog_name': new_backlog.name,
+                            'message': 'Backlog item created successfully'
+                        })
+                    else:
+                        print(">>> Returning redirect response")
+                        return redirect('create_story_map_from_backlog', pro_id=pro_id)
+                        
+                except Exception as e:
+                    print(f">>> Error creating backlog item: {e}")
+                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                        from django.http import JsonResponse
+                        return JsonResponse({
+                            'status': 'error',
+                            'message': f'Error creating backlog item: {str(e)}'
+                        })
+                    else:
+                        return redirect('create_story_map_from_backlog', pro_id=pro_id)
+            else:
+                # Handle empty input
+                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
+                    from django.http import JsonResponse
+                    return JsonResponse({
+                        'status': 'error',
+                        'message': 'Backlog item name cannot be empty'
+                    })
+                else:
+                    return redirect('create_story_map_from_backlog', pro_id=pro_id)
+    
+    # Context for template
     context = {
         'parent_page': '___PARENTPAGE___',
         'page': 'create_story_map_from_backlog',
         'pro_id': pro_id,
         'pro': pro,
         'project': pro,
-        'org': pro.org,
-        'organization': pro.org,
-        'org_id': pro.org_id,
-        'page_title': f'Story Map from Backlog',
+        'project_id_str': project_id_str,
+        'persona': persona,
+        'persona_id': persona.id,
+        'activities': activities,
+        'default_activity_id': request.session.get('default_activity_id'),
+        'story_maps': story_maps,
+        'existing_backlog': existing_backlog,
+        'unmapped_backlog': unmapped_backlog,
+        'mapped_items_count': mapped_items_count,
+        'releases': releases,
+        'org': organization,
+        'organization': organization,
+        'org_id': organization.id,
+        'page_title': f'Story Map from Backlog - {pro.name}',
     }       
+    
     template_file = f"{app_name}/{module_path}/story_map/create_story_map_from_backlog.html"
     return render(request, template_file, context)
-
 
 
 @login_required
