@@ -126,110 +126,7 @@ def create_project_story_map(request, org_id, project_id):
 
 from app_organization.mod_backlog.views_project_tree import get_tree_name_id
 
-# @login_required
-# def create_backlog_from_story_map(request, pro_id, persona_id):
-#     pro = get_object_or_404(Project, pk=pro_id)
-#     persona = get_object_or_404(Persona, pk=persona_id)
-#     default_activity_id = request.session.pop('default_activity', None)
-#     organization = pro.org
-#     project_id_str = f"{pro_id}_PROJECT_TREE"
-#     flat_backlog_root = Backlog.objects.filter(pro=pro, name=project_id_str).first()
-    
-#     create_backlog_type = BacklogType.objects.filter(name='User Story').first()
-#     filters = {}
-#     releases = OrgRelease.objects.filter(org_id=pro.org_id, active=True)
-#     activities = Activity.objects.filter(persona_id=persona_id, active=True)
-    
-#     project_id_str = f"{pro_id}_PROJECT_TREE"
-#     root_project_type = BacklogType.objects.filter(name=project_id_str, active=True).first()
-#     project_backlog_root = Backlog.objects.filter(pro=pro, name=project_id_str).first()
-#     bt_tree_name_and_id = get_tree_name_id(root_project_type)
-#     bug_type_id = bt_tree_name_and_id.get("Bug")
-#     story_type_id = bt_tree_name_and_id.get("User Story")
-#     tech_task_type_id = bt_tree_name_and_id.get("Technical Task")
-#     feature_type_id = bt_tree_name_and_id.get("Feature")
-#     component_type_id = bt_tree_name_and_id.get("Component")
-#     capability_type_id = bt_tree_name_and_id.get("Capability")
-#     include_types = [bug_type_id, story_type_id, tech_task_type_id, feature_type_id, component_type_id, capability_type_id]  
-#     logger.debug(f"====> {include_types} ===> {persona_id}")  
-#     initial_backlog = Backlog.objects.filter(pro=pro,   type__in=include_types, active=True)
-#     logger.debug(f"====> {initial_backlog} ===> {persona_id}")
-#     backlog = Backlog.objects.filter(pro_id=pro_id, persona_id=persona_id, active=True)
-#     story_maps = StoryMapping.objects.filter(pro_id=pro_id, persona_id=persona_id)
-#     #StoryMapping.objects.filter(pro_id=pro_id, persona_id=persona_id).delete()
-#     if default_activity_id is None:
-#         default_activity = Activity.objects.get(name='Default Activity', persona_id=persona_id)
-#         request.session['default_activity_id'] = default_activity.id
-#         default_activity_id = default_activity.id
-#     #StoryMapping.objects.all().delete()
-#     if request.method == 'POST':
-#         selected_project_id = request.POST.get('project_id')
-#         selected_persona_id = request.POST.get('persona_id')
-        
-#         if 'submit_activity' in request.POST:
-#             activity_input = request.POST.get('activity')
-#             if activity_input:
-#                 activity = Activity.objects.create(
-#                     name=activity_input,
-#                     persona_id=selected_persona_id,
-#                     active=True
-#                 )
-#                 print(f">>> === ACTIVITY {activity} === <<<")
-#             return redirect('create_backlog_from_story_map', pro_id=selected_project_id, persona_id=selected_persona_id)
-        
-#         elif 'submit_step' in request.POST:
-#             step_input = request.POST.get('step_input')
-#             def_activity_id_input = request.POST.get('default_activity_id')
-#             if step_input:
-#                 step_save = Step.objects.create(
-#                     name=step_input,
-#                     persona_id=selected_persona_id,
-#                     activity_id=def_activity_id_input,
-#                     active=True
-#                 )
-#                 step_save.save()
-#                 print(f">>> === STEP {step_save} for {default_activity_id} === <<<")
-#             return redirect('create_backlog_from_story_map', pro_id=selected_project_id, persona_id=selected_persona_id)
-        
-#         elif 'submit_detail' in request.POST:
-#             detail_input = request.POST.get('detail')
-#             if detail_input:
-#                 detail = Backlog.objects.create(
-#                     name=detail_input,
-#                     persona_id=selected_persona_id,
-#                     pro_id=selected_project_id,
-#                     active=True,
-#                     parent=project_backlog_root,
-#                     type_id=story_type_id,
-#                     collection=None,
-#                 )
-#                 print(f">>> === DETAIL {detail} {selected_project_id} {selected_persona_id}=== <<<")
-#                 return redirect('create_backlog_from_story_map', pro_id=selected_project_id, persona_id=selected_persona_id)
-    
-#     # Context for GET request
-#     context = {
-#         'parent_page': '___PARENTPAGE___',
-#         'page': 'create_backlog_from_story_map',
-#         'pro_id': pro_id,
-#         'pro': pro,
-#         'project': pro,
-#         'project_id_str': project_id_str,
-#         'persona_id': persona_id,
-#         'persona': persona,
-#         'activities': activities,
-#         'default_activity_id': default_activity_id,
-#         'story_maps': story_maps,
-#         'initial_backlog': initial_backlog,
-#         'backlog': backlog,
-#         'releases': releases,
-#         'org': organization,
-#         'organization': organization,
-#         'org_id': organization.id if organization else None,
-#         'page_title': 'Backlog from Story Map',
-#     }
-    
-#     template_file = f"{app_name}/{module_path}/story_map/create_backlog_from_story_map.html"
-#     return render(request, template_file, context)
+# Update your create_backlog_from_story_map view function with this section:
 # Update your create_backlog_from_story_map view function with this section:
 
 @login_required
@@ -271,16 +168,74 @@ def create_backlog_from_story_map(request, pro_id, persona_id):
     backlog = Backlog.objects.filter(pro_id=pro_id, persona_id=persona_id, active=True)
     
     # Get story maps to identify which items are already mapped
-    story_maps = StoryMapping.objects.filter(pro_id=pro_id, persona_id=persona_id, active=True)
+    story_maps = StoryMapping.objects.filter(
+        pro_id=pro_id, 
+        persona_id=persona_id, 
+        active=True
+    )  # Remove select_related since 'story' field doesn't exist
+    
     mapped_story_ids = list(story_maps.values_list('story_id', flat=True))
+    # In your create_backlog_from_story_map function, replace the problematic section with:
+    # (Remove the entire mapped_backlog_items calculation and replace with this line)
+    mapped_backlog_items, unmapped_backlog_items, mapped_backlog_queryset = get_mapped_and_unmapped_items(pro_id, persona_id, initial_backlog)
+    # # Get mapped items with their story mapping details
+    # mapped_backlog_items = []
+    # if mapped_story_ids:
+    #     for backlog_item in initial_backlog.filter(id__in=mapped_story_ids):
+    #         # Find the story mapping for this item
+    #         story_mapping = story_maps.filter(story_id=backlog_item.id).first()
+    #         if story_mapping:
+    #             # Get related objects by ID lookup instead of direct relationship
+    #             release = None
+    #             iteration = None
+    #             activity = None
+    #             step = None
+                
+    #             try:
+    #                 if story_mapping.release_id:
+    #                     release = OrgRelease.objects.get(id=story_mapping.release_id)
+    #             except OrgRelease.DoesNotExist:
+    #                 pass
+    #             except AttributeError:
+    #                 # Handle case where release_id field might not exist
+    #                 pass
+                    
+    #             try:
+    #                 if hasattr(story_mapping, 'iteration_id') and story_mapping.iteration_id:
+    #                     from app_organization.mod_org_iteration.models_org_iteration import OrgIteration
+    #                     iteration = OrgIteration.objects.get(id=story_mapping.iteration_id)
+    #             except:
+    #                 pass
+                    
+    #             try:
+    #                 if hasattr(story_mapping, 'activity_id') and story_mapping.activity_id:
+    #                     activity = Activity.objects.get(id=story_mapping.activity_id)
+    #             except Activity.DoesNotExist:
+    #                 pass
+    #             except AttributeError:
+    #                 pass
+                    
+    #             try:
+    #                 if hasattr(story_mapping, 'step_id') and story_mapping.step_id:
+    #                     step = Step.objects.get(id=story_mapping.step_id)
+    #             except Step.DoesNotExist:
+    #                 pass
+    #             except AttributeError:
+    #                 pass
+                
+    #             mapped_backlog_items.append({
+    #                 'backlog_item': backlog_item,
+    #                 'story_mapping': story_mapping,
+    #                 'release': release,
+    #                 'iteration': iteration,
+    #                 'activity': activity,
+    #                 'step': step,
+    #             })
     
-    # Separate mapped and unmapped items for better organization
-    mapped_backlog_items = initial_backlog.filter(id__in=mapped_story_ids) if mapped_story_ids else Backlog.objects.none()
-    unmapped_backlog_items = initial_backlog.exclude(id__in=mapped_story_ids) if mapped_story_ids else initial_backlog
+    # # Separate unmapped items
+    # unmapped_backlog_items = initial_backlog.exclude(id__in=mapped_story_ids) if mapped_story_ids else initial_backlog
     
-    logger.debug(f"====> Total backlog items: {initial_backlog.count()}")
-    logger.debug(f"====> Mapped items: {mapped_backlog_items.count()}")
-    logger.debug(f"====> Unmapped items: {unmapped_backlog_items.count()}")
+
     
     if default_activity_id is None:
         default_activity = Activity.objects.get(name='Default Activity', persona_id=persona_id)
@@ -306,7 +261,7 @@ def create_backlog_from_story_map(request, pro_id, persona_id):
         'default_activity_id': default_activity_id,
         'story_maps': story_maps,
         'initial_backlog': initial_backlog,  # All backlog items
-        'mapped_backlog_items': mapped_backlog_items,  # Items already in story map
+        'mapped_backlog_items': mapped_backlog_items,  # Items with mapping details
         'unmapped_backlog_items': unmapped_backlog_items,  # Items not in story map
         'backlog': backlog,
         'releases': releases,
@@ -318,6 +273,7 @@ def create_backlog_from_story_map(request, pro_id, persona_id):
     
     template_file = f"{app_name}/{module_path}/story_map/create_backlog_from_story_map.html"
     return render(request, template_file, context)
+
 @login_required
 def create_story_map_from_backlog(request, pro_id):    
     pro = get_object_or_404(Project, pk=pro_id)
@@ -1735,3 +1691,170 @@ def ajax_save_to_persona(request):
             return JsonResponse({'status': 'error', 'message': str(e)})
     
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+@login_required
+def ajax_refresh_mapped_items(request):
+    """Refresh the mapped items section with current mapping details"""
+    if request.method == 'POST':
+        try:
+            pro_id = request.POST.get('pro_id')
+            persona_id = request.POST.get('persona_id')
+            
+            if not pro_id or not persona_id:
+                return JsonResponse({'status': 'error', 'message': 'Project ID and Persona ID are required'})
+            
+            # Get story maps
+            story_maps = StoryMapping.objects.filter(
+                pro_id=pro_id, 
+                persona_id=persona_id, 
+                active=True
+            )
+            
+            mapped_story_ids = list(story_maps.values_list('story_id', flat=True))
+            
+            # Get mapped items with their story mapping details
+            mapped_backlog_items = []
+            if mapped_story_ids:
+                for story_mapping in story_maps:
+                    try:
+                        # Get the backlog item
+                        backlog_item = Backlog.objects.get(id=story_mapping.story_id)
+                        
+                        # Get related objects by ID lookup
+                        release = None
+                        iteration = None
+                        activity = None
+                        step = None
+                        
+                        try:
+                            if story_mapping.release_id:
+                                release = OrgRelease.objects.get(id=story_mapping.release_id)
+                        except OrgRelease.DoesNotExist:
+                            pass
+                            
+                        try:
+                            if story_mapping.iteration_id:
+                                from app_organization.mod_org_iteration.models_org_iteration import OrgIteration
+                                iteration = OrgIteration.objects.get(id=story_mapping.iteration_id)
+                        except:
+                            pass
+                            
+                        try:
+                            if story_mapping.activity_id:
+                                activity = Activity.objects.get(id=story_mapping.activity_id)
+                        except Activity.DoesNotExist:
+                            pass
+                            
+                        try:
+                            if story_mapping.step_id:
+                                step = Step.objects.get(id=story_mapping.step_id)
+                        except Step.DoesNotExist:
+                            pass
+                        
+                        mapped_backlog_items.append({
+                            'backlog_item': backlog_item,
+                            'story_mapping': story_mapping,
+                            'release': release,
+                            'iteration': iteration,
+                            'activity': activity,
+                            'step': step,
+                        })
+                        
+                    except Backlog.DoesNotExist:
+                        # Skip if backlog item no longer exists
+                        continue
+            
+            # Render the partial template for mapped items
+            context = {
+                'mapped_backlog_items': mapped_backlog_items,
+            }
+            
+            template_file = f"{app_name}/{module_path}/story_map/partial_mapped_items.html"
+            html_content = render_to_string(template_file, context, request=request)
+            
+            return JsonResponse({
+                'status': 'success',
+                'html': html_content,
+                'count': len(mapped_backlog_items)
+            })
+            
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+
+
+# Alternative approach that keeps everything as QuerySets where possible:
+
+def get_mapped_and_unmapped_items(pro_id, persona_id, initial_backlog):
+    """Get mapped and unmapped items, returning consistent data types"""
+    
+    # Get story maps
+    story_maps = StoryMapping.objects.filter(
+        pro_id=pro_id, 
+        persona_id=persona_id, 
+        active=True
+    )
+    
+    mapped_story_ids = list(story_maps.values_list('story_id', flat=True))
+    
+    # Get QuerySets for both mapped and unmapped
+    if mapped_story_ids:
+        mapped_backlog_queryset = initial_backlog.filter(id__in=mapped_story_ids)
+        unmapped_backlog_queryset = initial_backlog.exclude(id__in=mapped_story_ids)
+    else:
+        mapped_backlog_queryset = initial_backlog.none()  # Empty QuerySet
+        unmapped_backlog_queryset = initial_backlog
+    
+    # Convert mapped items to list with additional details
+    mapped_backlog_items = []
+    for backlog_item in mapped_backlog_queryset:
+        # Find the story mapping for this item
+        story_mapping = story_maps.filter(story_id=backlog_item.id).first()
+        
+        release_name = "Not Set"
+        iteration_name = "Not Set"
+        activity_name = "Not Set"
+        step_name = "Not Set"
+        
+        if story_mapping:
+            # Try to get names safely
+            try:
+                if hasattr(story_mapping, 'release_id') and story_mapping.release_id:
+                    release = OrgRelease.objects.get(id=story_mapping.release_id)
+                    release_name = release.name
+            except:
+                pass
+                
+            try:
+                if hasattr(story_mapping, 'iteration_id') and story_mapping.iteration_id:
+                    from app_organization.mod_org_iteration.models_org_iteration import OrgIteration
+                    iteration = OrgIteration.objects.get(id=story_mapping.iteration_id)
+                    iteration_name = iteration.name
+            except:
+                pass
+                
+            try:
+                if hasattr(story_mapping, 'activity_id') and story_mapping.activity_id:
+                    activity = Activity.objects.get(id=story_mapping.activity_id)
+                    activity_name = activity.name
+            except:
+                pass
+                
+            try:
+                if hasattr(story_mapping, 'step_id') and story_mapping.step_id:
+                    step = Step.objects.get(id=story_mapping.step_id)
+                    step_name = step.name
+            except:
+                pass
+        
+        mapped_backlog_items.append({
+            'backlog_item': backlog_item,
+            'release_name': release_name,
+            'iteration_name': iteration_name,
+            'activity_name': activity_name,
+            'step_name': step_name,
+        })
+    
+    return mapped_backlog_items, unmapped_backlog_queryset, mapped_backlog_queryset

@@ -378,7 +378,7 @@
 </style>
 
 <style>
-    /* Add these styles to your existing CSS section */
+/* Add these styles to your existing CSS section */
 
 /* Available backlog items (unmapped) */
 .backlog-item.draggable-backlog {
@@ -399,11 +399,36 @@
 }
 
 /* Already mapped items (read-only reference) */
-.backlog-item.mapped {
+.backlog-item.mapped-item {
     background-color: #d4edda !important;
     border-color: #c3e6cb !important;
-    opacity: 0.7;
+    opacity: 0.8;
     cursor: default;
+    border-left: 3px solid #28a745;
+}
+
+.mapped-item-name {
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+
+.mapped-item-details {
+    color: #155724 !important;
+    font-weight: bold;
+}
+
+.mapped-item-details .release-name {
+    background-color: #c3e6cb;
+    padding: 1px 4px;
+    border-radius: 2px;
+    font-size: 0.5rem;
+}
+
+.mapped-item-details .iteration-name {
+    background-color: #b3d9b8;
+    padding: 1px 4px;
+    border-radius: 2px;
+    font-size: 0.5rem;
 }
 
 /* New items created for current persona */
@@ -516,7 +541,7 @@
         <!-- display-->
         <div class="row">
             <!-- Left Sidebar (Backlog) -->
-           <div class="col col-md-2" id="">
+          <div class="col col-md-2" id="">
     <!-- Sidebar Header -->
     <div class="container-fluid-width">
         <div class="row">
@@ -567,15 +592,29 @@
                 
                 <!-- Show items that are already mapped (for reference) -->
                 {% if mapped_backlog_items %}
-                    <div class="mb-3">
+                    <div class="mb-3" id="mapped-items-section">
                         <small class="text-success"><strong>Already Mapped:</strong></small>
-                        {% for backlog_item in mapped_backlog_items %}
-                            <div class="backlog-item post-it" 
-                                 style="background-color: #d4edda; border-color: #c3e6cb; opacity: 0.7;"
-                                 title="This item is already mapped in the story map">
-                                {{ backlog_item.name }}
-                                <small class="d-block text-muted" style="font-size: 0.6rem;">
-                                    ✓ Mapped
+                        {% for mapped_item in mapped_backlog_items %}
+                            <div class="backlog-item post-it mapped-item" 
+                                 id="mapped-{{ mapped_item.backlog_item.id }}"
+                                 data-story-id="{{ mapped_item.backlog_item.id }}"
+                                 style="background-color: #d4edda; border-color: #c3e6cb; opacity: 0.8;"
+                                 title="This item is mapped to: {% if mapped_item.release %}{{ mapped_item.release.name }}{% endif %}{% if mapped_item.iteration %} / {{ mapped_item.iteration.name }}{% endif %}">
+                                <div class="mapped-item-name">{{ mapped_item.backlog_item.name }}</div>
+                                <small class="d-block text-muted mapped-item-details" style="font-size: 0.6rem;">
+                                    ✓ 
+                                    {% if mapped_item.release %}
+                                        <span class="release-name">{{ mapped_item.release.name }}</span>
+                                    {% else %}
+                                        <span class="release-name">No Release</span>
+                                    {% endif %}
+                                    {% if mapped_item.iteration %}
+                                        / <span class="iteration-name">{{ mapped_item.iteration.name }}</span>
+                                    {% endif %}
+                                </small>
+                                <small class="d-block text-muted" style="font-size: 0.5rem;">
+                                    {% if mapped_item.activity %}{{ mapped_item.activity.name }}{% endif %}
+                                    {% if mapped_item.step %} → {{ mapped_item.step.name }}{% endif %}
                                 </small>
                             </div>
                         {% endfor %}
@@ -962,7 +1001,236 @@ function dropToBacklog(event) {
         });
 }
 
+// AJAX UPDATE ALREADY MAPPED
+// Add this JavaScript to your template to handle dynamic updates
 
+// Function to refresh the mapped items section
+function refreshMappedItems() {
+    $.ajax({
+        url: "{% url 'ajax_refresh_mapped_items' %}",
+        type: 'POST',
+        data: {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            pro_id: '{{ pro_id }}',
+            persona_id: '{{ persona.id }}'
+        },
+        success: function(response) {
+            if (response.status === 'success') {
+                $('#mapped-items-section').html(response.html);
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error refreshing mapped items:', error);
+        }
+    });
+}
+
+// Function to move item from mapped to unmapped section
+function moveToUnmapped(storyId, storyName) {
+    // Remove from mapped section
+    $(`#mapped-${storyId}`).remove();
+    
+    // Add to unmapped section
+    const unmappedContainer = $('.backlog-drop-zone');
+    const newItem = `
+        <div class="backlog-item post-it draggable-backlog" 
+             draggable="true" 
+             id="backlog-${storyId}"
+             ondblclick="makeEditable(this);" 
+             onblur="save_element_text(this, '${storyId}', 'app_organization', 'Backlog', 'name')"
+             title="Moved back to unmapped">
+            ${storyName}
+            <small class="d-block text-muted" style="font-size: 0.6rem;">
+                Available
+            </small>
+        </div>
+    `;
+    
+    // Insert after the form but before other items
+    const form = unmappedContainer.find('form');
+    if (form.length) {
+        form.after('<br>' + newItem);
+    } else {
+        unmappedContainer.prepend(newItem);
+    }
+    
+    // Re-enable drag events for the new item
+    const newElement = $(`#backlog-${storyId}`)[0];
+    if (newElement) {
+        newElement.addEventListener('dragstart', function(event) {
+            event.dataTransfer.setData("text/plain", event.target.id);
+        });
+    }
+}
+
+// Function to move item from unmapped to mapped section
+function moveToMapped(storyId, releaseData) {
+    // Remove from unmapped section
+    $(`#backlog-${storyId}`).remove();
+    
+    // Refresh the mapped items section to show the new mapping
+    refreshMappedItems();
+}
+
+// Update the existing drop function to refresh mapped items
+function drop(event) {
+    event.preventDefault();
+
+    // Get the dragged element's ID
+    const draggedId = event.dataTransfer.getData("text/plain");
+    const draggedElement = document.getElementById(draggedId);
+
+    if (!draggedElement) {
+        console.error('Dragged element not found.');
+        return;
+    }
+
+    // Extract the backlog ID
+    const backlogId = draggedId.split('-')[1];
+    const storyName = draggedElement.textContent.trim();
+
+    // Get the drop zone's data attributes
+    const dropZone = event.target.closest('.release-drop-zone');
+    const releaseId = dropZone.getAttribute('data-release-id');
+    const iterationId = dropZone.getAttribute('data-iteration-id');
+    const activityId = dropZone.getAttribute('data-activity-id');
+    const stepId = dropZone.getAttribute('data-step-id');
+
+    // Optional: Visual feedback for successful drop
+    dropZone.classList.add('dropped');
+
+    // Prepare the AJAX payload
+    const payload = {
+        project_id: {{ pro_id }},
+        story_id: backlogId,
+        release_id: releaseId,
+        iteration_id: iterationId,
+        activity_id: activityId,
+        step_id: stepId,
+        persona_id: {{ persona.id }},
+    };
+
+    // Send the AJAX request to the backend
+    fetch("{% url 'ajax_recieve_story_mapped_details' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}',
+        },
+        body: JSON.stringify(payload),
+    })
+        .then((response) => {
+            if (!response.ok) {
+                return response.json().then((err) => {
+                    throw new Error(err.message || 'Server Error');
+                });
+            }
+            return response.json();
+        })
+        .then((data) => {
+            if (data.status === 'success') {
+                // Move the dragged element to the drop zone
+                const clonedElement = draggedElement.cloneNode(true);
+                // Remove backlog-related classes
+                clonedElement.classList.remove('backlog-item');
+
+                // Add release-related classes
+                clonedElement.classList.add('step-item', 'card');
+                dropZone.appendChild(clonedElement);
+                
+                // Remove the element from the source container
+                draggedElement.remove();
+                
+                // Update the mapped items section
+                refreshMappedItems();
+
+                console.log('Backlog item successfully assigned to the release.');
+            } else {
+                throw new Error(data.message);
+            }
+        })
+        .catch((error) => {
+            console.error('Error updating story location:', error.message);
+            dropZone.classList.remove('dropped');
+        });
+}
+
+// Update the dropToBacklog function to refresh mapped items
+function dropToBacklog(event) {
+    event.preventDefault();
+
+    // Get the dragged element's ID
+    const draggedId = event.dataTransfer.getData("text/plain");
+    const draggedElement = document.getElementById(draggedId);
+
+    if (!draggedElement) {
+        console.error('Dragged element not found.');
+        return;
+    }
+
+    // Extract the backlog ID
+    const backlogId = draggedId.split('-')[1];
+    const storyName = draggedElement.textContent.trim();
+
+    // Define the AJAX payload
+    const payload = {
+        project_id: {{ pro_id }},
+        backlog_id: backlogId,
+        persona_id: {{ persona.id }},
+        release_id: null, // Remove release association
+    };
+
+    // Send the AJAX request to the backend
+    fetch("{% url 'ajax_update_backlog_release' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}',
+        },
+        body: JSON.stringify(payload),
+    })
+        .then((response) => {
+            if (!response.ok) {
+                return response.json().then((err) => {
+                    throw new Error(err.message || 'Server Error');
+                });
+            }
+            return response.json();
+        })
+        .then((data) => {
+            if (data.status === 'success') {
+                // Append the dragged element back to the backlog drop zone
+                const backlogDropZone = document.querySelector('.backlog-drop-zone');
+                clonedElement = draggedElement.cloneNode(true);
+                // Remove release-related classes
+                clonedElement.classList.remove('step-item', 'card');
+
+                // Add backlog-related classes
+                clonedElement.classList.add('backlog-item', 'draggable-backlog');
+                
+                // Add draggable attribute and events
+                clonedElement.setAttribute('draggable', 'true');
+                clonedElement.addEventListener('dragstart', function(event) {
+                    event.dataTransfer.setData("text/plain", event.target.id);
+                });
+                
+                backlogDropZone.appendChild(clonedElement);
+
+                // Remove the dropped element from its previous release zone
+                draggedElement.remove();
+                
+                // Update the mapped items section
+                refreshMappedItems();
+
+                console.log('Backlog item successfully moved back.');
+            } else {
+                throw new Error(data.message);
+            }
+        })
+        .catch((error) => {
+            console.error('Error moving backlog item back:', error.message);
+        });
+}
 
 </script>
 {% endblock content %}
