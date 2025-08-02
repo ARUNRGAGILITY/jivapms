@@ -11,8 +11,6 @@
 <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 {% include 'app_jivapms/mod_web/common_files/css.html' %}
 
-
-
 <style>
     .content-wrapper {
         padding: 20px;
@@ -21,6 +19,8 @@
     .step-item {
         cursor: pointer;
         transition: background-color 0.3s, color 0.3s;
+        border: 1px solid transparent;
+        margin: 2px 0;
     }
 
     .step-item:hover {
@@ -39,6 +39,7 @@
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
         padding: 15px;
         margin-bottom: 20px;
+        position: relative;
     }
 
     .list-group {
@@ -50,6 +51,18 @@
         font-size: 1.2rem;
         font-weight: bold;
         color: #495057;
+        cursor: move;
+        padding: 8px;
+        background: #f8f9fa;
+        border-radius: 4px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .activity-header:hover {
+        background: #e9ecef;
     }
 
     .btn {
@@ -67,8 +80,225 @@
         justify-content: flex-start;
         margin-bottom: 10px;
     }
+
     .content-wrapper {
         overflow-y: auto;
+    }
+
+    /* Drag and Drop Styles */
+    .sortable-activity {
+        transition: transform 0.2s ease;
+    }
+
+    .sortable-activity.dragging {
+        opacity: 0.5;
+        
+    }
+
+    .sortable-step {
+        transition: transform 0.2s ease;
+    }
+
+    .sortable-step.dragging {
+        opacity: 0.5;
+        background-color: #fff3cd !important;
+    }
+
+    .drag-over {
+        border: 2px dashed #007bff !important;
+        background-color: #f8f9ff !important;
+    }
+
+    .drag-handle {
+        cursor: grab;
+        color: #6c757d;
+        margin-right: 8px;
+    }
+
+    .drag-handle:hover {
+        color: #495057;
+    }
+
+    .drag-handle:active {
+        cursor: grabbing;
+    }
+
+    .drop-zone {
+        min-height: 50px;
+        border: 2px dashed transparent;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+    }
+
+    .drop-zone.drag-over {
+        border-color: #28a745;
+        background-color: #f8fff9;
+    }
+
+    /* Order indicator */
+    .order-badge {
+        background: #6c757d;
+        color: white;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: bold;
+    }
+
+    /* Smooth animations */
+    .activities-container {
+        position: relative;
+    }
+
+    .activity-container {
+        transition: all 0.3s ease;
+    }
+
+    .step-item {
+        transition: all 0.2s ease;
+    }
+
+    /* Quick add forms */
+    .quick-add-form {
+        background: #f8f9fa;
+        border: 1px solid #dee2e6;
+        border-radius: 6px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+
+    .quick-add-form .form-group {
+        margin-bottom: 10px;
+    }
+
+    .quick-add-form .form-control {
+        border-radius: 4px;
+    }
+
+    .quick-add-form .btn {
+        border-radius: 4px;
+    }
+
+    .section-divider {
+        border-top: 2px solid #dee2e6;
+        margin: 30px 0 20px 0;
+        position: relative;
+    }
+
+    .section-divider::before {
+        content: attr(data-title);
+        position: absolute;
+        top: -12px;
+        left: 20px;
+        background: white;
+        padding: 0 10px;
+        font-weight: bold;
+        color: #6c757d;
+        font-size: 14px;
+    }
+    
+    /* Loading state */
+    .saving-indicator {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #28a745;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 4px;
+        z-index: 1000;
+        display: none;
+    }
+
+    /* Delete button styles */
+    .delete-btn {
+        background: #dc3545;
+        color: white;
+        border: none;
+        border-radius: 3px;
+        padding: 2px 6px;
+        font-size: 12px;
+        cursor: pointer;
+        margin-left: 8px;
+        opacity: 0;
+        transition: opacity 0.2s;
+    }
+
+    .activity-header:hover .delete-btn,
+    .step-item:hover .delete-btn {
+        opacity: 1;
+    }
+
+    .delete-btn:hover {
+        background: #c82333;
+    }
+
+    /* Controls group */
+    .activity-controls {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+
+    .step-controls {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-left: auto;
+    }
+</style>
+
+<!-- Add these styles to your existing <style> section -->
+<style>
+    .restore-item {
+        padding: 8px 12px;
+        margin: 5px 0;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        background: #f8f9fa;
+        cursor: pointer;
+        transition: all 0.2s;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+    
+    .restore-item:hover {
+        background: #e9ecef;
+        border-color: #6c757d;
+    }
+    
+    .restore-item.selected {
+        background: #d1ecf1;
+        border-color: #17a2b8;
+        color: #0c5460;
+    }
+    
+    .restore-item input[type="checkbox"] {
+        margin-right: 8px;
+    }
+    
+    .restore-item-info {
+        display: flex;
+        align-items: center;
+        flex-grow: 1;
+    }
+    
+    .restore-item-meta {
+        font-size: 0.8em;
+        color: #6c757d;
+        margin-left: auto;
+    }
+    
+    .empty-restore-list {
+        text-align: center;
+        color: #6c757d;
+        padding: 20px;
+        font-style: italic;
     }
 </style>
 
@@ -77,78 +307,447 @@
         <div class="row">
             <div class="col col-md-6"><b class="h3">{{page_title}}</b></div>
             <div class="col col-md-6 text-end">
-                <a href="{% url 'create_backlog_from_story_map' pro_id persona_id %}" class="btn btn-sm">
+                <button class="btn btn-warning btn-sm me-2" onclick="showRestoreModal()">
+                    <i class="fas fa-undo"></i> <b>Restore Items</b>
+                </button>
+                <a href="{% url 'create_story_map_from_backlog' pro_id %}" class="btn btn-secondary btn-sm">
                     <i class="fas fa-arrow-left"></i> <b>Back to StoryMap</b>
                 </a>
             </div>
         </div>
+        
+        <!-- Saving indicator -->
+        <div class="saving-indicator" id="savingIndicator">
+            <i class="fas fa-spinner fa-spin"></i> Saving changes...
+        </div>
+
         <div class="row g-3">
-            <!-- Left Side: Unmapped Steps -->
+            <!-- Left Side: Unmapped Steps and Quick Add Forms -->
             <div class="col-lg-5">
+                <!-- Quick Add Activity Form -->
+                <div class="quick-add-form">
+                    <h5 class="mb-3"><i class="fas fa-plus-circle text-primary"></i> Add New Activity</h5>
+                    <form id="addActivityForm" onsubmit="addActivity(event)">
+                        <div class="form-group">
+                            <input type="text" class="form-control" id="activityNameInput" 
+                                   placeholder="Enter activity name..." required>
+                        </div>
+                        <button type="submit" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus"></i> Add Activity
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Quick Add Step Form -->
+                <div class="quick-add-form">
+                    <h5 class="mb-3"><i class="fas fa-plus-circle text-success"></i> Add New Step</h5>
+                    <form id="addStepForm" onsubmit="addStep(event)">
+                        <div class="form-group">
+                            <input type="text" class="form-control" id="stepNameInput" 
+                                   placeholder="Enter step name..." required>
+                        </div>
+                        <button type="submit" class="btn btn-success btn-sm">
+                            <i class="fas fa-plus"></i> Add Step
+                        </button>
+                    </form>
+                </div>
+
+                <!-- Section Divider -->
+                <div class="section-divider" data-title="UNMAPPED STEPS"></div>
+
+                <!-- Unmapped Steps -->
                 <div class="card shadow">
                     <div class="card-header bg-primary text-white">
                         <h4 class="mb-0">Unmapped Steps</h4>
                     </div>
                     <div class="card-body">
-                        <ul id="unmapped-steps" class="list-group">
-                            {% for step in unmapped_steps %}
-                            <li class="list-group-item step-item"
-                                data-step-id="{{ step.id }}"
-                                onclick="toggleStepSelection(this)">
-                                <i class="fa-solid fa-check-circle me-2" style="display: none;"></i>
-                                {{ step.name }}
-                            </li>
-                            {% endfor %}
-                        </ul>
+                        <div class="drop-zone" id="unmappedDropZone">
+                            <ul id="unmapped-steps" class="list-group sortable-steps">
+                                {% for step in unmapped_steps %}
+                                <li class="list-group-item step-item sortable-step d-flex align-items-center"
+                                    data-step-id="{{ step.id }}"
+                                    data-step-position="{{ step.position|default:0 }}"
+                                    draggable="true"
+                                    onclick="toggleStepSelection(this)">
+                                    <i class="fas fa-grip-vertical drag-handle" onclick="event.stopPropagation();"></i>
+                                    <i class="fa-solid fa-check-circle me-2" style="display: none;"></i>
+                                    <span class="flex-grow-1">{{ step.name }}</span>
+                                    <div class="step-controls">
+                                        <button class="delete-btn" onclick="deleteStep({{ step.id }}, event)" title="Delete step">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
                     </div>
                 </div>
             </div>
 
             <!-- Right Side: Activities and Steps -->
             <div class="col-lg-7">
-                {% for activity in activities %}
-                {% if activity.name != "Default Activity" %}
-                <div class="activity-container">
-                    <div class="activity-header">{{ activity.name }}</div>
-                    <div class="assign-buttons">
-                        <button class="btn btn-sm btn-success" onclick="assignStepsToActivity({{ activity.id }})">
-                            <i class="fas fa-angle-double-right"></i> Assign
-                        </button>
-                        <button class="btn btn-sm btn-danger" onclick="unassignStepsFromActivity({{ activity.id }})">
-                            <i class="fas fa-angle-double-left"></i> Unassign
-                        </button>
+                <div class="activities-container" id="activitiesContainer">
+                    {% for activity in activities %}
+                    {% if activity.name != "Default Activity" %}
+                    <div class="activity-container sortable-activity" 
+                         data-activity-id="{{ activity.id }}" 
+                         data-activity-position="{{ activity.position|default:0 }}"
+                         draggable="true">
+                        
+                        <div class="activity-header">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-grip-vertical drag-handle me-2"></i>
+                                <span class="order-badge me-2">{{ forloop.counter }}</span>
+                                <span>{{ activity.name }}</span>
+                            </div>
+                            <div class="activity-controls">
+                                <button class="btn btn-sm btn-outline-secondary" onclick="editActivityName({{ activity.id }}, '{{ activity.name|escapejs }}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button class="delete-btn" onclick="deleteActivity({{ activity.id }}, event)" title="Delete activity">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="assign-buttons">
+                            <button class="btn btn-sm btn-success" onclick="assignStepsToActivity({{ activity.id }})">
+                                <i class="fas fa-angle-double-right"></i> Assign
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="unassignStepsFromActivity({{ activity.id }})">
+                                <i class="fas fa-angle-double-left"></i> Unassign
+                            </button>
+                        </div>
+                        
+                        <div class="drop-zone activity-drop-zone" data-activity-id="{{ activity.id }}">
+                            <ul class="list-group mt-3 sortable-steps" data-activity-id="{{ activity.id }}">
+                                {% for step in activity.activity_steps.all|filter_active %}
+                                <li class="list-group-item step-item sortable-step d-flex align-items-center"
+                                    data-step-id="{{ step.id }}"
+                                    data-step-position="{{ step.position|default:0 }}"
+                                    draggable="true"
+                                    onclick="toggleStepSelection(this)">
+                                    <i class="fas fa-grip-vertical drag-handle" onclick="event.stopPropagation();"></i>
+                                    <i class="fa-solid fa-check-circle me-2" style="display: none;"></i>
+                                    <span class="flex-grow-1">{{ step.name }}</span>
+                                    <div class="step-controls">
+                                        <button class="delete-btn" onclick="deleteStep({{ step.id }}, event)" title="Delete step">
+                                            <i class="fas fa-trash"></i>
+                                        </button>
+                                    </div>
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
                     </div>
-                    <ul class="list-group mt-3">
-                        {% for step in activity.activity_steps.all|filter_active %}
-                        <li class="list-group-item step-item"
-                            data-step-id="{{ step.id }}"
-                            onclick="toggleStepSelection(this)">
-                            <i class="fa-solid fa-check-circle me-2" style="display: none;"></i>
-                            {{ step.name }}
-                        </li>
-                        {% endfor %}
-                    </ul>
+                    {% endif %}
+                    {% endfor %}
                 </div>
-                {% endif %}
-                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Confirmation Modal -->
+<div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="confirmationModalLabel">Confirm Action</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="confirmationMessage">Are you sure you want to perform this action?</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                <button type="button" class="btn btn-danger" id="confirmButton">Delete</button>
             </div>
         </div>
     </div>
 </div>
 
+<!-- Alert Modal for Messages -->
+<div class="modal fade" id="alertModal" tabindex="-1" aria-labelledby="alertModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="alertModalLabel">Message</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p id="alertMessage">Message</p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-primary" data-bs-dismiss="modal">OK</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Restore Modal -->
+<div class="modal fade" id="restoreModal" tabindex="-1" aria-labelledby="restoreModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="restoreModalLabel">Restore Deleted Items</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle"></i> 
+                    <strong>Note:</strong> When activities are deleted, their steps become unmapped (not deleted). 
+                    Restoring an activity will make it available again, but you'll need to manually reassign steps to it.
+                </div>
+                <div class="row">
+                    <!-- Deleted Activities -->
+                    <div class="col-md-6">
+                        <h6 class="text-primary">Deleted Activities</h6>
+                        <div id="deletedActivitiesList" class="border rounded p-3" style="max-height: 300px; overflow-y: auto;">
+                            <div class="text-center text-muted">
+                                <i class="fas fa-spinner fa-spin"></i> Loading...
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Deleted Steps -->
+                    <div class="col-md-6">
+                        <h6 class="text-success">Deleted Steps</h6>
+                        <small class="text-muted">Only steps that were individually deleted (not from activity deletion)</small>
+                        <div id="deletedStepsList" class="border rounded p-3" style="max-height: 300px; overflow-y: auto;">
+                            <div class="text-center text-muted">
+                                <i class="fas fa-spinner fa-spin"></i> Loading...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
+                <button type="button" class="btn btn-secondary" onclick="restoreSelectedItems()" id="restoreSelectedBtn" disabled>
+                    <i class="fas fa-undo"></i> Restore Selected
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+
 <script>
-    // Global set for selected steps
+    // Global variables
     let selectedSteps = new Set();
+    let draggedElement = null;
+    let draggedType = null; // 'activity' or 'step'
+
+    // Document ready
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeDragAndDrop();
+        updateOrderBadges();
+    });
+
+    // Modal helper functions
+    function showConfirmModal(message, callback) {
+        document.getElementById('confirmationMessage').textContent = message;
+        document.getElementById('confirmButton').onclick = function() {
+            callback();
+            bootstrap.Modal.getInstance(document.getElementById('confirmationModal')).hide();
+        };
+        new bootstrap.Modal(document.getElementById('confirmationModal')).show();
+    }
+
+    function showAlertModal(title, message) {
+        document.getElementById('alertModalLabel').textContent = title;
+        document.getElementById('alertMessage').textContent = message;
+        new bootstrap.Modal(document.getElementById('alertModal')).show();
+    }
+
+
+// Add new activity
+function addActivity(event) {
+    event.preventDefault();
+    const activityName = document.getElementById('activityNameInput').value.trim();
+    
+    if (!activityName) {
+        showAlertModal('Error', 'Please enter an activity name.');
+        return;
+    }
+
+    showSavingIndicator();
+    
+    $.ajax({
+        url: "{% url 'ajax_add_activity' %}",
+        type: 'POST',
+        data: {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            activity_name: activityName,
+            persona_id: '{{ persona_id }}'
+        },
+        success: function(response) {
+            hideSavingIndicator();
+            if (response.status === 'success') {
+                // Clear the form
+                document.getElementById('activityNameInput').value = '';
+                // Reload the page to show the new activity
+                location.reload();
+            } else {
+                showAlertModal('Error', 'Error adding activity: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            hideSavingIndicator();
+            showAlertModal('Error', 'Error adding activity: ' + error);
+        }
+    });
+}
+
+// Add new step
+function addStep(event) {
+    event.preventDefault();
+    const stepName = document.getElementById('stepNameInput').value.trim();
+    
+    if (!stepName) {
+        showAlertModal('Error', 'Please enter a step name.');
+        return;
+    }
+
+    showSavingIndicator();
+    
+    $.ajax({
+        url: "{% url 'ajax_add_step' %}",
+        type: 'POST',
+        data: {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            step_name: stepName,
+            persona_id: '{{ persona_id }}'
+        },
+        success: function(response) {
+            hideSavingIndicator();
+            if (response.status === 'success') {
+                // Clear the form
+                document.getElementById('stepNameInput').value = '';
+                // Add the new step to the unmapped steps list
+                addStepToUnmappedList(response.step_id, response.step_name);
+            } else {
+                showAlertModal('Error', 'Error adding step: ' + response.message);
+            }
+        },
+        error: function(xhr, status, error) {
+            hideSavingIndicator();
+            showAlertModal('Error', 'Error adding step: ' + error);
+        }
+    });
+}
+
+// Delete activity
+function deleteActivity(activityId, event) {
+    event.stopPropagation();
+    
+    showConfirmModal(
+        'Are you sure you want to delete this activity? All associated steps will become unmapped.',
+        function() {
+            showSavingIndicator();
+            
+            $.ajax({
+                url: "{% url 'ajax_delete_activity' %}",
+                type: 'POST',
+                data: {
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                    activity_id: activityId
+                },
+                success: function(response) {
+                    hideSavingIndicator();
+                    if (response.status === 'success') {
+                        location.reload();
+                    } else {
+                        showAlertModal('Error', 'Error deleting activity: ' + response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    hideSavingIndicator();
+                    showAlertModal('Error', 'Error deleting activity: ' + error);
+                }
+            });
+        }
+    );
+}
+
+// Delete step
+function deleteStep(stepId, event) {
+    event.stopPropagation();
+    
+    showConfirmModal(
+        'Are you sure you want to delete this step?',
+        function() {
+            showSavingIndicator();
+            
+            $.ajax({
+                url: "{% url 'ajax_delete_step' %}",
+                type: 'POST',
+                data: {
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                    step_id: stepId
+                },
+                success: function(response) {
+                    hideSavingIndicator();
+                    if (response.status === 'success') {
+                        // Remove the step element from the DOM
+                        const stepElement = document.querySelector(`[data-step-id="${stepId}"]`);
+                        if (stepElement) {
+                            stepElement.remove();
+                        }
+                        // Remove from selected steps if it was selected
+                        selectedSteps.delete(stepId.toString());
+                    } else {
+                        showAlertModal('Error', 'Error deleting step: ' + response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    hideSavingIndicator();
+                    showAlertModal('Error', 'Error deleting step: ' + error);
+                }
+            });
+        }
+    );
+}
+
+
+    // Add step to unmapped list dynamically
+    function addStepToUnmappedList(stepId, stepName) {
+        const unmappedStepsList = document.getElementById('unmapped-steps');
+        const newStepElement = document.createElement('li');
+        newStepElement.className = 'list-group-item step-item sortable-step d-flex align-items-center';
+        newStepElement.setAttribute('data-step-id', stepId);
+        newStepElement.setAttribute('data-step-position', '0');
+        newStepElement.setAttribute('draggable', 'true');
+        newStepElement.onclick = function() { toggleStepSelection(this); };
+        
+        newStepElement.innerHTML = `
+            <i class="fas fa-grip-vertical drag-handle" onclick="event.stopPropagation();"></i>
+            <i class="fa-solid fa-check-circle me-2" style="display: none;"></i>
+            <span class="flex-grow-1">${stepName}</span>
+            <div class="step-controls">
+                <button class="delete-btn" onclick="deleteStep(${stepId}, event)" title="Delete step">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </div>
+        `;
+        
+        // Add event listeners for drag and drop
+        newStepElement.addEventListener('dragstart', handleStepDragStart);
+        newStepElement.addEventListener('dragend', handleStepDragEnd);
+        
+        unmappedStepsList.appendChild(newStepElement);
+    }
 
     // Toggle selection state for a step
     function toggleStepSelection(stepElement) {
         const stepId = stepElement.getAttribute('data-step-id');
 
         if (selectedSteps.has(stepId)) {
-            selectedSteps.delete(stepId); // Deselect the step
+            selectedSteps.delete(stepId);
             stepElement.classList.remove('selected');
         } else {
-            selectedSteps.add(stepId); // Select the step
+            selectedSteps.add(stepId);
             stepElement.classList.add('selected');
         }
 
@@ -159,65 +758,627 @@
         }
     }
 
-    // Assign selected steps to an activity
-    function assignStepsToActivity(activityId) {
-        if (selectedSteps.size === 0) {
-            alert('Please select at least one step to assign.');
-            return;
+    // Initialize drag and drop
+    function initializeDragAndDrop() {
+        // Activity drag and drop
+        const activities = document.querySelectorAll('.sortable-activity');
+        activities.forEach(activity => {
+            activity.addEventListener('dragstart', handleActivityDragStart);
+            activity.addEventListener('dragend', handleActivityDragEnd);
+        });
+
+        // Step drag and drop
+        const steps = document.querySelectorAll('.sortable-step');
+        steps.forEach(step => {
+            step.addEventListener('dragstart', handleStepDragStart);
+            step.addEventListener('dragend', handleStepDragEnd);
+        });
+
+        // Drop zones
+        const dropZones = document.querySelectorAll('.drop-zone');
+        dropZones.forEach(zone => {
+            zone.addEventListener('dragover', handleDropZoneDragOver);
+            zone.addEventListener('drop', handleDropZoneDrop);
+            zone.addEventListener('dragleave', handleDropZoneDragLeave);
+        });
+
+        // Container for activities
+        const activitiesContainer = document.getElementById('activitiesContainer');
+        if (activitiesContainer) {
+            activitiesContainer.addEventListener('dragover', handleContainerDragOver);
+            activitiesContainer.addEventListener('drop', handleContainerDrop);
         }
+    }
 
-        const stepIds = Array.from(selectedSteps); // Convert Set to Array
+    // Activity drag handlers
+    function handleActivityDragStart(e) {
+        draggedElement = this;
+        draggedType = 'activity';
+        this.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/html', this.outerHTML);
+    }
 
+    function handleActivityDragEnd(e) {
+        this.classList.remove('dragging');
+        if (draggedType === 'activity') {
+            draggedElement = null;
+            draggedType = null;
+        }
+    }
+
+    // Step drag handlers
+    function handleStepDragStart(e) {
+        draggedElement = this;
+        draggedType = 'step';
+        this.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/html', this.outerHTML);
+        e.stopPropagation();
+    }
+
+    function handleStepDragEnd(e) {
+        this.classList.remove('dragging');
+        if (draggedType === 'step') {
+            draggedElement = null;
+            draggedType = null;
+        }
+    }
+
+    // Drop zone handlers
+    function handleDropZoneDragOver(e) {
+        if (draggedType !== 'step') return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        this.classList.add('drag-over');
+        
+        const stepsList = this.querySelector('.sortable-steps') || this.querySelector('#unmapped-steps');
+        if (stepsList) {
+            const afterElement = getDragAfterElement(stepsList, e.clientY);
+            const draggingElement = document.querySelector('.sortable-step.dragging');
+            
+            if (afterElement == null) {
+                stepsList.appendChild(draggingElement);
+            } else {
+                stepsList.insertBefore(draggingElement, afterElement);
+            }
+        }
+    }
+
+    function handleDropZoneDrop(e) {
+        if (draggedType !== 'step') return;
+        e.preventDefault();
+        this.classList.remove('drag-over');
+        
+        const stepId = draggedElement.getAttribute('data-step-id');
+        const activityId = this.getAttribute('data-activity-id') || null;
+        
+        // Update step's activity assignment
+        updateStepActivity(stepId, activityId);
+        
+        // Save step position within the new container
+        const stepsList = this.querySelector('.sortable-steps') || this.querySelector('#unmapped-steps');
+        if (stepsList) {
+            saveStepPosition(stepsList, activityId);
+        }
+    }
+
+    function handleDropZoneDragLeave(e) {
+        // Only remove drag-over if we're actually leaving the drop zone
+        if (!this.contains(e.relatedTarget)) {
+            this.classList.remove('drag-over');
+        }
+    }
+
+    // Container handlers for activities
+    function handleContainerDragOver(e) {
+        if (draggedType !== 'activity') return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        
+        const afterElement = getDragAfterElement(this, e.clientY);
+        const draggingElement = document.querySelector('.sortable-activity.dragging');
+        
+        if (afterElement == null) {
+            this.appendChild(draggingElement);
+        } else {
+            this.insertBefore(draggingElement, afterElement);
+        }
+    }
+
+    function handleContainerDrop(e) {
+        if (draggedType !== 'activity') return;
+        e.preventDefault();
+        saveActivityPosition();
+    }
+
+    // Utility function to find the element after which to insert
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.sortable-activity:not(.dragging), .sortable-step:not(.dragging)')];
+        
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    // Save activity position
+    function saveActivityPosition() {
+        showSavingIndicator();
+        const activities = document.querySelectorAll('.sortable-activity');
+        const positionData = [];
+        
+        activities.forEach((activity, index) => {
+            positionData.push({
+                id: activity.getAttribute('data-activity-id'),
+                position: index + 1
+            });
+        });
+        
         $.ajax({
-            url: "{% url 'ajax_map_steps_to_activity' %}",
+            url: "{% url 'ajax_update_activity_position' %}",
             type: 'POST',
             data: {
                 csrfmiddlewaretoken: '{{ csrf_token }}',
-                step_ids: stepIds,
+                position_data: JSON.stringify(positionData),
+                persona_id: '{{ persona_id }}'
+            },
+            success: function(response) {
+                hideSavingIndicator();
+                if (response.status === 'success') {
+                    updateOrderBadges();
+                    console.log('Activity position saved successfully');
+                } else {
+                    console.error('Error saving activity position:', response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                hideSavingIndicator();
+                console.error('Error saving activity position:', error);
+            }
+        });
+    }
+
+    // Save step position
+    function saveStepPosition(stepsList, activityId) {
+        showSavingIndicator();
+        const steps = stepsList.querySelectorAll('.sortable-step');
+        const positionData = [];
+        
+        steps.forEach((step, index) => {
+            positionData.push({
+                id: step.getAttribute('data-step-id'),
+                position: index + 1
+            });
+        });
+        
+        $.ajax({
+            url: "{% url 'ajax_update_step_position' %}",
+            type: 'POST',
+            data: {
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+                position_data: JSON.stringify(positionData),
                 activity_id: activityId,
-                persona_id: '{{ persona_id }}',
+                persona_id: '{{ persona_id }}'
             },
-            success: function (response) {
+            success: function(response) {
+                hideSavingIndicator();
                 if (response.status === 'success') {
-                    location.reload(); // Refresh the page
+                    console.log('Step position saved successfully');
                 } else {
-                    console.error('Error assigning steps:', response.message);
+                    console.error('Error saving step position:', response.message);
                 }
             },
-            error: function (xhr, status, error) {
-                console.error('Error assigning steps:', error);
-            },
+            error: function(xhr, status, error) {
+                hideSavingIndicator();
+                console.error('Error saving step position:', error);
+            }
         });
     }
 
-    // Unassign selected steps from an activity
-    function unassignStepsFromActivity(activityId) {
-        if (selectedSteps.size === 0) {
-            alert('Please select at least one step to unassign.');
-            return;
+    // Update step activity assignment
+    function updateStepActivity(stepId, activityId) {
+        const url = activityId ? "{% url 'ajax_map_steps_to_activity' %}" : "{% url 'ajax_unmap_steps_from_activity' %}";
+        const data = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            step_ids: [stepId],
+            persona_id: '{{ persona_id }}'
+        };
+        
+        if (activityId) {
+            data.activity_id = activityId;
         }
-
-        const stepIds = Array.from(selectedSteps); // Convert Set to Array
-
+        
         $.ajax({
-            url: "{% url 'ajax_unmap_steps_from_activity' %}",
+            url: url,
+            type: 'POST',
+            data: data,
+            success: function(response) {
+                if (response.status === 'success') {
+                    console.log('Step activity updated successfully');
+                } else {
+                    console.error('Error updating step activity:', response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error updating step activity:', error);
+            }
+        });
+    }
+
+    // Update order badges
+    function updateOrderBadges() {
+        const activities = document.querySelectorAll('.sortable-activity');
+        activities.forEach((activity, index) => {
+            const badge = activity.querySelector('.order-badge');
+            if (badge) {
+                badge.textContent = index + 1;
+            }
+        });
+    }
+
+    // Show/hide saving indicator
+    function showSavingIndicator() {
+        document.getElementById('savingIndicator').style.display = 'block';
+    }
+
+    function hideSavingIndicator() {
+        document.getElementById('savingIndicator').style.display = 'none';
+    }
+
+    // Edit activity name
+    function editActivityName(activityId, currentName) {
+        const newName = prompt('Enter new activity name:', currentName);
+        if (newName && newName.trim() !== '' && newName !== currentName) {
+            $.ajax({
+                url: "{% url 'ajax_update_activity_name' %}",
+                type: 'POST',
+                data: {
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                    activity_id: activityId,
+                    activity_name: newName.trim()
+                },
+                success: function(response) {
+                    if (response.status === 'success') {
+                        location.reload();
+                    } else {
+                        alert('Error updating activity name: ' + response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert('Error updating activity name: ' + error);
+                }
+            });
+        }
+    }
+
+    
+// Assign/unassign functions with modal alerts
+function assignStepsToActivity(activityId) {
+    if (selectedSteps.size === 0) {
+        showAlertModal('Error', 'Please select at least one step to assign.');
+        return;
+    }
+
+    const stepIds = Array.from(selectedSteps);
+
+    $.ajax({
+        url: "{% url 'ajax_map_steps_to_activity' %}",
+        type: 'POST',
+        data: {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            step_ids: stepIds,
+            activity_id: activityId,
+            persona_id: '{{ persona_id }}',
+        },
+        success: function (response) {
+            if (response.status === 'success') {
+                location.reload();
+            } else {
+                showAlertModal('Error', 'Error assigning steps: ' + response.message);
+            }
+        },
+        error: function (xhr, status, error) {
+            showAlertModal('Error', 'Error assigning steps: ' + error);
+        },
+    });
+}
+
+    
+function unassignStepsFromActivity(activityId) {
+    if (selectedSteps.size === 0) {
+        showAlertModal('Error', 'Please select at least one step to unassign.');
+        return;
+    }
+
+    const stepIds = Array.from(selectedSteps);
+
+    $.ajax({
+        url: "{% url 'ajax_unmap_steps_from_activity' %}",
+        type: 'POST',
+        data: {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            step_ids: stepIds,
+        },
+        success: function (response) {
+            if (response.status === 'success') {
+                location.reload();
+            } else {
+                showAlertModal('Error', 'Error unassigning steps: ' + response.message);
+            }
+        },
+        error: function (xhr, status, error) {
+            showAlertModal('Error', 'Error unassigning steps: ' + error);
+        },
+    });
+}
+
+
+let selectedRestoreItems = {
+    activities: new Set(),
+    steps: new Set()
+};
+
+// Show restore modal and load deleted items
+function showRestoreModal() {
+    // Reset selections
+    selectedRestoreItems.activities.clear();
+    selectedRestoreItems.steps.clear();
+    updateRestoreButton();
+    
+    // Show modal
+    new bootstrap.Modal(document.getElementById('restoreModal')).show();
+    
+    // Load deleted items
+    loadDeletedItems();
+}
+
+// Load deleted activities and steps
+function loadDeletedItems() {
+    // Load deleted activities
+    $.ajax({
+        url: "{% url 'ajax_get_deleted_activities' %}",
+        type: 'POST',
+        data: {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            persona_id: '{{ persona_id }}'
+        },
+        success: function(response) {
+            if (response.status === 'success') {
+                renderDeletedActivities(response.activities);
+            } else {
+                document.getElementById('deletedActivitiesList').innerHTML = 
+                    '<div class="empty-restore-list">Error loading activities</div>';
+            }
+        },
+        error: function() {
+            document.getElementById('deletedActivitiesList').innerHTML = 
+                '<div class="empty-restore-list">Error loading activities</div>';
+        }
+    });
+    
+    // Load deleted steps
+    $.ajax({
+        url: "{% url 'ajax_get_deleted_steps' %}",
+        type: 'POST',
+        data: {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            persona_id: '{{ persona_id }}'
+        },
+        success: function(response) {
+            if (response.status === 'success') {
+                renderDeletedSteps(response.steps);
+            } else {
+                document.getElementById('deletedStepsList').innerHTML = 
+                    '<div class="empty-restore-list">Error loading steps</div>';
+            }
+        },
+        error: function() {
+            document.getElementById('deletedStepsList').innerHTML = 
+                '<div class="empty-restore-list">Error loading steps</div>';
+        }
+    });
+}
+
+// Render deleted activities
+function renderDeletedActivities(activities) {
+    const container = document.getElementById('deletedActivitiesList');
+    
+    if (activities.length === 0) {
+        container.innerHTML = '<div class="empty-restore-list">No deleted activities found</div>';
+        return;
+    }
+    
+    let html = '';
+    activities.forEach(activity => {
+        const stepText = activity.step_count > 0 ? `${activity.step_count} unmapped steps` : 'No unmapped steps';
+        html += `
+            <div class="restore-item" onclick="handleRestoreItemClick('activity', ${activity.id}, this, event)">
+                <div class="restore-item-info">
+                    <input type="checkbox" onchange="toggleRestoreSelection('activity', ${activity.id}, this.parentElement.parentElement)">
+                    <i class="fas fa-layer-group text-primary me-2"></i>
+                    <span>${activity.name}</span>
+                </div>
+                <div class="restore-item-meta">
+                    ${stepText}
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+// Render deleted steps
+function renderDeletedSteps(steps) {
+    const container = document.getElementById('deletedStepsList');
+    
+    if (steps.length === 0) {
+        container.innerHTML = '<div class="empty-restore-list">No deleted steps found</div>';
+        return;
+    }
+    
+    let html = '';
+    steps.forEach(step => {
+        html += `
+            <div class="restore-item" onclick="handleRestoreItemClick('step', ${step.id}, this, event)">
+                <div class="restore-item-info">
+                    <input type="checkbox" onchange="toggleRestoreSelection('step', ${step.id}, this.parentElement.parentElement)">
+                    <i class="fas fa-step-forward text-success me-2"></i>
+                    <span>${step.name}</span>
+                </div>
+                <div class="restore-item-meta">
+                    ${step.activity_name || 'Unmapped'}
+                </div>
+            </div>
+        `;
+    });
+    
+    container.innerHTML = html;
+}
+
+// Handle clicking on restore item (toggle checkbox)
+function handleRestoreItemClick(type, id, element, event) {
+    // Don't toggle if clicking directly on checkbox
+    if (event.target.type === 'checkbox') {
+        return;
+    }
+    
+    const checkbox = element.querySelector('input[type="checkbox"]');
+    checkbox.checked = !checkbox.checked;
+    
+    // Trigger the change event to update selection
+    toggleRestoreSelection(type, id, element);
+}
+
+// Toggle selection for restore items
+function toggleRestoreSelection(type, id, element) {
+    const checkbox = element.querySelector('input[type="checkbox"]');
+    
+    // Use the checkbox state as the source of truth
+    const isNowSelected = checkbox.checked;
+    
+    // Fix the key mapping issue
+    const collectionKey = type === 'activity' ? 'activities' : 'steps';
+    
+    if (isNowSelected) {
+        selectedRestoreItems[collectionKey].add(id);
+        element.classList.add('selected');
+    } else {
+        selectedRestoreItems[collectionKey].delete(id);
+        element.classList.remove('selected');
+    }
+    
+    updateRestoreButton();
+}
+
+// Update restore button state
+function updateRestoreButton() {
+    const totalSelected = selectedRestoreItems.activities.size + selectedRestoreItems.steps.size;
+    const restoreBtn = document.getElementById('restoreSelectedBtn');
+    
+    console.log('Selected activities:', selectedRestoreItems.activities.size);
+    console.log('Selected steps:', selectedRestoreItems.steps.size);
+    console.log('Total selected:', totalSelected);
+    
+    if (totalSelected > 0) {
+        restoreBtn.disabled = false;
+        restoreBtn.innerHTML = `<i class="fas fa-undo"></i> Restore Selected (${totalSelected})`;
+        restoreBtn.classList.remove('btn-secondary');
+        restoreBtn.classList.add('btn-success');
+    } else {
+        restoreBtn.disabled = true;
+        restoreBtn.innerHTML = '<i class="fas fa-undo"></i> Restore Selected';
+        restoreBtn.classList.remove('btn-success');
+        restoreBtn.classList.add('btn-secondary');
+    }
+}
+
+
+// Restore selected items
+function restoreSelectedItems() {
+    const activityIds = Array.from(selectedRestoreItems.activities);
+    const stepIds = Array.from(selectedRestoreItems.steps);
+    
+    if (activityIds.length === 0 && stepIds.length === 0) {
+        showAlertModal('Error', 'Please select items to restore.');
+        return;
+    }
+    
+    showSavingIndicator();
+    
+    let completedRequests = 0;
+    let totalRequests = 0;
+    
+    // Count total requests
+    if (activityIds.length > 0) totalRequests++;
+    if (stepIds.length > 0) totalRequests++;
+    
+    function checkCompletion() {
+        completedRequests++;
+        if (completedRequests === totalRequests) {
+            setTimeout(function() {
+                hideSavingIndicator();
+                bootstrap.Modal.getInstance(document.getElementById('restoreModal')).hide();
+                location.reload();
+            }, 500);
+        }
+    }
+    
+    // Restore activities only (steps are unmapped, not deleted)
+    if (activityIds.length > 0) {
+        $.ajax({
+            url: "{% url 'ajax_restore_activities' %}",
             type: 'POST',
             data: {
                 csrfmiddlewaretoken: '{{ csrf_token }}',
-                step_ids: stepIds,
+                activity_ids: JSON.stringify(activityIds)
             },
-            success: function (response) {
+            success: function(response) {
                 if (response.status === 'success') {
-                    location.reload(); // Refresh the page
+                    console.log('Activities restored successfully');
                 } else {
-                    console.error('Error unassigning steps:', response.message);
+                    showAlertModal('Error', 'Error restoring activities: ' + response.message);
                 }
+                checkCompletion();
             },
-            error: function (xhr, status, error) {
-                console.error('Error unassigning steps:', error);
-            },
+            error: function() {
+                showAlertModal('Error', 'Error restoring activities');
+                checkCompletion();
+            }
         });
     }
+    
+    // Restore steps (actually deleted steps only)
+    if (stepIds.length > 0) {
+        $.ajax({
+            url: "{% url 'ajax_restore_steps' %}",
+            type: 'POST',
+            data: {
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+                step_ids: JSON.stringify(stepIds)
+            },
+            success: function(response) {
+                if (response.status === 'success') {
+                    console.log('Steps restored successfully');
+                } else {
+                    showAlertModal('Error', 'Error restoring steps: ' + response.message);
+                }
+                checkCompletion();
+            },
+            error: function() {
+                showAlertModal('Error', 'Error restoring steps');
+                checkCompletion();
+            }
+        });
+    }
+}
 </script>
 
 {% endblock content %}

@@ -63,5 +63,45 @@ urlpatterns = [
     # Kanban and other features
     path('project_tree_board_settings/<int:pro_id>/', views_project_tree.project_tree_board_settings, name='project_tree_board_settings'),
     
+    # MVP3: Aug 2nd 2025
+    # Drag and drop functionality
+
+    path('ajax/update-activity-position/', 
+         views_story_map.ajax_update_activity_position, 
+         name='ajax_update_activity_position'),
+    
+    path('ajax/update-step-position/', 
+         views_story_map.ajax_update_step_position, 
+         name='ajax_update_step_position'),
+    
+    path('ajax/update-activity-name/', 
+         views_story_map.ajax_update_activity_name, 
+         name='ajax_update_activity_name'),
+    
+    path('ajax/move-step-to-activity/', 
+         views_story_map.ajax_move_step_to_activity, 
+         name='ajax_move_step_to_activity'),
+
+    path('ajax/add-activity/', 
+         views_story_map.ajax_add_activity, 
+         name='ajax_add_activity'),
+    
+    path('ajax/add-step/', 
+         views_story_map.ajax_add_step, 
+         name='ajax_add_step'),
+
+    path('ajax/delete-activity/', views_story_map.ajax_delete_activity, name='ajax_delete_activity'),
+    path('ajax/delete-step/', views_story_map.ajax_delete_step, name='ajax_delete_step'),
+
+
+    # Restore functionality URLs
+    path('ajax/get-deleted-activities/', views_story_map.ajax_get_deleted_activities, name='ajax_get_deleted_activities'),
+    path('ajax/get-deleted-steps/', views_story_map.ajax_get_deleted_steps, name='ajax_get_deleted_steps'),
+    path('ajax/restore-activities/', views_story_map.ajax_restore_activities, name='ajax_restore_activities'),
+    path('ajax/restore-steps/', views_story_map.ajax_restore_steps, name='ajax_restore_steps'),
+    
+    # Optional: Permanent delete (for admin use)
+    path('ajax/permanent-delete-activity/', views_story_map.ajax_permanent_delete_activity, name='ajax_permanent_delete_activity'),
+    path('ajax/permanent-delete-step/', views_story_map.ajax_permanent_delete_step, name='ajax_permanent_delete_step'),
     
 ]

@@ -7,94 +7,674 @@
 {% load mptt_tags %}
 {% block content %}
 {% include 'app_common/common_files/navbar.html' %}
+
+<link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css" rel="stylesheet">
 {% include 'app_jivapms/mod_web/common_files/css.html' %}
-<!--
-required from the view
-project
-org
-org_id
--->
 
-<div class="content-wrapper">
-    {% include 'app_organization/mod_project/sidebar_menu.html' %}
-    
-    <div class="contentbar mb-5" id="contentbar">
-        <div class="container-fluid">
-            <h3>Create Story Map</h3>
-            <div class="d-flex justify-content-center align-items-center" style="min-height: 50vh;">
-                <table class="table table-bordered text-center" style="width: 50%;">
-                    <tbody>
-                        <tr>
-                            <td>
-                                <div class="container-fluid">
-                                    <div class="row">
-                                        <div class="col col-md-12 text-start">
-                                            <b class="">
-                                                Story Mapping is a technique to visualize the stories and their relationships in a project.
-                                            </b>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col col-md-6 text-start">
-                                            <ul class="text-start">
-                                                <li>Choose a Project</li>
-                                                <li>Choose to Create Backlog from Story Map</li>
-                                                <li>Or Map your existing stories to Story Map</li>
-                                            </ul>
-                                        </div>
-                                    </div>
-                                </div>
-                            </td>
-                        </tr>
-                        <tr>
-                            <form method="post" action="">
-                                {% csrf_token %}
-                                <td>
-                                
-                                    <div class="container-fluid">
-                                        <div class="row">
-                                            <div class="col-col-md-12 text-start">
-                                                <b class="h5">
-                                                    Choose a Project:
-                                                </b>
-                                                <select name="project" id="project_id">
-                                                    <option value="">-- Select the Project --</option>
-                                                    {% for project in projects %}
-                                                        <option value="{{ project.id }}"
-                                                            {% if project.id == project.id %}
-                                                                selected
-                                                            {% endif %}
-                                                        >{{ project.name }}</option>
-                                                    {% endfor %}
-                                                </select>
-                                                &nbsp;&nbsp;
-                                                <select name="story_mapping_name" id="story_mapping_option">
-                                                    <option value="">-- Select the Option --</option>
-                                                    <option value="1">Create Backlog from Story Map</option>
-                                                    <option value="2">Map existing stories to Backlog</option>
-                                                </select>
-                                                &nbsp;&nbsp;
-                                                <button type="submit" class="btn btn-sm btn-primary">Go</button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                
-                            
-                                </td>
-                            </form>
-                        </tr>
+<style>
+    .content-wrapper {
+        padding: 20px;
+    }
 
-                        <tr>
-                            <td>
-                                <h4>Or Choose the existing Persona</h4>
-                                <a href="{% url 'list_project_personae'  org_id project.id %}">List Project {{project}} Personae</a>
-                            </td>
-                        </tr>
-                    </tbody>
-                </table>
+    .step-item {
+        cursor: pointer;
+        transition: background-color 0.3s, color 0.3s;
+        border: 1px solid transparent;
+        margin: 2px 0;
+    }
+
+    .step-item:hover {
+        background-color: #f8f9fa;
+    }
+
+    .step-item.selected {
+        background-color: #007bff;
+        color: white;
+    }
+
+    .activity-container {
+        background-color: #ffffff;
+        border: 1px solid #e5e5e5;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        padding: 15px;
+        margin-bottom: 20px;
+        position: relative;
+    }
+
+    .list-group {
+        max-height: 300px;
+        overflow-y: auto;
+    }
+
+    .activity-header {
+        font-size: 1.2rem;
+        font-weight: bold;
+        color: #495057;
+        cursor: move;
+        padding: 8px;
+        background: #f8f9fa;
+        border-radius: 4px;
+        margin-bottom: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+    }
+
+    .activity-header:hover {
+        background: #e9ecef;
+    }
+
+    .btn {
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .btn:hover {
+        transform: scale(1.05);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .assign-buttons {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-start;
+        margin-bottom: 10px;
+    }
+
+    .content-wrapper {
+        overflow-y: auto;
+    }
+
+    /* Drag and Drop Styles */
+    .sortable-activity {
+        transition: transform 0.2s ease;
+    }
+
+    .sortable-activity.dragging {
+        opacity: 0.5;
+        transform: rotate(5deg);
+    }
+
+    .sortable-step {
+        transition: transform 0.2s ease;
+    }
+
+    .sortable-step.dragging {
+        opacity: 0.5;
+        background-color: #fff3cd !important;
+    }
+
+    .drag-over {
+        border: 2px dashed #007bff !important;
+        background-color: #f8f9ff !important;
+    }
+
+    .drag-handle {
+        cursor: grab;
+        color: #6c757d;
+        margin-right: 8px;
+    }
+
+    .drag-handle:hover {
+        color: #495057;
+    }
+
+    .drag-handle:active {
+        cursor: grabbing;
+    }
+
+    .drop-zone {
+        min-height: 50px;
+        border: 2px dashed transparent;
+        border-radius: 4px;
+        transition: all 0.3s ease;
+    }
+
+    .drop-zone.drag-over {
+        border-color: #28a745;
+        background-color: #f8fff9;
+    }
+
+    /* Order indicator */
+    .order-badge {
+        background: #6c757d;
+        color: white;
+        border-radius: 50%;
+        width: 24px;
+        height: 24px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        font-weight: bold;
+    }
+
+    /* Smooth animations */
+    .activities-container {
+        position: relative;
+    }
+
+    .activity-container {
+        transition: all 0.3s ease;
+    }
+
+    .step-item {
+        transition: all 0.2s ease;
+    }
+
+    /* Loading state */
+    .saving-indicator {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        background: #28a745;
+        color: white;
+        padding: 10px 20px;
+        border-radius: 4px;
+        z-index: 1000;
+        display: none;
+    }
+</style>
+
+<div class="content-wrapper mb-5">
+    <div class="container mt-4 mb-5">
+        <div class="row">
+            <div class="col col-md-6"><b class="h3">{{page_title}}</b></div>
+            <div class="col col-md-6 text-end">
+                <a href="{% url 'create_backlog_from_story_map' pro_id persona_id %}" class="btn btn-sm">
+                    <i class="fas fa-arrow-left"></i> <b>Back to StoryMap</b>
+                </a>
+            </div>
+        </div>
+        
+        <!-- Saving indicator -->
+        <div class="saving-indicator" id="savingIndicator">
+            <i class="fas fa-spinner fa-spin"></i> Saving changes...
+        </div>
+
+        <div class="row g-3">
+            <!-- Left Side: Unmapped Steps -->
+            <div class="col-lg-5">
+                <div class="card shadow">
+                    <div class="card-header bg-primary text-white">
+                        <h4 class="mb-0">Unmapped Steps</h4>
+                    </div>
+                    <div class="card-body">
+                        <div class="drop-zone" id="unmappedDropZone">
+                            <ul id="unmapped-steps" class="list-group sortable-steps">
+                                {% for step in unmapped_steps %}
+                                <li class="list-group-item step-item sortable-step"
+                                    data-step-id="{{ step.id }}"
+                                    data-step-position="{{ step.position|default:0 }}"
+                                    draggable="true"
+                                    onclick="toggleStepSelection(this)">
+                                    <i class="fas fa-grip-vertical drag-handle" onclick="event.stopPropagation();"></i>
+                                    <i class="fa-solid fa-check-circle me-2" style="display: none;"></i>
+                                    {{ step.name }}
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side: Activities and Steps -->
+            <div class="col-lg-7">
+                <div class="activities-container" id="activitiesContainer">
+                    {% for activity in activities %}
+                    {% if activity.name != "Default Activity" %}
+                    <div class="activity-container sortable-activity" 
+                         data-activity-id="{{ activity.id }}" 
+                         data-activity-position="{{ activity.position|default:0 }}"
+                         draggable="true">
+                        
+                        <div class="activity-header">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-grip-vertical drag-handle me-2"></i>
+                                <span class="order-badge me-2">{{ forloop.counter }}</span>
+                                <span>{{ activity.name }}</span>
+                            </div>
+                            <div class="activity-controls">
+                                <button class="btn btn-sm btn-outline-secondary" onclick="editActivityName({{ activity.id }}, '{{ activity.name|escapejs }}')">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <div class="assign-buttons">
+                            <button class="btn btn-sm btn-success" onclick="assignStepsToActivity({{ activity.id }})">
+                                <i class="fas fa-angle-double-right"></i> Assign
+                            </button>
+                            <button class="btn btn-sm btn-danger" onclick="unassignStepsFromActivity({{ activity.id }})">
+                                <i class="fas fa-angle-double-left"></i> Unassign
+                            </button>
+                        </div>
+                        
+                        <div class="drop-zone activity-drop-zone" data-activity-id="{{ activity.id }}">
+                            <ul class="list-group mt-3 sortable-steps" data-activity-id="{{ activity.id }}">
+                                {% for step in activity.activity_steps.all|filter_active %}
+                                <li class="list-group-item step-item sortable-step"
+                                    data-step-id="{{ step.id }}"
+                                    data-step-position="{{ step.position|default:0 }}"
+                                    draggable="true"
+                                    onclick="toggleStepSelection(this)">
+                                    <i class="fas fa-grip-vertical drag-handle" onclick="event.stopPropagation();"></i>
+                                    <i class="fa-solid fa-check-circle me-2" style="display: none;"></i>
+                                    {{ step.name }}
+                                </li>
+                                {% endfor %}
+                            </ul>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
             </div>
         </div>
     </div>
 </div>
+
+<script>
+    // Global variables
+    let selectedSteps = new Set();
+    let draggedElement = null;
+    let draggedType = null; // 'activity' or 'step'
+    let touchTimeout;
+
+    // Initialize drag and drop functionality
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeDragAndDrop();
+        updateOrderBadges();
+    });
+
+    // Toggle selection state for a step
+    function toggleStepSelection(stepElement) {
+        const stepId = stepElement.getAttribute('data-step-id');
+
+        if (selectedSteps.has(stepId)) {
+            selectedSteps.delete(stepId);
+            stepElement.classList.remove('selected');
+        } else {
+            selectedSteps.add(stepId);
+            stepElement.classList.add('selected');
+        }
+
+        // Show or hide check icon
+        const checkIcon = stepElement.querySelector('.fa-check-circle');
+        if (checkIcon) {
+            checkIcon.style.display = selectedSteps.has(stepId) ? 'inline' : 'none';
+        }
+    }
+
+    // Initialize drag and drop
+    function initializeDragAndDrop() {
+        // Activity drag and drop
+        const activities = document.querySelectorAll('.sortable-activity');
+        activities.forEach(activity => {
+            activity.addEventListener('dragstart', handleActivityDragStart);
+            activity.addEventListener('dragend', handleActivityDragEnd);
+            activity.addEventListener('dragover', handleActivityDragOver);
+            activity.addEventListener('drop', handleActivityDrop);
+        });
+
+        // Step drag and drop
+        const steps = document.querySelectorAll('.sortable-step');
+        steps.forEach(step => {
+            step.addEventListener('dragstart', handleStepDragStart);
+            step.addEventListener('dragend', handleStepDragEnd);
+        });
+
+        // Drop zones
+        const dropZones = document.querySelectorAll('.drop-zone');
+        dropZones.forEach(zone => {
+            zone.addEventListener('dragover', handleDropZoneDragOver);
+            zone.addEventListener('drop', handleDropZoneDrop);
+            zone.addEventListener('dragleave', handleDropZoneDragLeave);
+        });
+
+        // Container for activities
+        const activitiesContainer = document.getElementById('activitiesContainer');
+        activitiesContainer.addEventListener('dragover', handleContainerDragOver);
+        activitiesContainer.addEventListener('drop', handleContainerDrop);
+    }
+
+    // Activity drag handlers
+    function handleActivityDragStart(e) {
+        draggedElement = this;
+        draggedType = 'activity';
+        this.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/html', this.outerHTML);
+    }
+
+    function handleActivityDragEnd(e) {
+        this.classList.remove('dragging');
+        draggedElement = null;
+        draggedType = null;
+    }
+
+    function handleActivityDragOver(e) {
+        if (draggedType !== 'activity') return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        
+        const afterElement = getDragAfterElement(document.getElementById('activitiesContainer'), e.clientY);
+        const draggingElement = document.querySelector('.sortable-activity.dragging');
+        
+        if (afterElement == null) {
+            document.getElementById('activitiesContainer').appendChild(draggingElement);
+        } else {
+            document.getElementById('activitiesContainer').insertBefore(draggingElement, afterElement);
+        }
+    }
+
+    function handleActivityDrop(e) {
+        if (draggedType !== 'activity') return;
+        e.preventDefault();
+        saveActivityPosition();
+    }
+
+    // Step drag handlers
+    function handleStepDragStart(e) {
+        draggedElement = this;
+        draggedType = 'step';
+        this.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/html', this.outerHTML);
+        e.stopPropagation();
+    }
+
+    function handleStepDragEnd(e) {
+        this.classList.remove('dragging');
+        if (draggedType === 'step') {
+            draggedElement = null;
+            draggedType = null;
+        }
+    }
+
+    // Drop zone handlers
+    function handleDropZoneDragOver(e) {
+        if (draggedType !== 'step') return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        this.classList.add('drag-over');
+        
+        const stepsList = this.querySelector('.sortable-steps') || this.querySelector('#unmapped-steps');
+        if (stepsList) {
+            const afterElement = getDragAfterElement(stepsList, e.clientY);
+            const draggingElement = document.querySelector('.sortable-step.dragging');
+            
+            if (afterElement == null) {
+                stepsList.appendChild(draggingElement);
+            } else {
+                stepsList.insertBefore(draggingElement, afterElement);
+            }
+        }
+    }
+
+    function handleDropZoneDrop(e) {
+        if (draggedType !== 'step') return;
+        e.preventDefault();
+        this.classList.remove('drag-over');
+        
+        const stepId = draggedElement.getAttribute('data-step-id');
+        const activityId = this.getAttribute('data-activity-id') || null;
+        
+        // Update step's activity assignment
+        updateStepActivity(stepId, activityId);
+        
+        // Save step position within the new container
+        const stepsList = this.querySelector('.sortable-steps') || this.querySelector('#unmapped-steps');
+        if (stepsList) {
+            saveStepPosition(stepsList, activityId);
+        }
+    }
+
+    function handleDropZoneDragLeave(e) {
+        // Only remove drag-over if we're actually leaving the drop zone
+        if (!this.contains(e.relatedTarget)) {
+            this.classList.remove('drag-over');
+        }
+    }
+
+    // Container handlers for activities
+    function handleContainerDragOver(e) {
+        if (draggedType !== 'activity') return;
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+    }
+
+    function handleContainerDrop(e) {
+        if (draggedType !== 'activity') return;
+        e.preventDefault();
+        saveActivityPosition();
+    }
+
+    // Utility function to find the element after which to insert
+    function getDragAfterElement(container, y) {
+        const draggableElements = [...container.querySelectorAll('.sortable-activity:not(.dragging), .sortable-step:not(.dragging)')];
+        
+        return draggableElements.reduce((closest, child) => {
+            const box = child.getBoundingClientRect();
+            const offset = y - box.top - box.height / 2;
+            
+            if (offset < 0 && offset > closest.offset) {
+                return { offset: offset, element: child };
+            } else {
+                return closest;
+            }
+        }, { offset: Number.NEGATIVE_INFINITY }).element;
+    }
+
+    // Save activity position
+    function saveActivityPosition() {
+        showSavingIndicator();
+        const activities = document.querySelectorAll('.sortable-activity');
+        const positionData = [];
+        
+        activities.forEach((activity, index) => {
+            positionData.push({
+                id: activity.getAttribute('data-activity-id'),
+                position: index + 1
+            });
+        });
+        
+        $.ajax({
+            url: "{% url 'ajax_update_activity_position' %}",
+            type: 'POST',
+            data: {
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+                position_data: JSON.stringify(positionData),
+                persona_id: '{{ persona_id }}'
+            },
+            success: function(response) {
+                hideSavingIndicator();
+                if (response.status === 'success') {
+                    updateOrderBadges();
+                    console.log('Activity position saved successfully');
+                } else {
+                    console.error('Error saving activity position:', response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                hideSavingIndicator();
+                console.error('Error saving activity position:', error);
+            }
+        });
+    }
+
+    // Save step position
+    function saveStepPosition(stepsList, activityId) {
+        showSavingIndicator();
+        const steps = stepsList.querySelectorAll('.sortable-step');
+        const positionData = [];
+        
+        steps.forEach((step, index) => {
+            positionData.push({
+                id: step.getAttribute('data-step-id'),
+                position: index + 1
+            });
+        });
+        
+        $.ajax({
+            url: "{% url 'ajax_update_step_position' %}",
+            type: 'POST',
+            data: {
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+                position_data: JSON.stringify(positionData),
+                activity_id: activityId,
+                persona_id: '{{ persona_id }}'
+            },
+            success: function(response) {
+                hideSavingIndicator();
+                if (response.status === 'success') {
+                    console.log('Step position saved successfully');
+                } else {
+                    console.error('Error saving step position:', response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                hideSavingIndicator();
+                console.error('Error saving step position:', error);
+            }
+        });
+    }
+
+    // Update step activity assignment
+    function updateStepActivity(stepId, activityId) {
+        const url = activityId ? "{% url 'ajax_map_steps_to_activity' %}" : "{% url 'ajax_unmap_steps_from_activity' %}";
+        const data = {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            step_ids: [stepId],
+            persona_id: '{{ persona_id }}'
+        };
+        
+        if (activityId) {
+            data.activity_id = activityId;
+        }
+        
+        $.ajax({
+            url: url,
+            type: 'POST',
+            data: data,
+            success: function(response) {
+                if (response.status === 'success') {
+                    console.log('Step activity updated successfully');
+                } else {
+                    console.error('Error updating step activity:', response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Error updating step activity:', error);
+            }
+        });
+    }
+
+    // Update order badges
+    function updateOrderBadges() {
+        const activities = document.querySelectorAll('.sortable-activity');
+        activities.forEach((activity, index) => {
+            const badge = activity.querySelector('.order-badge');
+            if (badge) {
+                badge.textContent = index + 1;
+            }
+        });
+    }
+
+    // Show/hide saving indicator
+    function showSavingIndicator() {
+        document.getElementById('savingIndicator').style.display = 'block';
+    }
+
+    function hideSavingIndicator() {
+        document.getElementById('savingIndicator').style.display = 'none';
+    }
+
+    // Edit activity name
+    function editActivityName(activityId, currentName) {
+        const newName = prompt('Enter new activity name:', currentName);
+        if (newName && newName.trim() !== '' && newName !== currentName) {
+            $.ajax({
+                url: "{% url 'ajax_update_activity_name' %}",
+                type: 'POST',
+                data: {
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                    activity_id: activityId,
+                    activity_name: newName.trim()
+                },
+                success: function(response) {
+                    if (response.status === 'success') {
+                        location.reload();
+                    } else {
+                        alert('Error updating activity name: ' + response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    alert('Error updating activity name: ' + error);
+                }
+            });
+        }
+    }
+
+    // Existing functions (assign/unassign steps)
+    function assignStepsToActivity(activityId) {
+        if (selectedSteps.size === 0) {
+            alert('Please select at least one step to assign.');
+            return;
+        }
+
+        const stepIds = Array.from(selectedSteps);
+
+        $.ajax({
+            url: "{% url 'ajax_map_steps_to_activity' %}",
+            type: 'POST',
+            data: {
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+                step_ids: stepIds,
+                activity_id: activityId,
+                persona_id: '{{ persona_id }}',
+            },
+            success: function (response) {
+                if (response.status === 'success') {
+                    location.reload();
+                } else {
+                    console.error('Error assigning steps:', response.message);
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('Error assigning steps:', error);
+            },
+        });
+    }
+
+    function unassignStepsFromActivity(activityId) {
+        if (selectedSteps.size === 0) {
+            alert('Please select at least one step to unassign.');
+            return;
+        }
+
+        const stepIds = Array.from(selectedSteps);
+
+        $.ajax({
+            url: "{% url 'ajax_unmap_steps_from_activity' %}",
+            type: 'POST',
+            data: {
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+                step_ids: stepIds,
+            },
+            success: function (response) {
+                if (response.status === 'success') {
+                    location.reload();
+                } else {
+                    console.error('Error unassigning steps:', response.message);
+                }
+            },
+            error: function (xhr, status, error) {
+                console.error('Error unassigning steps:', error);
+            },
+        });
+    }
+</script>
 
 {% endblock content %}

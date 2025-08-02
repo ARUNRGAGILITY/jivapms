@@ -31,7 +31,7 @@ def create_story_map(request, org_id):
         
         story_maps = StoryMapping.objects.filter(pro_id=project.id, active=True)
         story_maps_count = story_maps.count()
-        print(f"====> {selected_project_id} ===> {selected_story_map_option}")
+        print(f"create_story_map OPT1 ====> {selected_project_id} ===> {selected_story_map_option}")
         
         if selected_story_map_option == '2':
             return redirect('create_story_map_from_backlog', pro_id=selected_project_id)
@@ -72,8 +72,8 @@ def create_project_story_map(request, org_id, project_id):
     project = None 
     project = Project.objects.get(pk=project_id, active=True)
     personae_count = 0
-    personae_count = Persona.objects.filter(organization_id=org_id, project=project).count()
-    logger.debug(f"====> {personae_count} ===> {project_id}")
+    personae_count = Persona.objects.filter(organization_id=org_id, project=project, active=True).count()
+    logger.debug(f"BEFORE POST METHOD ====> {personae_count} ===> {project_id}")
     if request.method == 'POST':
         selected_project_id = request.POST.get('project')
         selected_story_map_option = request.POST.get('story_mapping_name')      
@@ -81,22 +81,28 @@ def create_project_story_map(request, org_id, project_id):
         
         story_maps = StoryMapping.objects.filter(pro_id=project.id, active=True)
         story_maps_count = story_maps.count()
-        #print(f"====> {selected_project_id} ===> {selected_story_map_option}")
+        print(f"TESTING ====> {selected_project_id} ===> {selected_story_map_option}")
         
         if selected_story_map_option == '2':
             return redirect('create_story_map_from_backlog', pro_id=selected_project_id)
             
                 
         else:           
-            # create a persona and send the persona id 
-            new_persona = Persona.objects.create(name='', organization_id=org_id, project=project) 
-            default_activity = Activity.objects.create(name='Default Activity', persona_id=new_persona.id)
-            request.session['default_activity_id'] = default_activity.id
-            #print(f">>> === DEFAULT ACTIVITY {default_activity.id} === <<<")
-            return redirect('create_backlog_from_story_map', pro_id=selected_project_id, persona_id=new_persona.id)
+            # Make sure the persona is saved and has an ID
+            new_persona = Persona.objects.create(name='', organization_id=org_id, project=project)
+            print(f"Created persona with ID: {new_persona.id}")  # Debug line
+
+            # Make sure new_persona.id is not None before redirecting
+            if new_persona.id:
+                return redirect('create_backlog_from_story_map', pro_id=selected_project_id, persona_id=new_persona.id)
+            else:
+                # Handle the error case
+                print("Error: Persona was not created successfully")
     # if personae_count  > 0:
     #     # Create the personae list for project 
     #     return redirect('list_project_personae', organization_id=org_id, project_id=project_id)
+    else:
+        return redirect('create_story_map_from_backlog', pro_id=project.id)
        
         
     # send outputs info, template,
@@ -720,3 +726,765 @@ def ajax_storymap_group_steps(request):
             return JsonResponse({'status': 'error', 'message': str(e)})
 
     return JsonResponse({'status': 'error', 'message': 'Invalid request method.'})
+
+
+
+## Activity and Steps drag and drop 
+
+import json
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def ajax_update_step_position(request):
+    """Update the position of steps within an activity or unmapped steps"""
+    if request.method == 'POST':
+        try:
+            position_data = json.loads(request.POST.get('position_data', '[]'))
+            activity_id = request.POST.get('activity_id')  # Can be None for unmapped steps
+            persona_id = request.POST.get('persona_id')
+            
+            if not persona_id:
+                return JsonResponse({'status': 'error', 'message': 'Persona ID is required'})
+            
+            # Update each step's position
+            for item in position_data:
+                step_id = item.get('id')
+                position = item.get('position')
+                
+                try:
+                    step = Step.objects.get(id=step_id, persona_id=persona_id)
+                    step.position = position
+                    
+                    # If activity_id is provided, ensure the step is assigned to that activity
+                    if activity_id:
+                        activity = Activity.objects.get(id=activity_id, persona_id=persona_id)
+                        step.activity = activity
+                    else:
+                        # If no activity_id, this is an unmapped step
+                        step.activity = None
+                    
+                    step.save()
+                except (Step.DoesNotExist, Activity.DoesNotExist):
+                    continue
+            
+            return JsonResponse({'status': 'success', 'message': 'Step position updated successfully'})
+            
+        except json.JSONDecodeError:
+            return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+
+
+
+@login_required
+def ajax_move_step_to_activity(request):
+    """Move a step from one activity to another (including unmapped)"""
+    if request.method == 'POST':
+        try:
+            step_id = request.POST.get('step_id')
+            target_activity_id = request.POST.get('target_activity_id')  # Can be None for unmapped
+            persona_id = request.POST.get('persona_id')
+            new_position = request.POST.get('new_position', 1)
+            
+            if not step_id or not persona_id:
+                return JsonResponse({'status': 'error', 'message': 'Step ID and persona ID are required'})
+            
+            step = Step.objects.get(id=step_id, persona_id=persona_id)
+            
+            # Update the step's activity assignment
+            if target_activity_id:
+                target_activity = Activity.objects.get(id=target_activity_id, persona_id=persona_id)
+                step.activity = target_activity
+            else:
+                step.activity = None  # Unmapped
+            
+            step.position = new_position
+            step.save()
+            
+            return JsonResponse({'status': 'success', 'message': 'Step moved successfully'})
+            
+        except (Step.DoesNotExist, Activity.DoesNotExist):
+            return JsonResponse({'status': 'error', 'message': 'Step or activity not found'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+
+# You don't need any database migrations since you already have 
+# the position field in your BaseModelImpl!
+
+
+
+# Add these new view functions to your views_story_map.py file
+
+import json
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def ajax_update_step_position(request):
+    """Update the position of steps within an activity or unmapped steps"""
+    if request.method == 'POST':
+        try:
+            position_data = json.loads(request.POST.get('position_data', '[]'))
+            activity_id = request.POST.get('activity_id')  # Can be None for unmapped steps
+            persona_id = request.POST.get('persona_id')
+            
+            if not persona_id:
+                return JsonResponse({'status': 'error', 'message': 'Persona ID is required'})
+            
+            # Update each step's position
+            for item in position_data:
+                step_id = item.get('id')
+                position = item.get('position')
+                
+                try:
+                    step = Step.objects.get(id=step_id, persona_id=persona_id)
+                    step.position = position
+                    
+                    # If activity_id is provided, ensure the step is assigned to that activity
+                    if activity_id:
+                        activity = Activity.objects.get(id=activity_id, persona_id=persona_id)
+                        step.activity = activity
+                    else:
+                        # If no activity_id, this is an unmapped step
+                        step.activity = None
+                    
+                    step.save()
+                except (Step.DoesNotExist, Activity.DoesNotExist):
+                    continue
+            
+            return JsonResponse({'status': 'success', 'message': 'Step position updated successfully'})
+            
+        except json.JSONDecodeError:
+            return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+
+@login_required
+def ajax_update_activity_name(request):
+    """Update the name of an activity"""
+    if request.method == 'POST':
+        try:
+            activity_id = request.POST.get('activity_id')
+            activity_name = request.POST.get('activity_name', '').strip()
+            
+            if not activity_id or not activity_name:
+                return JsonResponse({'status': 'error', 'message': 'Activity ID and name are required'})
+            
+            activity = Activity.objects.get(id=activity_id)
+            activity.name = activity_name
+            activity.save()
+            
+            return JsonResponse({'status': 'success', 'message': 'Activity name updated successfully'})
+            
+        except Activity.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Activity not found'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+
+@login_required
+def ajax_move_step_to_activity(request):
+    """Move a step from one activity to another (including unmapped)"""
+    if request.method == 'POST':
+        try:
+            step_id = request.POST.get('step_id')
+            target_activity_id = request.POST.get('target_activity_id')  # Can be None for unmapped
+            persona_id = request.POST.get('persona_id')
+            new_position = request.POST.get('new_position', 1)
+            
+            if not step_id or not persona_id:
+                return JsonResponse({'status': 'error', 'message': 'Step ID and persona ID are required'})
+            
+            step = Step.objects.get(id=step_id, persona_id=persona_id)
+            
+            # Update the step's activity assignment
+            if target_activity_id:
+                target_activity = Activity.objects.get(id=target_activity_id, persona_id=persona_id)
+                step.activity = target_activity
+            else:
+                step.activity = None  # Unmapped
+            
+            step.position = new_position
+            step.save()
+            
+            return JsonResponse({'status': 'success', 'message': 'Step moved successfully'})
+            
+        except (Step.DoesNotExist, Activity.DoesNotExist):
+            return JsonResponse({'status': 'error', 'message': 'Step or activity not found'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+
+# You don't need any database migrations since you already have 
+# the position field in your BaseModelImpl!
+
+
+@login_required
+def ajax_add_activity(request):
+    """Add a new activity for a persona"""
+    if request.method == 'POST':
+        try:
+            activity_name = request.POST.get('activity_name', '').strip()
+            persona_id = request.POST.get('persona_id')
+            
+            if not activity_name:
+                return JsonResponse({'status': 'error', 'message': 'Activity name is required'})
+            
+            if not persona_id:
+                return JsonResponse({'status': 'error', 'message': 'Persona ID is required'})
+            
+            # Get the persona
+            persona = Persona.objects.get(id=persona_id)
+            
+            # Get the highest position for activities in this persona
+            max_position = Activity.objects.filter(
+                persona_id=persona_id, 
+                active=True
+            ).aggregate(models.Max('position'))['position__max'] or 0
+            
+            # Create the new activity
+            activity = Activity.objects.create(
+                name=activity_name,
+                persona=persona,
+                position=max_position + 1,
+                active=True,
+                author=request.user
+            )
+            
+            return JsonResponse({
+                'status': 'success', 
+                'message': 'Activity added successfully',
+                'activity_id': activity.id,
+                'activity_name': activity.name
+            })
+            
+        except Persona.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Persona not found'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+
+
+# Add these new view functions to your views_story_map.py file
+########################
+#
+#
+#
+#
+#
+#
+########################
+# Add these new view functions to your views_story_map.py file
+
+import json
+from django.http import JsonResponse
+from django.views.decorators.csrf import csrf_exempt
+from django.contrib.auth.decorators import login_required
+
+@login_required
+def ajax_update_activity_position(request):
+    """Update the position of activities for a persona"""
+    if request.method == 'POST':
+        try:
+            position_data = json.loads(request.POST.get('position_data', '[]'))
+            persona_id = request.POST.get('persona_id')
+            
+            if not persona_id:
+                return JsonResponse({'status': 'error', 'message': 'Persona ID is required'})
+            
+            # Update each activity's position
+            for item in position_data:
+                activity_id = item.get('id')
+                position = item.get('position')
+                
+                try:
+                    activity = Activity.objects.get(id=activity_id, persona_id=persona_id)
+                    activity.position = position
+                    activity.save()
+                except Activity.DoesNotExist:
+                    continue
+            
+            return JsonResponse({'status': 'success', 'message': 'Activity position updated successfully'})
+            
+        except json.JSONDecodeError:
+            return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+
+@login_required
+def ajax_update_step_position(request):
+    """Update the position of steps within an activity or unmapped steps"""
+    if request.method == 'POST':
+        try:
+            position_data = json.loads(request.POST.get('position_data', '[]'))
+            activity_id = request.POST.get('activity_id')  # Can be None for unmapped steps
+            persona_id = request.POST.get('persona_id')
+            
+            if not persona_id:
+                return JsonResponse({'status': 'error', 'message': 'Persona ID is required'})
+            
+            # Update each step's position
+            for item in position_data:
+                step_id = item.get('id')
+                position = item.get('position')
+                
+                try:
+                    step = Step.objects.get(id=step_id, persona_id=persona_id)
+                    step.position = position
+                    
+                    # If activity_id is provided, ensure the step is assigned to that activity
+                    if activity_id:
+                        activity = Activity.objects.get(id=activity_id, persona_id=persona_id)
+                        step.activity = activity
+                    else:
+                        # If no activity_id, this is an unmapped step
+                        step.activity = None
+                    
+                    step.save()
+                except (Step.DoesNotExist, Activity.DoesNotExist):
+                    continue
+            
+            return JsonResponse({'status': 'success', 'message': 'Step position updated successfully'})
+            
+        except json.JSONDecodeError:
+            return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+
+@login_required
+def ajax_update_activity_name(request):
+    """Update the name of an activity"""
+    if request.method == 'POST':
+        try:
+            activity_id = request.POST.get('activity_id')
+            activity_name = request.POST.get('activity_name', '').strip()
+            
+            if not activity_id or not activity_name:
+                return JsonResponse({'status': 'error', 'message': 'Activity ID and name are required'})
+            
+            activity = Activity.objects.get(id=activity_id)
+            activity.name = activity_name
+            activity.save()
+            
+            return JsonResponse({'status': 'success', 'message': 'Activity name updated successfully'})
+            
+        except Activity.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Activity not found'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+
+@login_required
+def ajax_move_step_to_activity(request):
+    """Move a step from one activity to another (including unmapped)"""
+    if request.method == 'POST':
+        try:
+            step_id = request.POST.get('step_id')
+            target_activity_id = request.POST.get('target_activity_id')  # Can be None for unmapped
+            persona_id = request.POST.get('persona_id')
+            new_position = request.POST.get('new_position', 1)
+            
+            if not step_id or not persona_id:
+                return JsonResponse({'status': 'error', 'message': 'Step ID and persona ID are required'})
+            
+            step = Step.objects.get(id=step_id, persona_id=persona_id)
+            
+            # Update the step's activity assignment
+            if target_activity_id:
+                target_activity = Activity.objects.get(id=target_activity_id, persona_id=persona_id)
+                step.activity = target_activity
+            else:
+                step.activity = None  # Unmapped
+            
+            step.position = new_position
+            step.save()
+            
+            return JsonResponse({'status': 'success', 'message': 'Step moved successfully'})
+            
+        except (Step.DoesNotExist, Activity.DoesNotExist):
+            return JsonResponse({'status': 'error', 'message': 'Step or activity not found'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+
+# You don't need any database migrations since you already have 
+# the position field in your BaseModelImpl!
+
+
+@login_required
+def ajax_add_activity(request):
+    """Add a new activity for a persona"""
+    if request.method == 'POST':
+        try:
+            activity_name = request.POST.get('activity_name', '').strip()
+            persona_id = request.POST.get('persona_id')
+            
+            if not activity_name:
+                return JsonResponse({'status': 'error', 'message': 'Activity name is required'})
+            
+            if not persona_id:
+                return JsonResponse({'status': 'error', 'message': 'Persona ID is required'})
+            
+            # Get the persona
+            persona = Persona.objects.get(id=persona_id)
+            
+            # Get the highest position for activities in this persona
+            max_position = Activity.objects.filter(
+                persona_id=persona_id, 
+                active=True
+            ).aggregate(models.Max('position'))['position__max'] or 0
+            
+            # Create the new activity
+            activity = Activity.objects.create(
+                name=activity_name,
+                persona=persona,
+                position=max_position + 1,
+                active=True,
+                author=request.user
+            )
+            
+            return JsonResponse({
+                'status': 'success', 
+                'message': 'Activity added successfully',
+                'activity_id': activity.id,
+                'activity_name': activity.name
+            })
+            
+        except Persona.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Persona not found'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+
+@login_required
+def ajax_add_step(request):
+    """Add a new step for a persona (unmapped by default)"""
+    if request.method == 'POST':
+        try:
+            step_name = request.POST.get('step_name', '').strip()
+            persona_id = request.POST.get('persona_id')
+            
+            if not step_name:
+                return JsonResponse({'status': 'error', 'message': 'Step name is required'})
+            
+            if not persona_id:
+                return JsonResponse({'status': 'error', 'message': 'Persona ID is required'})
+            
+            # Get the persona
+            persona = Persona.objects.get(id=persona_id)
+            
+            # Get the highest position for unmapped steps in this persona
+            max_position = Step.objects.filter(
+                persona_id=persona_id,
+                activity__isnull=True,
+                active=True
+            ).aggregate(models.Max('position'))['position__max'] or 0
+            
+            # Create the new step (unmapped by default)
+            step = Step.objects.create(
+                name=step_name,
+                persona=persona,
+                activity=None,  # Unmapped
+                position=max_position + 1,
+                active=True,
+                author=request.user
+            )
+            
+            return JsonResponse({
+                'status': 'success', 
+                'message': 'Step added successfully',
+                'step_id': step.id,
+                'step_name': step.name
+            })
+            
+        except Persona.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Persona not found'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+@login_required
+def ajax_delete_step(request):
+    """Delete a step"""
+    if request.method == 'POST':
+        try:
+            step_id = request.POST.get('step_id')
+            
+            if not step_id:
+                return JsonResponse({'status': 'error', 'message': 'Step ID is required'})
+            
+            step = Step.objects.get(id=step_id)
+            
+            # No permission check needed - just delete
+            step.active = False
+            step.save()
+            
+            return JsonResponse({'status': 'success', 'message': 'Step deleted successfully'})
+            
+        except Step.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Step not found'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+
+@login_required
+def ajax_delete_activity(request):
+    """Delete an activity and unmap all its steps"""
+    if request.method == 'POST':
+        try:
+            activity_id = request.POST.get('activity_id')
+            
+            if not activity_id:
+                return JsonResponse({'status': 'error', 'message': 'Activity ID is required'})
+            
+            activity = Activity.objects.get(id=activity_id)
+            
+            # Unmap all steps from this activity
+            Step.objects.filter(activity=activity).update(activity=None)
+            
+            # Soft delete the activity
+            activity.active = False
+            activity.save()
+            
+            return JsonResponse({'status': 'success', 'message': 'Activity deleted successfully'})
+            
+        except Activity.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Activity not found'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+
+# # Only allow users to delete their own created items
+# if step.author != request.user:
+#     return JsonResponse({'status': 'error', 'message': 'Permission denied'})
+
+
+
+import json
+from django.http import JsonResponse
+from django.contrib.auth.decorators import login_required
+from django.db.models import Count
+
+@login_required
+def ajax_get_deleted_activities(request):
+    """Get list of deleted activities for a persona"""
+    if request.method == 'POST':
+        try:
+            persona_id = request.POST.get('persona_id')
+            
+            if not persona_id:
+                return JsonResponse({'status': 'error', 'message': 'Persona ID is required'})
+            
+            # Get deleted activities with count of steps that became unmapped when this activity was deleted
+            deleted_activities = Activity.objects.filter(
+                persona_id=persona_id,
+                active=False
+            ).annotate(
+                # Count unmapped steps that might have belonged to this activity
+                step_count=Count('activity_steps', filter=models.Q(activity_steps__active=True, activity_steps__activity__isnull=True))
+            ).values(
+                'id', 
+                'name', 
+                'step_count',
+                'updated_at'
+            ).order_by('-updated_at')
+            
+            return JsonResponse({
+                'status': 'success', 
+                'activities': list(deleted_activities)
+            })
+            
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+
+@login_required
+def ajax_get_deleted_steps(request):
+    """Get list of deleted steps for a persona"""
+    if request.method == 'POST':
+        try:
+            persona_id = request.POST.get('persona_id')
+            
+            if not persona_id:
+                return JsonResponse({'status': 'error', 'message': 'Persona ID is required'})
+            
+            # Get deleted steps with activity name
+            deleted_steps = Step.objects.filter(
+                persona_id=persona_id,
+                active=False
+            ).select_related('activity').values(
+                'id',
+                'name',
+                'activity__name',
+                'updated_at'
+            ).order_by('-updated_at')
+            
+            # Format the data
+            steps_data = []
+            for step in deleted_steps:
+                steps_data.append({
+                    'id': step['id'],
+                    'name': step['name'],
+                    'activity_name': step['activity__name'],
+                    'updated_at': step['updated_at']
+                })
+            
+            return JsonResponse({
+                'status': 'success', 
+                'steps': steps_data
+            })
+            
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+
+@login_required
+def ajax_restore_activities(request):
+    """Restore deleted activities (steps were unmapped, not deleted)"""
+    if request.method == 'POST':
+        try:
+            activity_ids = json.loads(request.POST.get('activity_ids', '[]'))
+            
+            if not activity_ids:
+                return JsonResponse({'status': 'error', 'message': 'No activity IDs provided'})
+            
+            # Restore the activities only
+            # Steps were unmapped (activity set to None) when activity was deleted, not actually deleted
+            restored_count = Activity.objects.filter(
+                id__in=activity_ids,
+                active=False
+            ).update(active=True)
+            
+            # Note: Steps are still unmapped and need to be manually reassigned if needed
+            # This is by design since the user might want to reorganize them
+            
+            return JsonResponse({
+                'status': 'success', 
+                'message': f'{restored_count} activities restored successfully. Steps remain unmapped.'
+            })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+
+@login_required
+def ajax_restore_steps(request):
+    """Restore deleted steps"""
+    if request.method == 'POST':
+        try:
+            step_ids = json.loads(request.POST.get('step_ids', '[]'))
+            
+            if not step_ids:
+                return JsonResponse({'status': 'error', 'message': 'No step IDs provided'})
+            
+            # Restore the steps
+            restored_count = Step.objects.filter(
+                id__in=step_ids,
+                active=False
+            ).update(active=True)
+            
+            return JsonResponse({
+                'status': 'success', 
+                'message': f'{restored_count} steps restored successfully'
+            })
+            
+        except json.JSONDecodeError:
+            return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+
+@login_required
+def ajax_permanent_delete_activity(request):
+    """Permanently delete an activity (optional - for admin use)"""
+    if request.method == 'POST':
+        try:
+            activity_id = request.POST.get('activity_id')
+            
+            if not activity_id:
+                return JsonResponse({'status': 'error', 'message': 'Activity ID is required'})
+            
+            activity = Activity.objects.get(id=activity_id, active=False)
+            
+            # Delete all associated steps first
+            Step.objects.filter(activity=activity).delete()
+            
+            # Then delete the activity
+            activity.delete()
+            
+            return JsonResponse({'status': 'success', 'message': 'Activity permanently deleted'})
+            
+        except Activity.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Activity not found or not deleted'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+
+@login_required
+def ajax_permanent_delete_step(request):
+    """Permanently delete a step (optional - for admin use)"""
+    if request.method == 'POST':
+        try:
+            step_id = request.POST.get('step_id')
+            
+            if not step_id:
+                return JsonResponse({'status': 'error', 'message': 'Step ID is required'})
+            
+            step = Step.objects.get(id=step_id, active=False)
+            step.delete()
+            
+            return JsonResponse({'status': 'success', 'message': 'Step permanently deleted'})
+            
+        except Step.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Step not found or not deleted'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
