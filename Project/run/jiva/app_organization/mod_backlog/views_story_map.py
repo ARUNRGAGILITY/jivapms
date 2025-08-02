@@ -1488,3 +1488,163 @@ def ajax_permanent_delete_step(request):
             return JsonResponse({'status': 'error', 'message': str(e)})
     
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+
+@login_required
+def ajax_create_persona(request):
+    """Create a new persona for a project"""
+    if request.method == 'POST':
+        try:
+            persona_name = request.POST.get('persona_name', '').strip()
+            project_id = request.POST.get('project_id')
+            organization_id = request.POST.get('organization_id')
+            
+            if not persona_name:
+                return JsonResponse({'status': 'error', 'message': 'Persona name is required'})
+            
+            if not project_id:
+                return JsonResponse({'status': 'error', 'message': 'Project ID is required'})
+                
+            if not organization_id:
+                return JsonResponse({'status': 'error', 'message': 'Organization ID is required'})
+            
+            # Get the project and organization
+            project = Project.objects.get(id=project_id)
+            organization = Organization.objects.get(id=organization_id)
+            
+            # Create the new persona
+            persona = Persona.objects.create(
+                name=persona_name,
+                project=project,
+                organization_id=organization_id,
+                active=True,
+                author=request.user
+            )
+            
+            # Create a default activity for the new persona
+            default_activity = Activity.objects.create(
+                name='Default Activity',
+                persona=persona,
+                position=1,
+                active=True,
+                author=request.user
+            )
+            
+            return JsonResponse({
+                'status': 'success', 
+                'message': 'Persona created successfully',
+                'persona_id': persona.id,
+                'persona_name': persona.name,
+                'default_activity_id': default_activity.id
+            })
+            
+        except (Project.DoesNotExist, Organization.DoesNotExist):
+            return JsonResponse({'status': 'error', 'message': 'Project or Organization not found'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
+
+@login_required
+def ajax_save_to_persona(request):
+    """Save current activities and steps configuration to a target persona"""
+    if request.method == 'POST':
+        try:
+            target_persona_id = request.POST.get('target_persona_id')
+            current_persona_id = request.POST.get('current_persona_id')
+            activities_data = json.loads(request.POST.get('activities_data', '[]'))
+            steps_data = json.loads(request.POST.get('steps_data', '[]'))
+            project_id = request.POST.get('project_id')
+            
+            if not target_persona_id or not project_id:
+                return JsonResponse({'status': 'error', 'message': 'Target persona ID and project ID are required'})
+            
+            # Get the target persona
+            target_persona = Persona.objects.get(id=target_persona_id)
+            project = Project.objects.get(id=project_id)
+            
+            # Start transaction to ensure data consistency
+            from django.db import transaction
+            
+            with transaction.atomic():
+                # Create or update activities for the target persona
+                activity_id_mapping = {}  # Map old activity IDs to new ones
+                
+                for activity_data in activities_data:
+                    activity_name = activity_data.get('name', '').strip()
+                    position = activity_data.get('position', 1)
+                    old_activity_id = activity_data.get('id')
+                    
+                    if activity_name and activity_name != 'Default Activity':
+                        # Check if activity with this name already exists for target persona
+                        existing_activity = Activity.objects.filter(
+                            persona=target_persona,
+                            name=activity_name,
+                            active=True
+                        ).first()
+                        
+                        if existing_activity:
+                            # Update position
+                            existing_activity.position = position
+                            existing_activity.save()
+                            activity_id_mapping[old_activity_id] = existing_activity.id
+                        else:
+                            # Create new activity
+                            new_activity = Activity.objects.create(
+                                name=activity_name,
+                                persona=target_persona,
+                                position=position,
+                                active=True,
+                                author=request.user
+                            )
+                            activity_id_mapping[old_activity_id] = new_activity.id
+                
+                # Create or update steps for the target persona
+                for step_data in steps_data:
+                    step_name = step_data.get('name', '').strip()
+                    old_activity_id = step_data.get('activity_id')
+                    position = step_data.get('position', 1)
+                    
+                    if step_name:
+                        # Determine target activity
+                        target_activity = None
+                        if old_activity_id and old_activity_id in activity_id_mapping:
+                            target_activity = Activity.objects.get(id=activity_id_mapping[old_activity_id])
+                        
+                        # Check if step with this name already exists for target persona
+                        existing_step = Step.objects.filter(
+                            persona=target_persona,
+                            name=step_name,
+                            active=True
+                        ).first()
+                        
+                        if existing_step:
+                            # Update activity assignment and position
+                            existing_step.activity = target_activity
+                            existing_step.position = position
+                            existing_step.save()
+                        else:
+                            # Create new step
+                            Step.objects.create(
+                                name=step_name,
+                                persona=target_persona,
+                                activity=target_activity,
+                                position=position,
+                                active=True,
+                                author=request.user
+                            )
+            
+            return JsonResponse({
+                'status': 'success', 
+                'message': 'Configuration saved to target persona successfully',
+                'target_persona_id': target_persona_id
+            })
+            
+        except (Persona.DoesNotExist, Project.DoesNotExist):
+            return JsonResponse({'status': 'error', 'message': 'Persona or Project not found'})
+        except json.JSONDecodeError:
+            return JsonResponse({'status': 'error', 'message': 'Invalid JSON data'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})

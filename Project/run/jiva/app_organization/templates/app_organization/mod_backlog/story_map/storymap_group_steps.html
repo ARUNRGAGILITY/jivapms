@@ -301,7 +301,21 @@
         font-style: italic;
     }
 </style>
+<style>
+/* Add these styles to your existing style section */
+.persona-selector-card {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border: 1px solid #dee2e6;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
 
+.persona-info {
+    background-color: #e3f2fd;
+    border-left: 4px solid #2196f3;
+    padding: 8px 12px;
+    border-radius: 4px;
+}
+</style>
 <div class="content-wrapper mb-5">
     <div class="container mt-4 mb-5">
         <div class="row">
@@ -310,16 +324,77 @@
                 <button class="btn btn-warning btn-sm me-2" onclick="showRestoreModal()">
                     <i class="fas fa-undo"></i> <b>Restore Items</b>
                 </button>
-                <a href="{% url 'create_story_map_from_backlog' pro_id %}" class="btn btn-secondary btn-sm">
+                <a href="{% url 'create_story_map_from_backlog' pro_id %}" class="btn btn-secondary btn-sm me-2">
                     <i class="fas fa-arrow-left"></i> <b>Back to StoryMap</b>
+                </a>
+                 <a href="{% url 'create_backlog_from_story_map' pro_id persona.id %}" class="btn btn-secondary btn-sm">
+                    <i class="fas fa-arrow-left"></i> <b>Back to Backlog</b>
                 </a>
             </div>
         </div>
+
+<div class="row mb-3">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-body py-3">
+                <div class="row align-items-center">
+                    <div class="col-md-6">
+                        <h5 class="mb-0 text-primary">
+                            <i class="fas fa-user-circle me-2"></i>Working with Persona
+                        </h5>
+                    </div>
+                    <div class="col-md-6">
+                        <div class="d-flex align-items-center justify-content-end">
+                            <label for="personaSelector" class="form-label me-3 mb-0">
+                                <strong>Target Persona:</strong>
+                            </label>
+                            <select id="personaSelector" class="form-select" style="width: auto; min-width: 200px;" onchange="onPersonaSelectionChange()">
+                                {% for p in all_personas %}
+                                <option value="{{ p.id }}" {% if p.id == persona.id %}selected{% endif %}>
+                                    {{ p.name|default:"Unnamed Persona" }} (ID: {{ p.id }})
+                                </option>
+                                {% endfor %}
+                            </select>
+                            <button class="btn btn-outline-secondary btn-sm ms-2" onclick="createNewPersona()" title="Create New Persona">
+                                <i class="fas fa-plus"></i>
+                            </button>
+                            <button id="saveToPersonaBtn" class="btn btn-success btn-sm ms-2" onclick="saveToSelectedPersona()" style="display: none;">
+                                <i class="fas fa-save"></i> Save to Persona
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-2">
+                    <div class="col-12">
+                        <div id="personaStatusMessage" class="alert alert-info mb-0 py-2" style="display: none;">
+                            <i class="fas fa-info-circle me-1"></i>
+                            <span id="personaStatusText"></span>
+                        </div>
+                        {% if persona.name %}
+                        <small class="text-muted" id="currentPersonaInfo">
+                            <i class="fas fa-info-circle me-1"></i>
+                            Currently viewing activities and steps for: <strong>{{ persona.name }}</strong>
+                        </small>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+
         
         <!-- Saving indicator -->
         <div class="saving-indicator" id="savingIndicator">
             <i class="fas fa-spinner fa-spin"></i> Saving changes...
         </div>
+
+
+
+       
+
+
 
         <div class="row g-3">
             <!-- Left Side: Unmapped Steps and Quick Add Forms -->
@@ -448,20 +523,39 @@
         </div>
     </div>
 </div>
-<!-- Confirmation Modal -->
-<div class="modal fade" id="confirmationModal" tabindex="-1" aria-labelledby="confirmationModalLabel" aria-hidden="true">
+<div class="modal fade" id="saveConfirmationModal" tabindex="-1" aria-labelledby="saveConfirmationModalLabel" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="confirmationModalLabel">Confirm Action</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            <div class="modal-header bg-success text-white">
+                <h5 class="modal-title" id="saveConfirmationModalLabel">
+                    <i class="fas fa-save me-2"></i>Confirm Save to Persona
+                </h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
             <div class="modal-body">
-                <p id="confirmationMessage">Are you sure you want to perform this action?</p>
+                <div class="d-flex align-items-start">
+                    <div class="flex-shrink-0">
+                        <i class="fas fa-question-circle text-success fa-2x me-3"></i>
+                    </div>
+                    <div class="flex-grow-1">
+                        <p id="saveConfirmationMessage" class="mb-3">Are you sure you want to save the current configuration?</p>
+                        <div class="alert alert-info mb-0">
+                            <small>
+                                <i class="fas fa-info-circle me-1"></i>
+                                <strong>Note:</strong> This will copy the current activities and steps to the target persona. 
+                                Existing items with the same names will be updated, new items will be created.
+                            </small>
+                        </div>
+                    </div>
+                </div>
             </div>
             <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
-                <button type="button" class="btn btn-danger" id="confirmButton">Delete</button>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                    <i class="fas fa-times me-1"></i>Cancel
+                </button>
+                <button type="button" class="btn btn-success" id="saveConfirmButton">
+                    <i class="fas fa-save me-1"></i>Save to Persona
+                </button>
             </div>
         </div>
     </div>
@@ -1375,6 +1469,174 @@ function restoreSelectedItems() {
             error: function() {
                 showAlertModal('Error', 'Error restoring steps');
                 checkCompletion();
+            }
+        });
+    }
+}
+</script>
+<script>
+// Add this to your existing JavaScript section
+let selectedTargetPersonaId = '{{ persona_id }}'; // Track the target persona
+let hasUnsavedChanges = false; // Track if there are unsaved changes
+
+function onPersonaSelectionChange() {
+    const selector = document.getElementById('personaSelector');
+    const selectedPersonaId = selector.value;
+    const saveBtn = document.getElementById('saveToPersonaBtn');
+    const statusMessage = document.getElementById('personaStatusMessage');
+    const statusText = document.getElementById('personaStatusText');
+    const currentPersonaInfo = document.getElementById('currentPersonaInfo');
+    
+    selectedTargetPersonaId = selectedPersonaId;
+    
+    if (selectedPersonaId !== '{{ persona_id }}') {
+        // Show save button and status message
+        saveBtn.style.display = 'inline-block';
+        statusMessage.style.display = 'block';
+        statusText.textContent = `Selected target persona: ${selector.options[selector.selectedIndex].text}. Click "Save to Persona" to apply current activities and steps.`;
+        
+        // Hide current persona info
+        if (currentPersonaInfo) {
+            currentPersonaInfo.style.display = 'none';
+        }
+    } else {
+        // Hide save button and status message
+        saveBtn.style.display = 'none';
+        statusMessage.style.display = 'none';
+        
+        // Show current persona info
+        if (currentPersonaInfo) {
+            currentPersonaInfo.style.display = 'block';
+        }
+    }
+}
+
+function saveToSelectedPersona() {
+    if (selectedTargetPersonaId === '{{ persona_id }}') {
+        showAlertModal('Info', 'You are already viewing this persona. No changes needed.');
+        return;
+    }
+    
+    const selector = document.getElementById('personaSelector');
+    const targetPersonaName = selector.options[selector.selectedIndex].text;
+    
+    showSaveConfirmModal(
+        `Are you sure you want to save the current activity and step configuration to "${targetPersonaName}"? This will redirect you to that persona's view.`,
+        function() {
+            showSavingIndicator();
+            
+            // Get current activities and steps data
+            const activitiesData = [];
+            const stepsData = [];
+            
+            // Collect activities
+            const activityElements = document.querySelectorAll('.sortable-activity');
+            activityElements.forEach((activityEl, index) => {
+                const activityId = activityEl.getAttribute('data-activity-id');
+                const activityName = activityEl.querySelector('.activity-header span:not(.order-badge)').textContent.trim();
+                
+                activitiesData.push({
+                    id: activityId,
+                    name: activityName,
+                    position: index + 1
+                });
+                
+                // Collect steps for this activity
+                const stepElements = activityEl.querySelectorAll('.sortable-step');
+                stepElements.forEach((stepEl, stepIndex) => {
+                    const stepId = stepEl.getAttribute('data-step-id');
+                    const stepName = stepEl.querySelector('.flex-grow-1').textContent.trim();
+                    
+                    stepsData.push({
+                        id: stepId,
+                        name: stepName,
+                        activity_id: activityId,
+                        position: stepIndex + 1
+                    });
+                });
+            });
+            
+            // Collect unmapped steps
+            const unmappedStepElements = document.querySelectorAll('#unmapped-steps .sortable-step');
+            unmappedStepElements.forEach((stepEl, index) => {
+                const stepId = stepEl.getAttribute('data-step-id');
+                const stepName = stepEl.querySelector('.flex-grow-1').textContent.trim();
+                
+                stepsData.push({
+                    id: stepId,
+                    name: stepName,
+                    activity_id: null,
+                    position: index + 1
+                });
+            });
+            
+            // Send data to server
+            $.ajax({
+                url: "{% url 'ajax_save_to_persona' %}",
+                type: 'POST',
+                data: {
+                    csrfmiddlewaretoken: '{{ csrf_token }}',
+                    target_persona_id: selectedTargetPersonaId,
+                    current_persona_id: '{{ persona_id }}',
+                    activities_data: JSON.stringify(activitiesData),
+                    steps_data: JSON.stringify(stepsData),
+                    project_id: '{{ pro_id }}'
+                },
+                success: function(response) {
+                    hideSavingIndicator();
+                    if (response.status === 'success') {
+                        // Redirect to the target persona
+                        window.location.href = "{% url 'storymap_group_steps' pro_id=pro_id persona_id=0 %}".replace('0', selectedTargetPersonaId);
+                    } else {
+                        showAlertModal('Error', 'Error saving to persona: ' + response.message);
+                    }
+                },
+                error: function(xhr, status, error) {
+                    hideSavingIndicator();
+                    showAlertModal('Error', 'Error saving to persona: ' + error);
+                }
+            });
+        }
+    );
+}
+
+function createNewPersona() {
+    const personaName = prompt('Enter name for new persona:', 'New Persona');
+    
+    if (personaName && personaName.trim()) {
+        showSavingIndicator();
+        
+        $.ajax({
+            url: "{% url 'ajax_create_persona' %}",
+            type: 'POST',
+            data: {
+                csrfmiddlewaretoken: '{{ csrf_token }}',
+                persona_name: personaName.trim(),
+                project_id: '{{ pro_id }}',
+                organization_id: '{{ org_id }}'
+            },
+            success: function(response) {
+                hideSavingIndicator();
+                if (response.status === 'success') {
+                    // Add the new persona to the dropdown
+                    const selector = document.getElementById('personaSelector');
+                    const newOption = document.createElement('option');
+                    newOption.value = response.persona_id;
+                    newOption.textContent = `${response.persona_name} (ID: ${response.persona_id})`;
+                    selector.appendChild(newOption);
+                    
+                    // Select the new persona
+                    selector.value = response.persona_id;
+                    onPersonaSelectionChange();
+                    
+                    showAlertModal('Success', `Persona "${response.persona_name}" created successfully. You can now save your current configuration to it.`);
+                } else {
+                    showAlertModal('Error', 'Error creating persona: ' + response.message);
+                }
+            },
+            error: function(xhr, status, error) {
+                hideSavingIndicator();
+                showAlertModal('Error', 'Error creating persona: ' + error);
             }
         });
     }

@@ -103,5 +103,8 @@ urlpatterns = [
     # Optional: Permanent delete (for admin use)
     path('ajax/permanent-delete-activity/', views_story_map.ajax_permanent_delete_activity, name='ajax_permanent_delete_activity'),
     path('ajax/permanent-delete-step/', views_story_map.ajax_permanent_delete_step, name='ajax_permanent_delete_step'),
+
+    path('ajax/create-persona/', views_story_map.ajax_create_persona, name='ajax_create_persona'),
+    path('ajax/save-to-persona/', views_story_map.ajax_save_to_persona, name='ajax_save_to_persona'),
     
 ]
