@@ -375,9 +375,96 @@
   font-size: 14px;
   color: #333;
 }
+</style>
 
+<style>
+    /* Add these styles to your existing CSS section */
 
+/* Available backlog items (unmapped) */
+.backlog-item.draggable-backlog {
+    background-color: #fff9c4; /* Light yellow - available for mapping */
+    border: 1px solid #f0e68c;
+    cursor: grab;
+    transition: all 0.2s ease;
+}
 
+.backlog-item.draggable-backlog:hover {
+    transform: scale(1.02);
+    box-shadow: 2px 2px 8px rgba(0, 0, 0, 0.2);
+    cursor: grab;
+}
+
+.backlog-item.draggable-backlog:active {
+    cursor: grabbing;
+}
+
+/* Already mapped items (read-only reference) */
+.backlog-item.mapped {
+    background-color: #d4edda !important;
+    border-color: #c3e6cb !important;
+    opacity: 0.7;
+    cursor: default;
+}
+
+/* New items created for current persona */
+.backlog-item.new-item {
+    background-color: #fff3cd !important;
+    border-color: #ffeaa7 !important;
+    border-left: 3px solid #f39c12;
+}
+
+/* Backlog section improvements */
+.backlog-drop-zone {
+    min-height: 200px;
+    padding: 10px;
+}
+
+.backlog-drop-zone.drag-over {
+    background-color: #f8f9ff;
+    border: 2px dashed #007bff;
+}
+
+/* Item type labels */
+.item-type-label {
+    font-size: 0.6rem;
+    color: #6c757d;
+    font-weight: normal;
+    display: block;
+    margin-top: 2px;
+}
+
+/* Section headers in backlog */
+.backlog-section-header {
+    font-size: 0.8rem;
+    font-weight: bold;
+    color: #495057;
+    margin: 10px 0 5px 0;
+    padding: 2px 5px;
+    border-bottom: 1px solid #dee2e6;
+}
+
+/* Empty state styling */
+.backlog-empty-state {
+    text-align: center;
+    color: #6c757d;
+    font-style: italic;
+    padding: 20px;
+    border: 1px dashed #dee2e6;
+    border-radius: 4px;
+    margin: 10px 0;
+}
+
+/* Responsive adjustments for backlog sidebar */
+@media (max-width: 768px) {
+    .backlog-item {
+        margin-bottom: 8px;
+        font-size: 0.8rem;
+    }
+    
+    .col-md-2 {
+        margin-bottom: 20px;
+    }
+}
 </style>
 <div class="page-container">
     <!-- Custom Top Menu -->
@@ -429,49 +516,106 @@
         <!-- display-->
         <div class="row">
             <!-- Left Sidebar (Backlog) -->
-            <div class="col col-md-2" id="">
-                <!-- Sidebar Header -->
-                <div class="container-fluid-width">
-                    <div class="row">
-                        <div class="col col-md-12">
-                           <div class="message_display"></div>
-                        </div>
-                    </div>
-                </div>
-                <!-- Sidebar Content -->
-                <div class="container-fluid-width mt-2">
-                    <table class="table table-bordered">
-                        <!-- Backlog Row -->                         
-                        <tr id="details-row">
-                            <td colspan="" class="backlog-drop-zone"
-                            ondragover="allowDrop(event)"
-                            ondrop="dropToBacklog(event)">
-                            <strong>Backlog</strong>
-                            <form method="post" action="">
-                            {% csrf_token %}
-                            <input type="hidden" name="project_id" value="{{ pro_id }}">
-                            <input type="hidden" name="persona_id" value="{{ persona.id }}">
-                            <input type="hidden" name="submit_detail" value="submit_detail">
-                                <input type="text" name="detail" id="detail" >
-                            </form>
-                            <br>
-                            
-                            {% for backlog_item in initial_backlog|filter_active %}
-                            {% if backlog_item.release_id == None and backlog_item.name != project_id_str  %}
-                            <div class="backlog-item post-it draggable-backlog"  draggable="true" id="backlog-{{ backlog_item.id }}"
-                            ondblclick="makeEditable(this);" 
-                            onblur="save_element_text(this, '{{backlog_item.id}}',  'app_organization', 'Backlog', 'name')"    
-                            
-                            >
-                                {{ backlog_item.name }}  
-                            </div>
-                            {% endif %}
-                            {% endfor %}
-                            </td>
-                        </tr>      
-                   </table>
-                </div>
+           <div class="col col-md-2" id="">
+    <!-- Sidebar Header -->
+    <div class="container-fluid-width">
+        <div class="row">
+            <div class="col col-md-12">
+               <div class="message_display"></div>
             </div>
+        </div>
+    </div>
+    <!-- Sidebar Content -->
+    <div class="container-fluid-width mt-2">
+        <table class="table table-bordered">
+            <!-- Backlog Row -->                         
+            <tr id="details-row">
+                <td colspan="" class="backlog-drop-zone"
+                ondragover="allowDrop(event)"
+                ondrop="dropToBacklog(event)">
+                <strong>Backlog Items</strong>
+                
+                <!-- Form to add new backlog items -->
+                <form method="post" action="">
+                {% csrf_token %}
+                <input type="hidden" name="project_id" value="{{ pro_id }}">
+                <input type="hidden" name="persona_id" value="{{ persona.id }}">
+                <input type="hidden" name="submit_detail" value="submit_detail">
+                    <input type="text" name="detail" id="detail" placeholder="Add new item...">
+                </form>
+                <br>
+                
+                <!-- Show unmapped existing backlog items -->
+                {% if unmapped_backlog_items %}
+                    <div class="mb-3">
+                        <small class="text-muted"><strong>Available Items:</strong></small>
+                        {% for backlog_item in unmapped_backlog_items %}
+                            <div class="backlog-item post-it draggable-backlog" 
+                                 draggable="true" 
+                                 id="backlog-{{ backlog_item.id }}"
+                                 ondblclick="makeEditable(this);" 
+                                 onblur="save_element_text(this, '{{backlog_item.id}}', 'app_organization', 'Backlog', 'name')"
+                                 title="Created: {{ backlog_item.created_at|date:'M d, Y' }}">
+                                {{ backlog_item.name }}
+                                <small class="d-block text-muted" style="font-size: 0.6rem;">
+                                    {% if backlog_item.type %}{{ backlog_item.type.name }}{% endif %}
+                                </small>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                
+                <!-- Show items that are already mapped (for reference) -->
+                {% if mapped_backlog_items %}
+                    <div class="mb-3">
+                        <small class="text-success"><strong>Already Mapped:</strong></small>
+                        {% for backlog_item in mapped_backlog_items %}
+                            <div class="backlog-item post-it" 
+                                 style="background-color: #d4edda; border-color: #c3e6cb; opacity: 0.7;"
+                                 title="This item is already mapped in the story map">
+                                {{ backlog_item.name }}
+                                <small class="d-block text-muted" style="font-size: 0.6rem;">
+                                    ✓ Mapped
+                                </small>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+                
+                <!-- Show newly created items for this persona -->
+                {% for backlog_item in initial_backlog %}
+                    {% if backlog_item.persona_id == persona.id and backlog_item.release_id == None and backlog_item.name != project_id_str %}
+                        <div class="backlog-item post-it draggable-backlog" 
+                             draggable="true" 
+                             id="backlog-{{ backlog_item.id }}"
+                             ondblclick="makeEditable(this);" 
+                             onblur="save_element_text(this, '{{backlog_item.id}}', 'app_organization', 'Backlog', 'name')"
+                             style="background-color: #fff3cd; border-color: #ffeaa7;"
+                             title="New item created for this persona">
+                            {{ backlog_item.name }}
+                            <small class="d-block text-muted" style="font-size: 0.6rem;">
+                                New
+                            </small>
+                        </div>
+                    {% endif %}
+                {% endfor %}
+                
+                <!-- Show message if no items available -->
+                {% if not unmapped_backlog_items and not mapped_backlog_items %}
+                    <div class="text-center text-muted mt-3">
+                        <small>
+                            <i class="fas fa-info-circle"></i><br>
+                            No backlog items found.<br>
+                            Create new items using the form above.
+                        </small>
+                    </div>
+                {% endif %}
+                
+                </td>
+            </tr>      
+       </table>
+    </div>
+</div>
             <!-- Right Sidebar (Story Map) -->
             <div class="col col-md-10 text-start story-map-container">
                 <i class="bi bi-person-heart"></i> &nbsp;
