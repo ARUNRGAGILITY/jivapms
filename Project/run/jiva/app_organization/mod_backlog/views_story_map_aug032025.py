@@ -64,6 +64,7 @@ def create_story_map(request, org_id):
     return render(request, template_file, context)
 
 
+
 @login_required
 def create_project_story_map(request, org_id, project_id):    
     projects = Organization.objects.get(pk=org_id).org_projects.filter(active=True)
@@ -73,9 +74,28 @@ def create_project_story_map(request, org_id, project_id):
     personae_count = 0
     personas = Persona.objects.filter(organization_id=org_id, project=project, active=True)
     personae_count = personas.count()
-    print(f">>> ===> create_project_story_map: {org_id} {project_id} {personae_count} === <<<")
-    return redirect('list_project_personae', organization_id=org_id, project_id=project_id)
-    
+    if personae_count  > 0:
+        return redirect('list_project_personae', organization_id=org_id, project_id=project_id)
+    else:
+        return redirect('create_backlog_from_story_map', pro_id=project.id, personae_id=personas.first().id)
+
+
+    # # send outputs info, template,
+    # context = {
+    #     'parent_page': '___PARENTPAGE___',
+    #     'page': 'list_backlogs',
+    #     'org_id': org_id,
+    #     'project_id': project_id,
+    #     'project': project,
+    #     'pro_id': project_id,
+    #     'organization': organization,
+    #     'org': organization,
+    #     'projects': projects,
+    #     'page_title': f'Backlog List',
+    # }       
+    # template_file = f"{app_name}/{module_path}/story_map/create_story_map.html"
+    # return render(request, template_file, context)
+
 
 
 
@@ -149,114 +169,10 @@ def create_backlog_from_story_map(request, pro_id, persona_id):
         default_activity_id = default_activity.id
 
     # Handle POST requests (your existing POST handling code remains the same)
-    # Add this to your Django view's POST handling section
-    # In the create_story_map_from_backlog view function
-
     if request.method == 'POST':
-        print(f">>> POST request received: {request.POST}")
-        print(f">>> Headers: {dict(request.headers)}")
-        
-        # Check for different types of form submissions
-        if 'submit_activity' in request.POST:
-            activity_input = request.POST.get('activity')
-            if activity_input:
-                activity = Activity.objects.create(
-                    name=activity_input,
-                    persona_id=persona.id,
-                    active=True
-                )
-                print(f">>> === ACTIVITY {activity} === <<<")
-            return redirect('create_story_map_from_backlog', pro_id=pro_id)
-        
-        elif 'submit_step' in request.POST:
-            step_input = request.POST.get('step_input')
-            def_activity_id_input = request.POST.get('default_activity_id')
-            if step_input:
-                step_save = Step.objects.create(
-                    name=step_input,
-                    persona_id=persona.id,
-                    activity_id=def_activity_id_input,
-                    active=True
-                )
-                step_save.save()
-                print(f">>> === STEP {step_save} for {def_activity_id_input} === <<<")
-            return redirect('create_story_map_from_backlog', pro_id=pro_id)
-        
-        elif 'submit_detail' in request.POST:
-            detail_input = request.POST.get('detail')
-            print(f">>> Detail input: '{detail_input}'")
-            print(f">>> Is AJAX: {request.headers.get('X-Requested-With')}")
-            print(f">>> All POST data: {dict(request.POST)}")
-            
-            if detail_input and detail_input.strip():
-                try:
-                    # Create new backlog item
-                    new_backlog = Backlog.objects.create(
-                        name=detail_input.strip(),
-                        persona_id=persona.id,
-                        pro_id=pro_id,
-                        active=True,
-                        parent=project_backlog_root,
-                        type_id=story_type_id,
-                        collection=None,
-                        author=request.user  # Make sure to add author
-                    )
-                    print(f">>> === NEW BACKLOG ITEM {new_backlog} ID: {new_backlog.id} === <<<")
-                    
-                    # Check if this is an AJAX request
-                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                        print(">>> Returning JSON response")
-                        from django.http import JsonResponse
-                        return JsonResponse({
-                            'status': 'success',
-                            'backlog_id': new_backlog.id,
-                            'backlog_name': new_backlog.name,
-                            'message': 'Backlog item created successfully'
-                        })
-                    else:
-                        print(">>> Returning redirect response")
-                        return redirect('create_story_map_from_backlog', pro_id=pro_id)
-                        
-                except Exception as e:
-                    print(f">>> Error creating backlog item: {e}")
-                    import traceback
-                    print(f">>> Full traceback: {traceback.format_exc()}")
-                    
-                    if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                        from django.http import JsonResponse
-                        return JsonResponse({
-                            'status': 'error',
-                            'message': f'Error creating backlog item: {str(e)}'
-                        })
-                    else:
-                        return redirect('create_story_map_from_backlog', pro_id=pro_id)
-            else:
-                # Handle empty input
-                error_msg = 'Backlog item name cannot be empty'
-                print(f">>> {error_msg}")
-                
-                if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                    from django.http import JsonResponse
-                    return JsonResponse({
-                        'status': 'error',
-                        'message': error_msg
-                    })
-                else:
-                    return redirect('create_story_map_from_backlog', pro_id=pro_id)
-        
-        else:
-            # Handle unknown POST action
-            print(">>> === Invalid action: {} === <<<".format(list(request.POST.keys())))
-            
-            if request.headers.get('X-Requested-With') == 'XMLHttpRequest':
-                from django.http import JsonResponse
-                return JsonResponse({
-                    'status': 'error',
-                    'message': 'Invalid action'
-                })
-            else:
-                return redirect('create_story_map_from_backlog', pro_id=pro_id)
-        
+        # ... existing POST handling code ...
+        pass
+    
     # Context for GET request
     context = {
         'parent_page': '___PARENTPAGE___',

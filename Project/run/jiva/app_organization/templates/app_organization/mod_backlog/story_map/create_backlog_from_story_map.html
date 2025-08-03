@@ -504,33 +504,7 @@
 
             <!-- Right-Aligned Section (60%) -->
             <div class="right-section">
-                <b>Activity:</b>
-                <form action="" method="post" class="d-flex align-items-center w-100" >
-                    {% csrf_token %}
-                    <input type="text" name="activity" id="activity" class="form-control activity_input_style"  placeholder="Activity" width="100%">
-                    <input type="hidden" name="persona_id" value="{{ persona.id }}">
-                    <input type="hidden" name="project_id" value="{{ pro_id }}">
-                    &nbsp;&nbsp;
-                    <button type="submit" name="submit_activity" class="btn btn-primary btn-sm">Add</button>
-                </form>
-                
-                <b>Step:</b> 
-                <form action="" method="post" class="d-flex align-items-center w-100">
-                    {% csrf_token %}
-                    <input type="text" name="step_input" id="step_input" class="form-control step_input_style" placeholder="Step">
-                    <input type="hidden" name="default_activity_id" value="{{ default_activity_id }}">
-                    <input type="hidden" name="persona_id" value="{{ persona.id }}">
-                    <input type="hidden" name="project_id" value="{{ pro_id }}">
-                    &nbsp;&nbsp;
-                    <button type="submit" name="submit_step" class="btn btn-success btn-sm">Add  </button>
-                    &nbsp;&nbsp;
-                    <a href="{% url 'storymap_group_steps' pro_id persona_id %}" class="btn btn-sm btn-primary">Group</a>
-                    &nbsp;&nbsp;&nbsp;&nbsp;
-                    &nbsp;&nbsp;&nbsp;&nbsp;
-                    <a href="{% url 'edit_persona' org_id persona.id %}" class="btn btn-primary btn-sm">View</a>
-                    &nbsp;&nbsp;
-                    <a href="{% url 'list_project_personae' org_id project.id %}" class="btn btn-secondary btn-sm">List </a>
-                </form> 
+                <a href="{% url 'storymap_group_steps' pro_id=project.id persona_id=persona.id %}" class="btn btn-sm btn-success">Configure Activities/Steps</a>
             </div>
         </div>
     </div>
@@ -541,7 +515,7 @@
         <!-- display-->
         <div class="row">
             <!-- Left Sidebar (Backlog) -->
-          <div class="col col-md-2" id="">
+         <div class="col col-md-2" id="">
     <!-- Sidebar Header -->
     <div class="container-fluid-width">
         <div class="row">
@@ -555,103 +529,109 @@
         <table class="table table-bordered">
             <!-- Backlog Row -->                         
             <tr id="details-row">
-                <td colspan="" class="backlog-drop-zone"
-                ondragover="allowDrop(event)"
-                ondrop="dropToBacklog(event)">
-                <strong>Backlog Items</strong>
-                
-                <!-- Form to add new backlog items -->
-                <form method="post" action="">
-                {% csrf_token %}
-                <input type="hidden" name="project_id" value="{{ pro_id }}">
-                <input type="hidden" name="persona_id" value="{{ persona.id }}">
-                <input type="hidden" name="submit_detail" value="submit_detail">
-                    <input type="text" name="detail" id="detail" placeholder="Add new item...">
-                </form>
-                <br>
-                
-                <!-- Show unmapped existing backlog items -->
-                {% if unmapped_backlog_items %}
-                    <div class="mb-3">
-                        <small class="text-muted"><strong>Available Items:</strong></small>
-                        {% for backlog_item in unmapped_backlog_items %}
-                            <div class="backlog-item post-it draggable-backlog" 
-                                 draggable="true" 
-                                 id="backlog-{{ backlog_item.id }}"
-                                 ondblclick="makeEditable(this);" 
-                                 onblur="save_element_text(this, '{{backlog_item.id}}', 'app_organization', 'Backlog', 'name')"
-                                 title="Created: {{ backlog_item.created_at|date:'M d, Y' }}">
-                                {{ backlog_item.name }}
-                                <small class="d-block text-muted" style="font-size: 0.6rem;">
-                                    {% if backlog_item.type %}{{ backlog_item.type.name }}{% endif %}
-                                </small>
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-                
-                <!-- Show items that are already mapped (for reference) -->
-                {% if mapped_backlog_items %}
-                    <div class="mb-3" id="mapped-items-section">
-                        <small class="text-success"><strong>Already Mapped:</strong></small>
-                        {% for mapped_item in mapped_backlog_items %}
-                            <div class="backlog-item post-it mapped-item" 
-                                 id="mapped-{{ mapped_item.backlog_item.id }}"
-                                 data-story-id="{{ mapped_item.backlog_item.id }}"
-                                 style="background-color: #d4edda; border-color: #c3e6cb; opacity: 0.8;"
-                                 title="This item is mapped to: {% if mapped_item.release %}{{ mapped_item.release.name }}{% endif %}{% if mapped_item.iteration %} / {{ mapped_item.iteration.name }}{% endif %}">
-                                <div class="mapped-item-name">{{ mapped_item.backlog_item.name }}</div>
-                                <small class="d-block text-muted mapped-item-details" style="font-size: 0.6rem;">
-                                    ✓ 
-                                    {% if mapped_item.release %}
-                                        <span class="release-name">{{ mapped_item.release.name }}</span>
-                                    {% else %}
-                                        <span class="release-name">No Release</span>
-                                    {% endif %}
-                                    {% if mapped_item.iteration %}
-                                        / <span class="iteration-name">{{ mapped_item.iteration.name }}</span>
-                                    {% endif %}
-                                </small>
-                                <small class="d-block text-muted" style="font-size: 0.5rem;">
-                                    {% if mapped_item.activity %}{{ mapped_item.activity.name }}{% endif %}
-                                    {% if mapped_item.step %} → {{ mapped_item.step.name }}{% endif %}
-                                </small>
-                            </div>
-                        {% endfor %}
-                    </div>
-                {% endif %}
-                
-                <!-- Show newly created items for this persona -->
-                {% for backlog_item in initial_backlog %}
-                    {% if backlog_item.persona_id == persona.id and backlog_item.release_id == None and backlog_item.name != project_id_str %}
-                        <div class="backlog-item post-it draggable-backlog" 
-                             draggable="true" 
-                             id="backlog-{{ backlog_item.id }}"
-                             ondblclick="makeEditable(this);" 
-                             onblur="save_element_text(this, '{{backlog_item.id}}', 'app_organization', 'Backlog', 'name')"
-                             style="background-color: #fff3cd; border-color: #ffeaa7;"
-                             title="New item created for this persona">
-                            {{ backlog_item.name }}
-                            <small class="d-block text-muted" style="font-size: 0.6rem;">
-                                New
-                            </small>
-                        </div>
-                    {% endif %}
-                {% endfor %}
-                
-                <!-- Show message if no items available -->
-                {% if not unmapped_backlog_items and not mapped_backlog_items %}
-                    <div class="text-center text-muted mt-3">
-                        <small>
-                            <i class="fas fa-info-circle"></i><br>
-                            No backlog items found.<br>
-                            Create new items using the form above.
+    <td colspan="" class="backlog-drop-zone"
+    ondragover="allowDrop(event)"
+    ondrop="dropToBacklog(event)">
+    <strong>Backlog Items</strong>
+    
+    <!-- Form to add new backlog items -->
+    <form method="post" action="" id="add-backlog-form">
+    {% csrf_token %}
+    <input type="hidden" name="project_id" value="{{ pro_id }}">
+    <input type="hidden" name="persona_id" value="{{ persona.id }}">
+    <input type="hidden" name="submit_detail" value="submit_detail">
+        <div class="input-group input-group-sm mb-2">
+            <input type="text" name="detail" id="detail" class="form-control form-control-sm" placeholder="Add new item..." required>
+            <button type="submit" class="btn btn-primary btn-sm">Add</button>
+        </div>
+    </form>
+    
+    <!-- Show unmapped existing backlog items -->
+    {% if unmapped_backlog_items %}
+        <div class="mb-3">
+            <small class="text-muted"><strong>Available Items:</strong></small>
+            <div id="unmapped-items-container">
+                {% for backlog_item in unmapped_backlog_items %}
+                    <div class="backlog-item post-it draggable-backlog" 
+                         draggable="true" 
+                         id="backlog-{{ backlog_item.id }}"
+                         ondblclick="makeEditable(this);" 
+                         onblur="save_element_text(this, '{{backlog_item.id}}', 'app_organization', 'Backlog', 'name')"
+                         title="Created: {{ backlog_item.created_at|date:'M d, Y' }}">
+                        {{ backlog_item.name }}
+                        <small class="d-block text-muted" style="font-size: 0.6rem;">
+                            {% if backlog_item.type %}{{ backlog_item.type.name }}{% endif %}
                         </small>
                     </div>
-                {% endif %}
-                
-                </td>
-            </tr>      
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+    
+    <!-- Show items that are already mapped (for reference) -->
+    {% if mapped_backlog_items %}
+        <div class="mb-3" id="mapped-items-section">
+            <small class="text-success"><strong>Already Mapped:</strong></small>
+            {% for mapped_item in mapped_backlog_items %}
+                <div class="backlog-item post-it mapped-item" 
+                     id="mapped-{{ mapped_item.backlog_item.id }}"
+                     data-story-id="{{ mapped_item.backlog_item.id }}"
+                     style="background-color: #d4edda; border-color: #c3e6cb; opacity: 0.8;"
+                     title="This item is mapped to: {{ mapped_item.release_name }}{% if mapped_item.iteration_name != 'Not Set' %} / {{ mapped_item.iteration_name }}{% endif %}">
+                    <div class="mapped-item-name">{{ mapped_item.backlog_item.name }}</div>
+                    <small class="d-block text-muted mapped-item-details" style="font-size: 0.6rem;">
+                        ✓ 
+                        {% if mapped_item.release_name and mapped_item.release_name != 'Not Set' %}
+                            <span class="release-name">{{ mapped_item.release_name }}</span>
+                        {% else %}
+                            <span class="release-name">No Release</span>
+                        {% endif %}
+                        {% if mapped_item.iteration_name and mapped_item.iteration_name != 'Not Set' %}
+                            / <span class="iteration-name">{{ mapped_item.iteration_name }}</span>
+                        {% endif %}
+                    </small>
+                    <small class="d-block text-muted" style="font-size: 0.5rem;">
+                        {% if mapped_item.activity_name and mapped_item.activity_name != 'Not Set' %}{{ mapped_item.activity_name }}{% endif %}
+                        {% if mapped_item.step_name and mapped_item.step_name != 'Not Set' %} → {{ mapped_item.step_name }}{% endif %}
+                    </small>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    
+    <!-- Show newly created items for this persona -->
+    <div id="new-items-container">
+        {% for backlog_item in initial_backlog %}
+            {% if backlog_item.persona_id == persona.id and backlog_item.release_id == None and backlog_item.name != project_id_str %}
+                <div class="backlog-item post-it draggable-backlog" 
+                     draggable="true" 
+                     id="backlog-{{ backlog_item.id }}"
+                     ondblclick="makeEditable(this);" 
+                     onblur="save_element_text(this, '{{backlog_item.id}}', 'app_organization', 'Backlog', 'name')"
+                     style="background-color: #fff3cd; border-color: #ffeaa7;"
+                     title="New item created for this persona">
+                    {{ backlog_item.name }}
+                    <small class="d-block text-muted" style="font-size: 0.6rem;">
+                        New
+                    </small>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+    
+    <!-- Show message if no items available -->
+    {% if not unmapped_backlog_items and not mapped_backlog_items %}
+        <div class="text-center text-muted mt-3" id="empty-state">
+            <small>
+                <i class="fas fa-info-circle"></i><br>
+                No backlog items found.<br>
+                Create new items using the form above.
+            </small>
+        </div>
+    {% endif %}
+    
+    </td>
+</tr>
        </table>
     </div>
 </div>
@@ -1232,5 +1212,249 @@ function dropToBacklog(event) {
         });
 }
 
+</script>
+
+
+
+<script>
+// Enhanced form submission with AJAX
+$(document).ready(function() {
+    $('#add-backlog-form').on('submit', function(e) {
+        e.preventDefault();
+        
+        const formData = new FormData(this);
+        const detailInput = $('#detail');
+        const detailValue = detailInput.val().trim();
+        
+        if (!detailValue) {
+            alert('Please enter a backlog item name.');
+            return;
+        }
+        
+        // Show loading state
+        const submitBtn = $(this).find('button[type="submit"]');
+        const originalText = submitBtn.text();
+        submitBtn.prop('disabled', true).text('Adding...');
+        
+        $.ajax({
+            url: window.location.href,
+            type: 'POST',
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            success: function(response) {
+                console.log('Form submission response:', response);
+                
+                if (response.status === 'success') {
+                    // Create new backlog item element
+                    const newItemHtml = `
+                        <div class="backlog-item post-it draggable-backlog" 
+                             draggable="true" 
+                             id="backlog-${response.backlog_id}"
+                             ondblclick="makeEditable(this);" 
+                             onblur="save_element_text(this, '${response.backlog_id}', 'app_organization', 'Backlog', 'name')"
+                             style="background-color: #fff3cd; border-color: #ffeaa7;"
+                             title="New item created for this persona">
+                            ${response.backlog_name}
+                            <small class="d-block text-muted" style="font-size: 0.6rem;">
+                                New
+                            </small>
+                        </div>
+                    `;
+                    
+                    // Add to new items container
+                    $('#new-items-container').append(newItemHtml);
+                    
+                    // Hide empty state if it exists
+                    $('#empty-state').hide();
+                    
+                    // Enable drag functionality for the new item
+                    const newElement = $(`#backlog-${response.backlog_id}`)[0];
+                    if (newElement) {
+                        newElement.addEventListener('dragstart', function(event) {
+                            event.dataTransfer.setData("text/plain", event.target.id);
+                        });
+                    }
+                    
+                    // Clear the form
+                    detailInput.val('');
+                    
+                    // Show success message
+                    showMessage('Backlog item added successfully!', 'success');
+                    
+                } else {
+                    showMessage(response.message || 'Error adding backlog item', 'error');
+                }
+            },
+            error: function(xhr, status, error) {
+                console.error('Form submission error:', error);
+                showMessage('Error adding backlog item: ' + error, 'error');
+            },
+            complete: function() {
+                // Reset button state
+                submitBtn.prop('disabled', false).text(originalText);
+            }
+        });
+    });
+});
+
+// Enhanced dropToBacklog function
+function dropToBacklog(event) {
+    event.preventDefault();
+
+    // Get the dragged element's ID
+    const draggedId = event.dataTransfer.getData("text/plain");
+    const draggedElement = document.getElementById(draggedId);
+
+    if (!draggedElement) {
+        console.error('Dragged element not found.');
+        return;
+    }
+
+    // Extract the backlog ID
+    const backlogId = draggedId.split('-')[1];
+    const storyName = draggedElement.textContent.trim();
+
+    // Define the AJAX payload
+    const payload = {
+        project_id: {{ pro_id }},
+        backlog_id: backlogId,
+        persona_id: {{ persona.id }},
+        release_id: null, // Remove release association
+    };
+
+    // Send the AJAX request to the backend
+    fetch("{% url 'ajax_update_backlog_release' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}',
+        },
+        body: JSON.stringify(payload),
+    })
+        .then((response) => {
+            if (!response.ok) {
+                return response.json().then((err) => {
+                    throw new Error(err.message || 'Server Error');
+                });
+            }
+            return response.json();
+        })
+        .then((data) => {
+            if (data.status === 'success') {
+                // Create new element for backlog
+                const newItemHtml = `
+                    <div class="backlog-item post-it draggable-backlog" 
+                         draggable="true" 
+                         id="backlog-${backlogId}"
+                         ondblclick="makeEditable(this);" 
+                         onblur="save_element_text(this, '${backlogId}', 'app_organization', 'Backlog', 'name')"
+                         title="Moved back from story map">
+                        ${storyName.split('\n')[0]}
+                        <small class="d-block text-muted" style="font-size: 0.6rem;">
+                            Available
+                        </small>
+                    </div>
+                `;
+                
+                // Add to unmapped items container
+                let container = document.getElementById('unmapped-items-container');
+                if (!container) {
+                    // Create container if it doesn't exist
+                    const backlogDropZone = document.querySelector('.backlog-drop-zone');
+                    const newContainer = document.createElement('div');
+                    newContainer.innerHTML = `
+                        <div class="mb-3">
+                            <small class="text-muted"><strong>Available Items:</strong></small>
+                            <div id="unmapped-items-container"></div>
+                        </div>
+                    `;
+                    // Insert after the form
+                    const form = backlogDropZone.querySelector('form');
+                    form.parentNode.insertBefore(newContainer, form.nextSibling);
+                    container = document.getElementById('unmapped-items-container');
+                }
+                
+                container.insertAdjacentHTML('beforeend', newItemHtml);
+                
+                // Enable drag functionality for the new item
+                const newElement = document.getElementById(`backlog-${backlogId}`);
+                if (newElement) {
+                    newElement.addEventListener('dragstart', function(event) {
+                        event.dataTransfer.setData("text/plain", event.target.id);
+                    });
+                }
+
+                // Remove the original element from the story map
+                draggedElement.remove();
+                
+                // Update the mapped items section
+                refreshMappedItems();
+
+                console.log('Backlog item successfully moved back.');
+                showMessage('Item moved back to backlog', 'success');
+            } else {
+                throw new Error(data.message);
+            }
+        })
+        .catch((error) => {
+            console.error('Error moving backlog item back:', error.message);
+            showMessage('Error moving item back: ' + error.message, 'error');
+        });
+}
+
+// Enhanced drag over effects
+function allowDrop(event) {
+    event.preventDefault();
+    
+    // Add visual feedback
+    const dropZone = event.currentTarget;
+    if (dropZone.classList.contains('backlog-drop-zone')) {
+        dropZone.style.backgroundColor = '#f8f9ff';
+        dropZone.style.border = '2px dashed #007bff';
+    }
+}
+
+// Remove drag over effects
+document.addEventListener('dragleave', function(event) {
+    if (event.target.classList.contains('backlog-drop-zone')) {
+        event.target.style.backgroundColor = '';
+        event.target.style.border = '';
+    }
+});
+
+document.addEventListener('drop', function(event) {
+    if (event.target.classList.contains('backlog-drop-zone')) {
+        event.target.style.backgroundColor = '';
+        event.target.style.border = '';
+    }
+});
+
+// Message display function
+function showMessage(message, type = 'info') {
+    const messageContainer = document.querySelector('.message_display');
+    if (messageContainer) {
+        const alertClass = type === 'success' ? 'alert-success' : 
+                          type === 'error' ? 'alert-danger' : 'alert-info';
+        
+        messageContainer.innerHTML = `
+            <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        `;
+        
+        // Auto-hide after 3 seconds
+        setTimeout(() => {
+            const alert = messageContainer.querySelector('.alert');
+            if (alert) {
+                alert.remove();
+            }
+        }, 3000);
+    }
+}
 </script>
 {% endblock content %}

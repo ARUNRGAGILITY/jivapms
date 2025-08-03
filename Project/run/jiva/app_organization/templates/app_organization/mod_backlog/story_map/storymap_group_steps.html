@@ -324,11 +324,9 @@
                 <button class="btn btn-warning btn-sm me-2" onclick="showRestoreModal()">
                     <i class="fas fa-undo"></i> <b>Restore Items</b>
                 </button>
-                <a href="{% url 'create_story_map_from_backlog' pro_id %}" class="btn btn-secondary btn-sm me-2">
-                    <i class="fas fa-arrow-left"></i> <b>Back to StoryMap</b>
-                </a>
+              
                  <a href="{% url 'create_backlog_from_story_map' pro_id persona.id %}" class="btn btn-secondary btn-sm">
-                    <i class="fas fa-arrow-left"></i> <b>Back to Backlog</b>
+                    <i class="fas fa-arrow-left"></i> <b>Back to Storymapping</b>
                 </a>
             </div>
         </div>
@@ -344,24 +342,7 @@
                         </h5>
                     </div>
                     <div class="col-md-6">
-                        <div class="d-flex align-items-center justify-content-end">
-                            <label for="personaSelector" class="form-label me-3 mb-0">
-                                <strong>Target Persona:</strong>
-                            </label>
-                            <select id="personaSelector" class="form-select" style="width: auto; min-width: 200px;" onchange="onPersonaSelectionChange()">
-                                {% for p in all_personas %}
-                                <option value="{{ p.id }}" {% if p.id == persona.id %}selected{% endif %}>
-                                    {{ p.name|default:"Unnamed Persona" }} (ID: {{ p.id }})
-                                </option>
-                                {% endfor %}
-                            </select>
-                            <button class="btn btn-outline-secondary btn-sm ms-2" onclick="createNewPersona()" title="Create New Persona">
-                                <i class="fas fa-plus"></i>
-                            </button>
-                            <button id="saveToPersonaBtn" class="btn btn-success btn-sm ms-2" onclick="saveToSelectedPersona()" style="display: none;">
-                                <i class="fas fa-save"></i> Save to Persona
-                            </button>
-                        </div>
+                        
                     </div>
                 </div>
                 <div class="row mt-2">
