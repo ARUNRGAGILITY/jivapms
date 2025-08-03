@@ -929,28 +929,61 @@ def ajax_update_step_position(request):
 
 @login_required
 def ajax_update_activity_name(request):
-    """Update the name of an activity"""
+    """Update the name of an activity or step"""
     if request.method == 'POST':
         try:
-            activity_id = request.POST.get('activity_id')
-            activity_name = request.POST.get('activity_name', '').strip()
+            # Check what type of item we're updating
+            item_type = request.POST.get('item_type', 'activity')
             
-            if not activity_id or not activity_name:
-                return JsonResponse({'status': 'error', 'message': 'Activity ID and name are required'})
-            
-            activity = Activity.objects.get(id=activity_id)
-            activity.name = activity_name
-            activity.save()
-            
-            return JsonResponse({'status': 'success', 'message': 'Activity name updated successfully'})
-            
+            if item_type == 'step':
+                # Handle step update
+                step_id = request.POST.get('step_id')
+                step_name = request.POST.get('step_name', '').strip()
+                
+                if not step_id or not step_name:
+                    return JsonResponse({'status': 'error', 'message': 'Step ID and name are required'})
+                
+                step = Step.objects.get(id=step_id)
+                old_name = step.name
+                step.name = step_name
+                step.save()
+                
+                print(f">>> Step updated: {old_name} -> {step_name} (ID: {step_id})")
+                return JsonResponse({
+                    'status': 'success', 
+                    'message': 'Step name updated successfully',
+                    'item_type': 'step'
+                })
+                
+            else:
+                # Handle activity update (default behavior)
+                activity_id = request.POST.get('activity_id')
+                activity_name = request.POST.get('activity_name', '').strip()
+                
+                if not activity_id or not activity_name:
+                    return JsonResponse({'status': 'error', 'message': 'Activity ID and name are required'})
+                
+                activity = Activity.objects.get(id=activity_id)
+                old_name = activity.name
+                activity.name = activity_name
+                activity.save()
+                
+                print(f">>> Activity updated: {old_name} -> {activity_name} (ID: {activity_id})")
+                return JsonResponse({
+                    'status': 'success', 
+                    'message': 'Activity name updated successfully',
+                    'item_type': 'activity'
+                })
+                
+        except Step.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Step not found'})
         except Activity.DoesNotExist:
             return JsonResponse({'status': 'error', 'message': 'Activity not found'})
         except Exception as e:
+            print(f">>> Error updating item: {e}")
             return JsonResponse({'status': 'error', 'message': str(e)})
     
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
-
 
 @login_required
 def ajax_move_step_to_activity(request):
@@ -1871,3 +1904,29 @@ def get_mapped_and_unmapped_items(pro_id, persona_id, initial_backlog):
         })
     
     return mapped_backlog_items, unmapped_backlog_queryset, mapped_backlog_queryset
+
+
+
+@login_required
+def ajax_update_step_name(request):
+    """Update the name of a step"""
+    if request.method == 'POST':
+        try:
+            step_id = request.POST.get('step_id')
+            step_name = request.POST.get('step_name', '').strip()
+            
+            if not step_id or not step_name:
+                return JsonResponse({'status': 'error', 'message': 'Step ID and name are required'})
+            
+            step = Step.objects.get(id=step_id)
+            step.name = step_name
+            step.save()
+            
+            return JsonResponse({'status': 'success', 'message': 'Step name updated successfully'})
+            
+        except Step.DoesNotExist:
+            return JsonResponse({'status': 'error', 'message': 'Step not found'})
+        except Exception as e:
+            return JsonResponse({'status': 'error', 'message': str(e)})
+    
+    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})

@@ -107,5 +107,7 @@ urlpatterns = [
     path('ajax/create-persona/', views_story_map.ajax_create_persona, name='ajax_create_persona'),
     path('ajax/save-to-persona/', views_story_map.ajax_save_to_persona, name='ajax_save_to_persona'),
     path('ajax/refresh-mapped-items/', views_story_map.ajax_refresh_mapped_items, name='ajax_refresh_mapped_items'),
+
+    path('ajax_update_step_name/', views_story_map.ajax_update_step_name, name='ajax_update_step_name'),
     
 ]
