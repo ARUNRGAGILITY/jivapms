@@ -17,4 +17,6 @@ urlpatterns = [
     
     # added
     path('list_project_personae/<int:organization_id>/<int:project_id>/', views_persona.list_project_personae, name='list_project_personae'),
+
+    path('create_persona_with_project_id/<int:organization_id>/<int:project_id>/', views_persona.create_persona_with_project_id, name='create_persona_with_project_id'),
 ]

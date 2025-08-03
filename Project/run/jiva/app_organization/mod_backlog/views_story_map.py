@@ -74,7 +74,107 @@ def create_project_story_map(request, org_id, project_id):
     personas = Persona.objects.filter(organization_id=org_id, project=project, active=True)
     personae_count = personas.count()
     print(f">>> ===> create_project_story_map: {org_id} {project_id} {personae_count} === <<<")
-    return redirect('list_project_personae', organization_id=org_id, project_id=project_id)
+    #return redirect('list_project_personae', organization_id=org_id, project_id=project_id)
+    return redirect('project_personas', org_id=org_id, project_id=project_id)
+@login_required
+def project_personas(request, org_id, project_id):    
+    projects = Organization.objects.get(pk=org_id).org_projects.filter(active=True)
+    organization = Organization.objects.get(pk=org_id)
+    organization_id = organization.id
+    project = None 
+    project = Project.objects.get(pk=project_id, active=True)
+    personae_count = 0
+    personas = Persona.objects.filter(organization_id=org_id, project=project, active=True)
+    personae_count = personas.count()
+    user = request.user       
+    objects_count = 0    
+    show_all = request.GET.get('all', '25')
+    objects_per_page = int(show_all) if show_all != 'all' else 25
+    pagination_options = [5, 10, 15, 25, 50, 100, 'all']
+    selected_bulk_operations = None
+    deleted_count = 0
+    organization = Organization.objects.get(id=organization_id, active=True)
+    
+    search_query = request.GET.get('search', '')
+    if search_query:
+        tobjects = Persona.objects.filter(name__icontains=search_query, 
+                                            organization_id=organization_id).order_by('position')
+    else:
+        tobjects = Persona.objects.filter(active=True, organization_id=organization_id).order_by('position')
+        deleted = Persona.objects.filter(active=False, deleted=False,
+                                organization_id=organization_id).order_by('position')
+        deleted_count = deleted.count()
+    
+    if show_all == 'all':
+        # No pagination, show all records
+        page_obj = tobjects
+        objects_per_page = tobjects.count()
+    else:
+        objects_per_page = int(show_all)     
+        paginator = Paginator(tobjects, objects_per_page)  
+        page_number = request.GET.get('page')
+        page_obj = paginator.get_page(page_number)
+    
+    objects_count = tobjects.count()
+    
+    
+    ## processing the POST
+    if request.method == 'POST':
+        selected_bulk_operations = request.POST.getlist('bulk_operations')
+        bulk_operation = str(selected_bulk_operations[0].strip()) if selected_bulk_operations else None
+             
+        if 'selected_item' in request.POST:  # Correct the typo here
+            selected_items = request.POST.getlist('selected_item')  # Use getlist to ensure all are captured
+            for item_id in selected_items:
+                item = int(item_id)  # Ensure item_id is converted to int if necessary
+                if bulk_operation == 'bulk_delete':
+                    object = get_object_or_404(Persona, pk=item, active=True)
+                    object.active = False
+                    object.save()
+                    
+                elif bulk_operation == 'bulk_done':
+                    object = get_object_or_404(Persona, pk=item, active=True)
+                    object.done = True
+                    object.save()
+                    
+                elif bulk_operation == 'bulk_not_done':
+                    object = get_object_or_404(Persona, pk=item, active=True)
+                    object.done = False
+                    object.save()
+                    
+                elif bulk_operation == 'bulk_blocked':  # Correct the operation check here
+                    object = get_object_or_404(Persona, pk=item, active=True)
+                    object.blocked = True
+                    object.save()
+                    
+                else:
+                    redirect('list_personae', organization_id=organization_id)
+            return redirect('list_personae', organization_id=organization_id)
+    
+    # send outputs info, template,
+    context = {
+        'parent_page': '___PARENTPAGE___',
+        'page': 'project_personas',
+        'organization': organization,
+        'organization_id': organization_id,
+        'org_id': organization_id,
+        'project_id': project_id,
+        'project': project,
+        'module_path': module_path,
+        'user': user,
+        'tobjects': tobjects,
+        'page_obj': page_obj,
+        'objects_count': objects_count,
+        'objects_per_page': objects_per_page,
+        'deleted_count': deleted_count,
+        'show_all': show_all,
+        
+        'pagination_options': pagination_options,
+        'selected_bulk_operations': selected_bulk_operations,
+        'page_title': f'Persona List',
+    }       
+    template_file = f"{app_name}/{module_path}/story_map/project_personas.html"
+    return render(request, template_file, context)
     
 
 
@@ -143,10 +243,10 @@ def create_backlog_from_story_map(request, pro_id, persona_id):
     logger.debug(f"====> Mapped items: {len(mapped_backlog_items)}")
     logger.debug(f"====> Unmapped items: {unmapped_backlog_items.count()}")
     
-    if default_activity_id is None:
-        default_activity = Activity.objects.get(name='Default Activity', persona_id=persona_id)
-        request.session['default_activity_id'] = default_activity.id
-        default_activity_id = default_activity.id
+    # if default_activity_id is None:
+    #     default_activity = Activity.objects.get(name='Default Activity', persona_id=persona_id)
+    #     request.session['default_activity_id'] = default_activity.id
+    #     default_activity_id = default_activity.id
 
     # Handle POST requests (your existing POST handling code remains the same)
     # Add this to your Django view's POST handling section

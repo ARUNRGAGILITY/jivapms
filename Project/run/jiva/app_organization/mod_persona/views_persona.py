@@ -234,7 +234,38 @@ def create_persona(request, organization_id):
     template_file = f"{app_name}/{module_path}/create_persona.html"
     return render(request, template_file, context)
 
+@login_required
+def create_persona_with_project_id(request, organization_id, project_id):
+    user = request.user
+    organization = Organization.objects.get(id=organization_id, active=True, 
+                                                **first_viewable_dict)
+    project = get_object_or_404(Project, id=project_id, active=True, **viewable_dict)
 
+    if request.method == 'POST':
+        form = PersonaForm(request.POST)
+        if form.is_valid():
+            form.instance.author = user
+            form.instance.organization_id = organization_id
+            form.instance.project_id = project_id
+            form.save()
+        else:
+            print(f">>> === form.errors: {form.errors} === <<<")
+        return redirect('project_personas', org_id=organization_id, project_id=project_id)
+    else:
+        form = PersonaForm()
+
+    context = {
+        'parent_page': '___PARENTPAGE___',
+        'page': 'create_persona_with_project_id',
+        'organization': organization,
+        'organization_id': organization_id,
+        'org_id': organization_id,
+        'module_path': module_path,
+        'form': form,
+        'page_title': f'Create Persona with Project ID {project_id}',
+    }
+    template_file = f"{app_name}/{module_path}/create_persona.html"
+    return render(request, template_file, context)
 
 
 # Edit
