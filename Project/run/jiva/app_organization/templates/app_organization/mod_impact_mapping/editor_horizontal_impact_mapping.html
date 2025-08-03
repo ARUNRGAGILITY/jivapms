@@ -552,19 +552,20 @@
     function save_element_text(element, id, appName, modelName, fieldName) {
         console.log("Saving Node:", id, "New Text:", element.textContent);  // ✅ Debugging log
 
-        let csrfToken = "6TUzcPZv81WdUrhLzDemhP3jcVH647JQDTY3RgcwF5oDDJZGEaeiGuJFoT9nLDly";
-
+        let csrfToken = '{{ csrf_token }}';  // ✅ Get CSRF token from Django template
+        const nodeId = element.dataset.node_id;
         let formData = new FormData();
         formData.append("csrfmiddlewaretoken", csrfToken);
         formData.append("app_name", appName);
         formData.append("model_name", modelName);
         formData.append("field_name", fieldName);
         formData.append("text", element.textContent);
-        formData.append("id", id);
+        formData.append("id", nodeId);
 
         fetch("/common/common_ajax/ajax_save_element_text/", {
             method: "POST",
             body: formData,
+            headers: { "X-CSRFToken": csrfToken },
         })
         .then(response => response.json())
         .then(data => {
