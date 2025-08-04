@@ -668,7 +668,7 @@
             <!-- Left Sidebar (Backlog) -->
          <div class="col col-md-2">
     <!-- Sidebar Header -->
-    <div class="message_display"></div>
+    
     
     <!-- Sidebar Content -->
     <div class="mt-2">
@@ -821,6 +821,7 @@
                 <b id="persona_name" class="persona-name" ondblclick="makeEditable(this)"
                 onblur="save_element_text(this, '{{ persona.id }}', 'app_organization', 'Persona', 'name')">
                 {% if persona.name != '' %}{{ persona.name }}{% else %}Enter Persona name here...{% endif %}</b>
+                <div class="message_display"></div>
                 <div class="table-responsive">
                 <table class="table table-bordered">
                     <!-- Activities Row --> 
