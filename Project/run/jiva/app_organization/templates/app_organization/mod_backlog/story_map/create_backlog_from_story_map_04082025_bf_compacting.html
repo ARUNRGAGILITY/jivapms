@@ -378,7 +378,7 @@
 </style>
 
 <style>
-/* Clean, Compact Backlog Items Styles */
+/* Add these styles to your existing CSS section */
 
 /* Available backlog items (unmapped) */
 .backlog-item.draggable-backlog {
@@ -386,10 +386,6 @@
     border: 1px solid #f0e68c;
     cursor: grab;
     transition: all 0.2s ease;
-    margin-bottom: 4px;
-    padding: 6px 8px;
-    font-size: 0.75rem;
-    border-radius: 4px;
 }
 
 .backlog-item.draggable-backlog:hover {
@@ -402,143 +398,50 @@
     cursor: grabbing;
 }
 
-/* CLEAN MAPPED ITEMS - Compact and readable */
-.mapped-item {
-    position: relative;
-    margin-bottom: 3px;
-    padding: 4px 6px;
-    border-radius: 3px;
-    font-size: 0.7rem;
-    line-height: 1.2;
-    transition: all 0.2s ease;
+/* Already mapped items (read-only reference) */
+.backlog-item.mapped-item {
+    background-color: #d4edda !important;
+    border-color: #c3e6cb !important;
+    opacity: 0.8;
     cursor: default;
-    word-wrap: break-word;
-    overflow: hidden;
+    border-left: 3px solid #28a745;
 }
 
-/* Current persona items - Green with good contrast */
-.mapped-item[data-is-current="true"] {
-    background-color: #d1f2d1 !important;
-    border: 1px solid #28a745 !important;
-    color: #155724 !important;
-}
-
-.mapped-item[data-is-current="true"]:hover {
-    background-color: #c3e6c3 !important;
-}
-
-/* Other persona items - Orange with good contrast */
-.mapped-item[data-is-current="false"] {
-    background-color: #ffeaa7 !important;
-    border: 1px solid #ffc107 !important;
-    color: #856404 !important;
-}
-
-.mapped-item[data-is-current="false"]:hover {
-    background-color: #ffe066 !important;
-}
-
-/* Conflict items - Red with good contrast */
-.mapped-item[data-personas*=","] {
-    background-color: #f8d7da !important;
-    border: 1px solid #dc3545 !important;
-    color: #721c24 !important;
-}
-
-.mapped-item[data-personas*=","]::before {
-    content: "⚠";
-    position: absolute;
-    top: 1px;
-    right: 2px;
-    font-size: 0.6rem;
-    color: #dc3545;
-    font-weight: bold;
-}
-
-/* Clean item content */
 .mapped-item-name {
-    font-weight: 600;
-    margin-bottom: 1px;
-    display: block;
-    max-width: calc(100% - 20px); /* Space for icons */
+    font-weight: 500;
+    margin-bottom: 2px;
 }
 
 .mapped-item-details {
-    font-size: 0.55rem !important;
-    opacity: 0.8;
-    margin-bottom: 1px;
-}
-
-/* Compact persona indicator */
-.persona-indicator {
-    position: absolute;
-    top: 2px;
-    right: 2px;
-    font-size: 0.5rem;
-    line-height: 1;
-    padding: 1px 3px;
-    border-radius: 2px;
+    color: #155724 !important;
     font-weight: bold;
 }
 
-.persona-indicator.current {
-    background-color: #28a745;
-    color: white;
-}
-
-.persona-indicator.other {
-    background-color: #ffc107;
-    color: #212529;
-}
-
-.persona-indicator.conflict {
-    background-color: #dc3545;
-    color: white;
-}
-
-/* Action button - only for current persona */
-.mapped-item-action {
-    position: absolute;
-    bottom: 1px;
-    right: 2px;
-    opacity: 0;
-    transition: opacity 0.2s ease;
-}
-
-.mapped-item[data-is-current="true"]:hover .mapped-item-action {
-    opacity: 1;
-}
-
-.btn-remove {
-    background: none;
-    border: none;
-    color: #dc3545;
-    font-size: 0.6rem;
-    padding: 1px 3px;
-    cursor: pointer;
+.mapped-item-details .release-name {
+    background-color: #c3e6cb;
+    padding: 1px 4px;
     border-radius: 2px;
+    font-size: 0.5rem;
 }
 
-.btn-remove:hover {
-    background-color: #dc3545;
-    color: white;
+.mapped-item-details .iteration-name {
+    background-color: #b3d9b8;
+    padding: 1px 4px;
+    border-radius: 2px;
+    font-size: 0.5rem;
+}
+
+/* New items created for current persona */
+.backlog-item.new-item {
+    background-color: #fff3cd !important;
+    border-color: #ffeaa7 !important;
+    border-left: 3px solid #f39c12;
 }
 
 /* Backlog section improvements */
 .backlog-drop-zone {
-    min-height: 150px;
-    padding: 8px;
-    max-height: 70vh;
-    overflow-y: auto;
-}
-
-.backlog-drop-zone::-webkit-scrollbar {
-    width: 4px;
-}
-
-.backlog-drop-zone::-webkit-scrollbar-thumb {
-    background-color: rgba(0,0,0,0.2);
-    border-radius: 2px;
+    min-height: 200px;
+    padding: 10px;
 }
 
 .backlog-drop-zone.drag-over {
@@ -546,75 +449,163 @@
     border: 2px dashed #007bff;
 }
 
-/* Section headers */
-.section-header {
-    font-size: 0.7rem;
+/* Item type labels */
+.item-type-label {
+    font-size: 0.6rem;
+    color: #6c757d;
+    font-weight: normal;
+    display: block;
+    margin-top: 2px;
+}
+
+/* Section headers in backlog */
+.backlog-section-header {
+    font-size: 0.8rem;
     font-weight: bold;
     color: #495057;
-    margin: 8px 0 4px 0;
-    padding: 2px 0;
+    margin: 10px 0 5px 0;
+    padding: 2px 5px;
     border-bottom: 1px solid #dee2e6;
 }
 
-/* Compact stats */
-.mapping-stats {
-    background-color: #f8f9fa;
-    border-radius: 3px;
-    padding: 4px 6px;
-    font-size: 0.65rem;
-    margin-top: 6px;
-    border: 1px solid #e9ecef;
-}
-
-.stat-item {
-    display: inline-block;
-    margin-right: 8px;
-}
-
-.stat-value {
-    font-weight: bold;
-    margin-left: 2px;
-}
-
-.stat-value.success {
-    color: #28a745;
-}
-
-.stat-value.danger {
-    color: #dc3545;
-}
-
-/* Empty state */
-.empty-state {
+/* Empty state styling */
+.backlog-empty-state {
     text-align: center;
     color: #6c757d;
     font-style: italic;
-    padding: 12px;
-    font-size: 0.7rem;
+    padding: 20px;
+    border: 1px dashed #dee2e6;
+    border-radius: 4px;
+    margin: 10px 0;
 }
 
-/* Responsive adjustments */
+/* Responsive adjustments for backlog sidebar */
 @media (max-width: 768px) {
     .backlog-item {
-        font-size: 0.7rem;
-        padding: 4px 6px;
+        margin-bottom: 8px;
+        font-size: 0.8rem;
     }
     
-    .mapped-item {
-        font-size: 0.65rem;
+    .col-md-2 {
+        margin-bottom: 20px;
     }
 }
+</style>
 
-/* Remove double scrollbar issue */
-.container-fluid-width {
-    overflow: visible;
+<style>
+    /* Enhanced Persona Markers and Mapped Items Styles */
+
+/* Persona Markers */
+.persona-markers {
+    z-index: 10;
 }
 
-.table-bordered {
-    border: 1px solid #dee2e6;
+.persona-marker {
+    display: inline-block;
+    min-width: 16px;
+    height: 16px;
+    line-height: 14px;
+    text-align: center;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: help;
+    transition: transform 0.2s ease;
+}
+
+.persona-marker:hover {
+    transform: scale(1.2);
+    z-index: 15;
+}
+
+.persona-marker.badge-success {
+    background-color: #28a745 !important;
+    color: white;
+}
+
+.persona-marker.badge-warning {
+    background-color: #ffc107 !important;
+    color: #212529;
+}
+
+/* Mapped Items Enhanced Styling */
+.mapped-item {
+    position: relative;
+    min-height: 60px;
+    margin-bottom: 8px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    cursor: default;
+}
+
+.mapped-item:hover {
+    transform: translateY(-1px);
+    box-shadow: 2px 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Current persona items */
+.mapped-item[data-is-current="true"] {
+    border-left: 4px solid #28a745;
+}
+
+.mapped-item[data-is-current="true"]:hover {
+    background-color: #c8e6c9 !important;
+}
+
+/* Other persona items */
+.mapped-item[data-is-current="false"] {
+    border-left: 4px solid #ffc107;
+}
+
+.mapped-item[data-is-current="false"]:hover {
+    background-color: #fff8e1 !important;
+}
+
+/* Conflict indicators */
+.mapped-item[data-personas*=","] {
+    border-left: 4px solid #dc3545;
+    position: relative;
+}
+
+.mapped-item[data-personas*=","]::before {
+    content: "!";
+    position: absolute;
+    top: -5px;
+    left: -8px;
+    background-color: #dc3545;
+    color: white;
+    border-radius: 50%;
+    width: 16px;
+    height: 16px;
+    font-size: 10px;
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 10;
+}
+
+/* Action buttons */
+.item-actions {
+    opacity: 0;
+    transition: opacity 0.2s ease;
+}
+
+.mapped-item:hover .item-actions {
+    opacity: 1;
+}
+
+.btn-xs {
+    padding: 2px 6px;
+    font-size: 0.65rem;
+    line-height: 1;
+    border-radius: 3px;
 }
 
 /* Persona Switcher */
+.persona-switcher {
+    position: relative;
+}
+
 .persona-switcher select {
     border: 1px solid #28a745;
     background-color: #f8fff9;
@@ -626,8 +617,78 @@
     border-color: #1e7e34;
     box-shadow: 0 0 0 0.2rem rgba(40, 167, 69, 0.25);
 }
-</style>
 
+/* Mapping stats */
+.mapping-stats {
+    border: 1px solid #e9ecef;
+    font-size: 0.75rem;
+}
+
+.mapping-stats .row > div {
+    padding: 0 5px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 576px) {
+    .persona-marker {
+        min-width: 14px;
+        height: 14px;
+        font-size: 0.4rem;
+    }
+    
+    .mapped-item-content {
+        margin-right: 35px !important;
+    }
+    
+    .persona-switcher select {
+        font-size: 0.7rem;
+    }
+}
+
+/* Tooltip enhancements */
+.persona-marker[title]:hover::after {
+    content: attr(title);
+    position: absolute;
+    bottom: -25px;
+    left: 50%;
+    transform: translateX(-50%);
+    background-color: #333;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 3px;
+    font-size: 0.6rem;
+    white-space: nowrap;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+/* Animation for new items */
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateX(-20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+.mapped-item.new-mapping {
+    animation: slideIn 0.3s ease-out;
+}
+
+/* Filter states */
+.mapped-item.filtered-out {
+    display: none;
+}
+
+.mapped-item.highlighted {
+    background-color: #fff9c4 !important;
+    border-color: #f0e68c !important;
+    box-shadow: 0 0 10px rgba(240, 230, 140, 0.5);
+}
+</style>
 <div class="page-container">
     <!-- Custom Top Menu -->
     <div class="top-menu-container">
@@ -641,9 +702,8 @@
 
             <!-- Right-Aligned Section (60%) -->
             <div class="right-section">
-
-                <b>{% if persona.name != '' %}{{ persona.name }}{% endif %}</b>
                 <!-- Persona Switcher Dropdown -->
+                
                 <div class="persona-switcher">
                     <select class="form-select form-select-sm" id="persona-switcher" onchange="switchPersona(this.value)" style="width: auto; font-size: 0.75rem;">
                         <option value="">Switch Persona...</option>
@@ -665,152 +725,202 @@
         <!-- display-->
         <div class="row">
             <!-- Left Sidebar (Backlog) -->
-         <div class="col col-md-2">
+         <div class="col col-md-2" id="">
     <!-- Sidebar Header -->
-    <div class="message_display"></div>
-    
-    <!-- Sidebar Content -->
-    <div class="mt-2">
-        <div class="backlog-drop-zone border rounded"
-             ondragover="allowDrop(event)"
-             ondrop="dropToBacklog(event)">
-            
-            <div class="section-header">
-                <i class="fas fa-tasks"></i> Backlog Items
+    <div class="container-fluid-width">
+        <div class="row">
+            <div class="col col-md-12">
+               <div class="message_display"></div>
             </div>
-            
-            <!-- Form to add new backlog items -->
-            <form method="post" action="" id="add-backlog-form" class="mb-2">
-                {% csrf_token %}
-                <input type="hidden" name="project_id" value="{{ pro_id }}">
-                <input type="hidden" name="persona_id" value="{{ persona.id }}">
-                <input type="hidden" name="submit_detail" value="submit_detail">
-                <div class="input-group input-group-sm">
-                    <input type="text" name="detail" id="detail" class="form-control form-control-sm" placeholder="Add new item..." required>
-                    <button type="submit" class="btn btn-primary btn-sm">+</button>
-                </div>
-            </form>
-            
-            <!-- Show unmapped existing backlog items -->
-            {% if unmapped_backlog_items %}
-                <div class="mb-2">
-                    <small class="text-muted"><strong>Available:</strong></small>
-                    <div id="unmapped-items-container">
-                        {% for backlog_item in unmapped_backlog_items %}
-                            <div class="backlog-item draggable-backlog" 
-                                 draggable="true" 
-                                 id="backlog-{{ backlog_item.id }}"
-                                 ondblclick="makeEditable(this);" 
-                                 onblur="save_element_text(this, '{{backlog_item.id}}', 'app_organization', 'Backlog', 'name')"
-                                 title="Created: {{ backlog_item.created_at|date:'M d, Y' }}">
-                                {{ backlog_item.name }}
-                                {% if backlog_item.type %}
-                                    <small class="d-block text-muted" style="font-size: 0.55rem;">{{ backlog_item.type.name }}</small>
-                                {% endif %}
-                            </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            {% endif %}
-            
-            <!-- CLEAN MAPPED ITEMS SECTION -->
-            {% if mapped_backlog_items %}
-            <div class="mb-2" id="mapped-items-section">
-                <small class="text-success"><strong>Mapped Items:</strong></small>
-                
-                {% for mapped_item in mapped_backlog_items %}
-                <div class="mapped-item" 
-                     id="mapped-{{ mapped_item.backlog_item.id }}"
-                     data-story-id="{{ mapped_item.backlog_item.id }}"
-                     data-personas="{{ mapped_item.mapped_personas|join:',' }}"
-                     data-is-current="{{ mapped_item.is_current_persona|yesno:'true,false' }}"
-                     title="{% if mapped_item.is_current_persona %}Your mapping{% else %}Mapped by: {{ mapped_item.mapped_personas|join:', ' }}{% endif %}">
-                    
-                    <!-- Compact persona indicator -->
-                    <span class="persona-indicator {% if mapped_item.is_current_persona %}current{% elif mapped_item.has_conflict %}conflict{% else %}other{% endif %}">
-                        {% if mapped_item.is_current_persona %}
-                            YOU
-                        {% elif mapped_item.has_conflict %}
-                            {{ mapped_item.mapped_personas_count }}
-                        {% else %}
-                            {{ mapped_item.mapped_personas.0|truncatechars:3|upper }}
-                        {% endif %}
-                    </span>
-                    
-                    <!-- Item name -->
-                    <div class="mapped-item-name">
-                        {{ mapped_item.backlog_item.name }}
-                    </div>
-                    
-                    <!-- Compact details -->
-                    {% with mapped_item.mapping_details|first as primary_detail %}
-                    {% if primary_detail.release_name and primary_detail.release_name != 'Not Set' %}
-                    <div class="mapped-item-details">
-                        {{ primary_detail.release_name }}
-                        {% if primary_detail.activity_name and primary_detail.activity_name != 'Not Set' %} → {{ primary_detail.activity_name|truncatechars:12 }}{% endif %}
-                    </div>
-                    {% endif %}
-                    {% endwith %}
-                    
-                    <!-- Action button (only for current persona items) -->
-                    {% if mapped_item.is_current_persona %}
-                    <button class="btn-remove mapped-item-action" 
-                            onclick="unmapFromPersona({{ mapped_item.backlog_item.id }}, '{{ mapped_item.backlog_item.name|escapejs }}')"
-                            title="Remove from your persona">
-                        <i class="fas fa-times"></i>
-                    </button>
-                    {% endif %}
-                </div>
-                {% endfor %}
-                
-                <!-- Compact Summary Stats -->
-                <div class="mapping-stats">
-                <span class="stat-item">
-                    <i class="fas fa-user"></i>
-                    <span class="stat-value success" id="your-items-count">
-                       
-                        <!-- OPTION 3: Simple JavaScript counting (recommended for now) -->
-                        <span id="js-your-count">0</span>
-                    </span>
-                </span>
-                <span class="stat-item">
-                    <i class="fas fa-exclamation-triangle"></i>
-                    <span class="stat-value danger" id="conflict-count">
-                        <!-- Same fix for conflicts -->
-                        <span id="js-conflict-count">0</span>
-                    </span>
-                </span>
-            </div>
-
-            </div>
-            {% endif %}
-            
-            <!-- Show newly created items for this persona -->
-            <div id="new-items-container">
-                {% for backlog_item in new_persona_items %}
-                    <div class="backlog-item draggable-backlog" 
-                        draggable="true" 
-                        id="backlog-{{ backlog_item.id }}"
-                        ondblclick="makeEditable(this);" 
-                        onblur="save_element_text(this, '{{backlog_item.id}}', 'app_organization', 'Backlog', 'name')"
-                        style="background-color: #fff3cd; border-color: #ffeaa7;"
-                        title="New item created for this persona">
-                        {{ backlog_item.name }}
-                        <small class="d-block text-muted" style="font-size: 0.55rem;">New</small>
-                    </div>
-                {% endfor %}
-            </div>
-            
-            <!-- Show message if no items available -->
-            {% if not unmapped_backlog_items and not mapped_backlog_items %}
-                <div class="empty-state">
-                    <i class="fas fa-info-circle"></i><br>
-                    No backlog items found.<br>
-                    Create new items using the form above.
-                </div>
-            {% endif %}
-            
         </div>
+    </div>
+    <!-- Sidebar Content -->
+    <div class="container-fluid-width mt-2">
+        <table class="table table-bordered">
+            <!-- Backlog Row -->                         
+            <tr id="details-row">
+    <td colspan="" class="backlog-drop-zone"
+    ondragover="allowDrop(event)"
+    ondrop="dropToBacklog(event)">
+    <strong>Backlog Items</strong>
+    
+    <!-- Form to add new backlog items -->
+    <form method="post" action="" id="add-backlog-form">
+    {% csrf_token %}
+    <input type="hidden" name="project_id" value="{{ pro_id }}">
+    <input type="hidden" name="persona_id" value="{{ persona.id }}">
+    <input type="hidden" name="submit_detail" value="submit_detail">
+        <div class="input-group input-group-sm mb-2">
+            <input type="text" name="detail" id="detail" class="form-control form-control-sm" placeholder="Add new item..." required>
+            <button type="submit" class="btn btn-primary btn-sm">Add</button>
+        </div>
+    </form>
+    
+    <!-- Show unmapped existing backlog items -->
+    {% if unmapped_backlog_items %}
+        <div class="mb-3">
+            <small class="text-muted"><strong>Available Items:</strong></small>
+            <div id="unmapped-items-container">
+                {% for backlog_item in unmapped_backlog_items %}
+                    <div class="backlog-item post-it draggable-backlog" 
+                         draggable="true" 
+                         id="backlog-{{ backlog_item.id }}"
+                         ondblclick="makeEditable(this);" 
+                         onblur="save_element_text(this, '{{backlog_item.id}}', 'app_organization', 'Backlog', 'name')"
+                         title="Created: {{ backlog_item.created_at|date:'M d, Y' }}">
+                        {{ backlog_item.name }}
+                        <small class="d-block text-muted" style="font-size: 0.6rem;">
+                            {% if backlog_item.type %}{{ backlog_item.type.name }}{% endif %}
+                        </small>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+    
+    <!-- Show items that are already mapped (for reference) -->
+   <!-- Enhanced Already Mapped Items Section -->
+{% if mapped_backlog_items %}
+<div class="mb-3" id="mapped-items-section">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <small class="text-success"><strong>Already Mapped Items:</strong></small>
+        
+       
+    </div>
+    
+    {% for mapped_item in mapped_backlog_items %}
+    <div class="backlog-item post-it mapped-item position-relative" 
+         id="mapped-{{ mapped_item.backlog_item.id }}"
+         data-story-id="{{ mapped_item.backlog_item.id }}"
+         data-personas="{{ mapped_item.mapped_personas|join:',' }}"
+         data-is-current="{{ mapped_item.is_current_persona|yesno:'true,false' }}"
+         style="background-color: {% if mapped_item.is_current_persona %}#d4edda{% else %}#fff3cd{% endif %}; 
+                border-color: {% if mapped_item.is_current_persona %}#c3e6cb{% else %}#ffeaa7{% endif %}; 
+                opacity: {% if mapped_item.is_current_persona %}1{% else %}0.7{% endif %};"
+         title="{% if mapped_item.is_current_persona %}Your mapping{% else %}Mapped by other persona(s){% endif %}">
+        
+        <!-- Persona Markers -->
+        <div class="persona-markers position-absolute" style="top: 2px; right: 2px;">
+            {% for detail in mapped_item.mapping_details %}
+                <span class="persona-marker badge {% if detail.is_current_persona %}badge-success{% else %}badge-warning{% endif %}" 
+                      style="font-size: 0.5rem; margin: 1px;"
+                      title="{{ detail.persona_name }}{% if detail.release_name != 'Not Set' %} - {{ detail.release_name }}{% endif %}">
+                    {% if detail.is_current_persona %}
+                        <i class="fas fa-user"></i>
+                    {% else %}
+                        <i class="fas fa-lock"></i>
+                    {% endif %}
+                    {{ detail.persona_name|truncatechars:3 }}
+                </span>
+            {% endfor %}
+        </div>
+        
+        <!-- Item Content -->
+        <div class="mapped-item-content" style="margin-right: 40px;">
+            <div class="mapped-item-name" style="font-weight: 500; margin-bottom: 2px;">
+                {{ mapped_item.backlog_item.name }}
+            </div>
+            
+            <!-- Primary mapping details (current persona if available, otherwise first mapping) -->
+            {% with mapped_item.mapping_details|first as primary_detail %}
+            <small class="d-block text-muted mapped-item-details" style="font-size: 0.6rem;">
+                {% if mapped_item.is_current_persona %}
+                    <span class="text-success">✓ Your mapping:</span>
+                {% else %}
+                    <span class="text-warning">⚠ Mapped by {{ primary_detail.persona_name }}:</span>
+                {% endif %}
+                
+                {% if primary_detail.release_name and primary_detail.release_name != 'Not Set' %}
+                    <span class="release-name badge badge-light" style="font-size: 0.5rem;">{{ primary_detail.release_name }}</span>
+                {% endif %}
+                
+                {% if primary_detail.iteration_name and primary_detail.iteration_name != 'Not Set' %}
+                    <span class="iteration-name badge badge-light" style="font-size: 0.5rem;">{{ primary_detail.iteration_name }}</span>
+                {% endif %}
+            </small>
+            
+            {% if primary_detail.activity_name and primary_detail.activity_name != 'Not Set' %}
+            <small class="d-block text-muted" style="font-size: 0.5rem;">
+                {{ primary_detail.activity_name }}
+                {% if primary_detail.step_name and primary_detail.step_name != 'Not Set' %} → {{ primary_detail.step_name }}{% endif %}
+            </small>
+            {% endif %}
+            {% endwith %}
+            
+            <!-- Show conflict indicator if multiple personas -->
+            {% if mapped_item.mapped_personas_count > 1 %}
+            <small class="d-block text-danger" style="font-size: 0.5rem;">
+                <i class="fas fa-exclamation-triangle"></i> 
+                Conflict: {{ mapped_item.mapped_personas_count }} personas
+            </small>
+            {% endif %}
+        </div>
+        
+        <!-- Action Buttons (only show for current persona items) -->
+        {% if mapped_item.is_current_persona %}
+        <div class="item-actions position-absolute" style="bottom: 2px; right: 2px;">
+            <button class="btn btn-xs btn-outline-warning" 
+                    onclick="unmapFromPersona({{ mapped_item.backlog_item.id }}, '{{ mapped_item.backlog_item.name|escapejs }}')"
+                    style="font-size: 0.6rem; padding: 1px 4px;"
+                    title="Remove from your persona">
+                <i class="fas fa-minus"></i>
+            </button>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+    
+    <!-- Summary Stats -->
+    <div class="mapping-stats mt-2 p-2" style="background-color: #f8f9fa; border-radius: 4px; font-size: 0.7rem;">
+        <div class="row">
+            <div class="col-6">
+                <strong>Your Items:</strong> 
+                <span class="text-success">{{ mapped_backlog_items|length|add:"-1"|add:"1" }} 
+                    {# This is a hacky way to count, better to pass count from view #}
+                </span>
+            </div>
+            <div class="col-6">
+                <strong>Conflicts:</strong> 
+                <span class="text-danger" id="conflict-count">0</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+    <!-- Show newly created items for this persona -->
+    <div id="new-items-container">
+        {% for backlog_item in initial_backlog %}
+            {% if backlog_item.persona_id == persona.id and backlog_item.release_id == None and backlog_item.name != project_id_str %}
+                <div class="backlog-item post-it draggable-backlog" 
+                     draggable="true" 
+                     id="backlog-{{ backlog_item.id }}"
+                     ondblclick="makeEditable(this);" 
+                     onblur="save_element_text(this, '{{backlog_item.id}}', 'app_organization', 'Backlog', 'name')"
+                     style="background-color: #fff3cd; border-color: #ffeaa7;"
+                     title="New item created for this persona">
+                    {{ backlog_item.name }}
+                    <small class="d-block text-muted" style="font-size: 0.6rem;">
+                        New
+                    </small>
+                </div>
+            {% endif %}
+        {% endfor %}
+    </div>
+    
+    <!-- Show message if no items available -->
+    {% if not unmapped_backlog_items and not mapped_backlog_items %}
+        <div class="text-center text-muted mt-3" id="empty-state">
+            <small>
+                <i class="fas fa-info-circle"></i><br>
+                No backlog items found.<br>
+                Create new items using the form above.
+            </small>
+        </div>
+    {% endif %}
+    
+    </td>
+</tr>
+       </table>
     </div>
 </div>
             <!-- Right Sidebar (Story Map) -->
@@ -1093,6 +1203,7 @@
 
 
 <script>
+    
 function dropToBacklog(event) {
     event.preventDefault();
 
@@ -1107,7 +1218,6 @@ function dropToBacklog(event) {
 
     // Extract the backlog ID
     const backlogId = draggedId.split('-')[1];
-    const storyName = draggedElement.textContent.trim().split('\n')[0]; // Get clean name
 
     // Define the AJAX payload
     const payload = {
@@ -1126,39 +1236,39 @@ function dropToBacklog(event) {
         },
         body: JSON.stringify(payload),
     })
-    .then((response) => {
-        if (!response.ok) {
-            return response.json().then((err) => {
-                throw new Error(err.message || 'Server Error');
-            });
-        }
-        return response.json();
-    })
-    .then((data) => {
-        if (data.status === 'success') {
-            // IMPORTANT: Only remove the original element from story map
-            // Don't create a new element - let refreshMappedItems handle the update
-            draggedElement.remove();
-            
-            // Refresh the mapped items section which will:
-            // 1. Remove it from mapped items if no longer mapped
-            // 2. Add it to unmapped section if it should be there
-            refreshMappedItems();
-            
-            // Also refresh unmapped items if needed
-            refreshUnmappedItems();
+        .then((response) => {
+            if (!response.ok) {
+                return response.json().then((err) => {
+                    throw new Error(err.message || 'Server Error');
+                });
+            }
+            return response.json();
+        })
+        .then((data) => {
+            if (data.status === 'success') {
+                // Append the dragged element back to the backlog drop zone
+                const backlogDropZone = document.querySelector('.backlog-drop-zone');
+                clonedElement = draggedElement.cloneNode(true);
+                // Remove release-related classes
+                clonedElement.classList.remove('step-item', 'card');
 
-            console.log('Backlog item successfully moved back.');
-            showMessage('Item moved back to backlog', 'success');
-        } else {
-            throw new Error(data.message);
-        }
-    })
-    .catch((error) => {
-        console.error('Error moving backlog item back:', error.message);
-        showMessage('Error moving item back: ' + error.message, 'error');
-    });
+                // Add backlog-related classes
+                clonedElement.classList.add('backlog-item');
+                backlogDropZone.appendChild(clonedElement);
+
+                // Optional: Remove the dropped element from its previous release zone
+                draggedElement.remove();
+
+                console.log('Backlog item successfully moved back.');
+            } else {
+                throw new Error(data.message);
+            }
+        })
+        .catch((error) => {
+            console.error('Error moving backlog item back:', error.message);
+        });
 }
+
 // AJAX UPDATE ALREADY MAPPED
 // Add this JavaScript to your template to handle dynamic updates
 
@@ -1174,20 +1284,11 @@ function refreshMappedItems() {
         },
         success: function(response) {
             if (response.status === 'success') {
-                // Update the mapped items section with the new compact template
                 $('#mapped-items-section').html(response.html);
-                
-                updateStatsCorrectly();
-                
-                console.log(`Refreshed: ${response.count} total items`);
-            } else {
-                console.error('Error refreshing mapped items:', response.message);
-                showMessage('Error refreshing mapped items', 'error');
             }
         },
         error: function(xhr, status, error) {
             console.error('Error refreshing mapped items:', error);
-            showMessage('Error refreshing mapped items', 'error');
         }
     });
 }
@@ -1421,7 +1522,7 @@ $(document).ready(function() {
         // Show loading state
         const submitBtn = $(this).find('button[type="submit"]');
         const originalText = submitBtn.text();
-        submitBtn.prop('disabled', true).text('...');
+        submitBtn.prop('disabled', true).text('Adding...');
         
         $.ajax({
             url: window.location.href,
@@ -1438,7 +1539,7 @@ $(document).ready(function() {
                 if (response.status === 'success') {
                     // Create new backlog item element
                     const newItemHtml = `
-                        <div class="backlog-item draggable-backlog" 
+                        <div class="backlog-item post-it draggable-backlog" 
                              draggable="true" 
                              id="backlog-${response.backlog_id}"
                              ondblclick="makeEditable(this);" 
@@ -1446,7 +1547,9 @@ $(document).ready(function() {
                              style="background-color: #fff3cd; border-color: #ffeaa7;"
                              title="New item created for this persona">
                             ${response.backlog_name}
-                            <small class="d-block text-muted" style="font-size: 0.55rem;">New</small>
+                            <small class="d-block text-muted" style="font-size: 0.6rem;">
+                                New
+                            </small>
                         </div>
                     `;
                     
@@ -1454,7 +1557,7 @@ $(document).ready(function() {
                     $('#new-items-container').append(newItemHtml);
                     
                     // Hide empty state if it exists
-                    $('.empty-state').hide();
+                    $('#empty-state').hide();
                     
                     // Enable drag functionality for the new item
                     const newElement = $(`#backlog-${response.backlog_id}`)[0];
@@ -1468,15 +1571,15 @@ $(document).ready(function() {
                     detailInput.val('');
                     
                     // Show success message
-                    showMessage('Item added successfully!', 'success');
+                    showMessage('Backlog item added successfully!', 'success');
                     
                 } else {
-                    showMessage(response.message || 'Error adding item', 'error');
+                    showMessage(response.message || 'Error adding backlog item', 'error');
                 }
             },
             error: function(xhr, status, error) {
                 console.error('Form submission error:', error);
-                showMessage('Error adding item: ' + error, 'error');
+                showMessage('Error adding backlog item: ' + error, 'error');
             },
             complete: function() {
                 // Reset button state
@@ -1485,6 +1588,111 @@ $(document).ready(function() {
         });
     });
 });
+
+// Enhanced dropToBacklog function
+function dropToBacklog(event) {
+    event.preventDefault();
+
+    // Get the dragged element's ID
+    const draggedId = event.dataTransfer.getData("text/plain");
+    const draggedElement = document.getElementById(draggedId);
+
+    if (!draggedElement) {
+        console.error('Dragged element not found.');
+        return;
+    }
+
+    // Extract the backlog ID
+    const backlogId = draggedId.split('-')[1];
+    const storyName = draggedElement.textContent.trim();
+
+    // Define the AJAX payload
+    const payload = {
+        project_id: {{ pro_id }},
+        backlog_id: backlogId,
+        persona_id: {{ persona.id }},
+        release_id: null, // Remove release association
+    };
+
+    // Send the AJAX request to the backend
+    fetch("{% url 'ajax_update_backlog_release' %}", {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRFToken': '{{ csrf_token }}',
+        },
+        body: JSON.stringify(payload),
+    })
+        .then((response) => {
+            if (!response.ok) {
+                return response.json().then((err) => {
+                    throw new Error(err.message || 'Server Error');
+                });
+            }
+            return response.json();
+        })
+        .then((data) => {
+            if (data.status === 'success') {
+                // Create new element for backlog
+                const newItemHtml = `
+                    <div class="backlog-item post-it draggable-backlog" 
+                         draggable="true" 
+                         id="backlog-${backlogId}"
+                         ondblclick="makeEditable(this);" 
+                         onblur="save_element_text(this, '${backlogId}', 'app_organization', 'Backlog', 'name')"
+                         title="Moved back from story map">
+                        ${storyName.split('\n')[0]}
+                        <small class="d-block text-muted" style="font-size: 0.6rem;">
+                            Available
+                        </small>
+                    </div>
+                `;
+                
+                // Add to unmapped items container
+                let container = document.getElementById('unmapped-items-container');
+                if (!container) {
+                    // Create container if it doesn't exist
+                    const backlogDropZone = document.querySelector('.backlog-drop-zone');
+                    const newContainer = document.createElement('div');
+                    newContainer.innerHTML = `
+                        <div class="mb-3">
+                            <small class="text-muted"><strong>Available Items:</strong></small>
+                            <div id="unmapped-items-container"></div>
+                        </div>
+                    `;
+                    // Insert after the form
+                    const form = backlogDropZone.querySelector('form');
+                    form.parentNode.insertBefore(newContainer, form.nextSibling);
+                    container = document.getElementById('unmapped-items-container');
+                }
+                
+                container.insertAdjacentHTML('beforeend', newItemHtml);
+                
+                // Enable drag functionality for the new item
+                const newElement = document.getElementById(`backlog-${backlogId}`);
+                if (newElement) {
+                    newElement.addEventListener('dragstart', function(event) {
+                        event.dataTransfer.setData("text/plain", event.target.id);
+                    });
+                }
+
+                // Remove the original element from the story map
+                draggedElement.remove();
+                
+                // Update the mapped items section
+                refreshMappedItems();
+
+                console.log('Backlog item successfully moved back.');
+                showMessage('Item moved back to backlog', 'success');
+            } else {
+                throw new Error(data.message);
+            }
+        })
+        .catch((error) => {
+            console.error('Error moving backlog item back:', error.message);
+            showMessage('Error moving item back: ' + error.message, 'error');
+        });
+}
 
 // Enhanced drag over effects
 function allowDrop(event) {
@@ -1521,9 +1729,9 @@ function showMessage(message, type = 'info') {
                           type === 'error' ? 'alert-danger' : 'alert-info';
         
         messageContainer.innerHTML = `
-            <div class="alert ${alertClass} alert-dismissible fade show" role="alert" style="font-size: 0.8rem; padding: 0.5rem;">
+            <div class="alert ${alertClass} alert-dismissible fade show" role="alert">
                 ${message}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" style="font-size: 0.7rem;"></button>
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
             </div>
         `;
         
@@ -1539,7 +1747,7 @@ function showMessage(message, type = 'info') {
 </script>
 
 <script>
-// Clean, simplified persona management functions
+    // Enhanced JavaScript Functions for Persona Management
 
 // Switch to different persona
 function switchPersona(personaId) {
@@ -1548,27 +1756,392 @@ function switchPersona(personaId) {
     // Show loading state
     showMessage('Switching to persona...', 'info');
     
-    // Get current URL and replace the persona_id parameter
+    // Redirect to the selected persona's story map
     const currentUrl = window.location.pathname;
-    const urlParts = currentUrl.split('/');
-    
-    // Find the index of the persona_id (should be the last numeric part before the trailing slash)
-    for (let i = urlParts.length - 1; i >= 0; i--) {
-        if (urlParts[i] && /^\d+$/.test(urlParts[i])) {
-            // This is the persona_id (last numeric part)
-            urlParts[i] = personaId;
-            break;
-        }
-    }
-    
-    const newUrl = urlParts.join('/');
-    console.log('Switching from:', currentUrl, 'to:', newUrl);
+    const newUrl = currentUrl.replace(/persona_id\/\d+/, `persona_id/${personaId}`);
     window.location.href = newUrl;
 }
 
 // Unmap item from current persona
 function unmapFromPersona(storyId, storyName) {
-    if (!confirm(`Remove "${storyName}" from your persona?`)) {
+    if (!confirm(`Remove "${storyName}" from your persona mapping?`)) {
+        return;
+    }
+    
+    // Show loading state
+    const button = event.target.closest('button');
+    const originalContent = button.innerHTML;
+    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+    button.disabled = true;
+    
+    $.ajax({
+        url: "{% url 'ajax_update_backlog_release' %}",
+        type: 'POST',
+        data: {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            backlog_id: storyId,
+            release_id: null,
+            persona_id: {{ persona.id }}
+        },
+        success: function(response) {
+            if (response.status === 'success') {
+                // Remove from mapped section and add to unmapped
+                moveFromMappedToUnmapped(storyId, storyName);
+                showMessage('Item removed from your persona', 'success');
+                updateMappingStats();
+            } else {
+                showMessage('Error: ' + response.message, 'error');
+            }
+        },
+        error: function(xhr, status, error) {
+            showMessage('Error removing item: ' + error, 'error');
+        },
+        complete: function() {
+            // Reset button state
+            button.innerHTML = originalContent;
+            button.disabled = false;
+        }
+    });
+}
+
+// Move item from mapped to unmapped section
+function moveFromMappedToUnmapped(storyId, storyName) {
+    // Remove from mapped section
+    $(`#mapped-${storyId}`).fadeOut(300, function() {
+        $(this).remove();
+        
+        // Add to unmapped section
+        const newItemHtml = `
+            <div class="backlog-item post-it draggable-backlog new-mapping" 
+                 draggable="true" 
+                 id="backlog-${storyId}"
+                 ondblclick="makeEditable(this);" 
+                 onblur="save_element_text(this, '${storyId}', 'app_organization', 'Backlog', 'name')"
+                 title="Moved back from story map">
+                ${storyName}
+                <small class="d-block text-muted" style="font-size: 0.6rem;">
+                    Available
+                </small>
+            </div>
+        `;
+        
+        // Find or create unmapped container
+        let container = $('#unmapped-items-container');
+        if (container.length === 0) {
+            const backlogDropZone = $('.backlog-drop-zone');
+            const newContainer = $(`
+                <div class="mb-3">
+                    <small class="text-muted"><strong>Available Items:</strong></small>
+                    <div id="unmapped-items-container"></div>
+                </div>
+            `);
+            backlogDropZone.find('form').after(newContainer);
+            container = $('#unmapped-items-container');
+        }
+        
+        container.append(newItemHtml);
+        
+        // Enable drag functionality
+        const newElement = $(`#backlog-${storyId}`)[0];
+        if (newElement) {
+            newElement.addEventListener('dragstart', function(event) {
+                event.dataTransfer.setData("text/plain", event.target.id);
+            });
+        }
+        
+        // Remove empty state if no mapped items left
+        if ($('.mapped-item').length === 0) {
+            $('#mapped-items-section').hide();
+        }
+    });
+}
+
+// Update mapping statistics
+function updateMappingStats() {
+    const totalMapped = $('.mapped-item').length;
+    const yourItems = $('.mapped-item[data-is-current="true"]').length;
+    const conflicts = $('.mapped-item[data-personas*=","]').length;
+    
+    // Update stats display
+    $('.mapping-stats .text-success').text(yourItems);
+    $('#conflict-count').text(conflicts);
+    
+    // Update stats color based on conflicts
+    if (conflicts > 0) {
+        $('#conflict-count').removeClass('text-warning').addClass('text-danger');
+    } else {
+        $('#conflict-count').removeClass('text-danger').addClass('text-success');
+    }
+}
+
+// Enhanced refresh mapped items function
+function refreshMappedItems() {
+    $.ajax({
+        url: "{% url 'ajax_refresh_mapped_items' %}",
+        type: 'POST',
+        data: {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            pro_id: '{{ pro_id }}',
+            persona_id: '{{ persona.id }}'
+        },
+        success: function(response) {
+            if (response.status === 'success') {
+                $('#mapped-items-section').html(response.html);
+                updateMappingStats();
+                
+                // Re-initialize tooltips and interactions
+                initializeMappedItemsInteractions();
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error refreshing mapped items:', error);
+            showMessage('Error refreshing mapped items', 'error');
+        }
+    });
+}
+
+// Initialize interactions for mapped items
+function initializeMappedItemsInteractions() {
+    // Initialize tooltips
+    $('[title]').tooltip({
+        placement: 'top',
+        trigger: 'hover'
+    });
+    
+    // Add click handlers for persona markers
+    $('.persona-marker').on('click', function(e) {
+        e.stopPropagation();
+        const personaName = $(this).attr('title').split(' - ')[0];
+        showMessage(`This item is mapped by: ${personaName}`, 'info');
+    });
+    
+    // Add double-click to highlight conflicts
+    $('.mapped-item[data-personas*=","]').on('dblclick', function() {
+        $(this).addClass('highlighted');
+        setTimeout(() => {
+            $(this).removeClass('highlighted');
+        }, 2000);
+        
+        const personas = $(this).attr('data-personas').split(',');
+        showMessage(`Conflict: Mapped by ${personas.join(', ')}`, 'warning');
+    });
+}
+
+// Filter mapped items by persona
+function filterMappedItemsByPersona(personaName) {
+    if (!personaName) {
+        $('.mapped-item').removeClass('filtered-out');
+        return;
+    }
+    
+    $('.mapped-item').each(function() {
+        const itemPersonas = $(this).attr('data-personas');
+        if (itemPersonas && itemPersonas.includes(personaName)) {
+            $(this).removeClass('filtered-out');
+        } else {
+            $(this).addClass('filtered-out');
+        }
+    });
+}
+
+// Show conflict resolution dialog
+function showConflictResolution(storyId, storyName, conflictingPersonas) {
+    const dialogHtml = `
+        <div class="modal fade" id="conflictModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Resolve Mapping Conflict</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <p><strong>"${storyName}"</strong> is currently mapped by multiple personas:</p>
+                        <ul>
+                            ${conflictingPersonas.map(p => `<li>${p}</li>`).join('')}
+                        </ul>
+                        <p>What would you like to do?</p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-warning" onclick="forceMapToCurrentPersona(${storyId})">
+                            Move to My Persona
+                        </button>
+                        <button type="button" class="btn btn-primary" onclick="createDuplicateItem('${storyName}')">
+                            Create Duplicate
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    $('body').append(dialogHtml);
+    $('#conflictModal').modal('show');
+    
+    // Clean up modal after hide
+    $('#conflictModal').on('hidden.bs.modal', function() {
+        $(this).remove();
+    });
+}
+
+// Force map item to current persona (removes from others)
+function forceMapToCurrentPersona(storyId) {
+    $.ajax({
+        url: "{% url 'ajax_force_move_item' %}",
+        type: 'POST',
+        data: {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            story_id: storyId,
+            target_persona_id: {{ persona.id }},
+            pro_id: {{ pro_id }},
+            force_move: 'true'
+        },
+        success: function(response) {
+            if (response.status === 'success') {
+                $('#conflictModal').modal('hide');
+                refreshMappedItems();
+                showMessage('Item moved to your persona', 'success');
+            } else {
+                showMessage('Error: ' + response.message, 'error');
+            }
+        },
+        error: function(xhr, status, error) {
+            showMessage('Error moving item: ' + error, 'error');
+        }
+    });
+}
+
+// Create duplicate item for current persona
+function createDuplicateItem(originalName) {
+    const duplicateName = prompt(`Enter name for duplicate item:`, `${originalName} (Copy)`);
+    
+    if (!duplicateName) return;
+    
+    $.ajax({
+        url: window.location.href,
+        type: 'POST',
+        data: {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            detail: duplicateName,
+            submit_detail: 'submit_detail',
+            project_id: {{ pro_id }},
+            persona_id: {{ persona.id }}
+        },
+        headers: {
+            'X-Requested-With': 'XMLHttpRequest'
+        },
+        success: function(response) {
+            if (response.status === 'success') {
+                $('#conflictModal').modal('hide');
+                
+                // Add new item to unmapped section
+                const newItemHtml = `
+                    <div class="backlog-item post-it draggable-backlog new-mapping" 
+                         draggable="true" 
+                         id="backlog-${response.backlog_id}"
+                         ondblclick="makeEditable(this);" 
+                         onblur="save_element_text(this, '${response.backlog_id}', 'app_organization', 'Backlog', 'name')"
+                         style="background-color: #fff3cd; border-color: #ffeaa7;"
+                         title="Duplicate item created">
+                        ${response.backlog_name}
+                        <small class="d-block text-muted" style="font-size: 0.6rem;">
+                            New (Duplicate)
+                        </small>
+                    </div>
+                `;
+                
+                $('#new-items-container').append(newItemHtml);
+                showMessage('Duplicate item created', 'success');
+                
+                // Enable drag functionality
+                const newElement = $(`#backlog-${response.backlog_id}`)[0];
+                if (newElement) {
+                    newElement.addEventListener('dragstart', function(event) {
+                        event.dataTransfer.setData("text/plain", event.target.id);
+                    });
+                }
+            } else {
+                showMessage('Error creating duplicate: ' + response.message, 'error');
+            }
+        },
+        error: function(xhr, status, error) {
+            showMessage('Error creating duplicate: ' + error, 'error');
+        }
+    });
+}
+
+// Initialize on document ready
+$(document).ready(function() {
+    updateMappingStats();
+    initializeMappedItemsInteractions();
+    
+    // Add keyboard shortcut for persona switcher
+    document.addEventListener('keydown', function(event) {
+        if (event.ctrlKey && event.key === 'p') {
+            event.preventDefault();
+            $('#persona-switcher').focus();
+        }
+    });
+});
+</script>
+
+<script>
+    // Updated JavaScript Functions for Multi-Persona Story Mapping
+
+// Switch to different persona
+function switchPersona(personaId) {
+    if (!personaId) return;
+    
+    // Show loading state
+    showMessage('Switching to persona...', 'info');
+    
+    // Redirect to the selected persona's story map
+    const currentUrl = window.location.pathname;
+    const newUrl = currentUrl.replace(/persona_id\/\d+/, `persona_id/${personaId}`);
+    window.location.href = newUrl;
+}
+
+// Enhanced refresh mapped items function
+function refreshMappedItems() {
+    $.ajax({
+        url: "{% url 'ajax_refresh_mapped_items' %}",
+        type: 'POST',
+        data: {
+            csrfmiddlewaretoken: '{{ csrf_token }}',
+            pro_id: '{{ pro_id }}',
+            persona_id: '{{ persona.id }}'
+        },
+        success: function(response) {
+            if (response.status === 'success') {
+                $('#mapped-items-section').html(response.html);
+                
+                // Update any counters or stats displays
+                if (response.current_persona_count !== undefined) {
+                    $('#your-items-count').text(response.current_persona_count);
+                }
+                if (response.conflicts_count !== undefined) {
+                    $('#conflict-count').text(response.conflicts_count);
+                }
+                
+                // Re-initialize interactions
+                initializeMappedItemsInteractions();
+                
+                console.log(`Refreshed: ${response.count} total items, ${response.current_persona_count} yours, ${response.conflicts_count} conflicts`);
+            } else {
+                console.error('Error refreshing mapped items:', response.message);
+                showMessage('Error refreshing mapped items', 'error');
+            }
+        },
+        error: function(xhr, status, error) {
+            console.error('Error refreshing mapped items:', error);
+            showMessage('Error refreshing mapped items', 'error');
+        }
+    });
+}
+
+// Unmap item from current persona
+function unmapFromPersona(storyId, storyName) {
+    if (!confirm(`Remove "${storyName}" from your persona mapping?`)) {
         return;
     }
     
@@ -1628,22 +2201,18 @@ function moveFromMappedToUnmapped(storyId, storyName) {
     $(`#mapped-${storyId}`).fadeOut(300, function() {
         $(this).remove();
         
-        // Check if item already exists in unmapped section
-        if ($(`#backlog-${storyId}`).length > 0) {
-            console.log('Item already exists in unmapped section');
-            return;
-        }
-        
-        // Add to unmapped section only if it doesn't exist
+        // Add to unmapped section
         const newItemHtml = `
-            <div class="backlog-item draggable-backlog" 
+            <div class="backlog-item post-it draggable-backlog new-mapping" 
                  draggable="true" 
                  id="backlog-${storyId}"
                  ondblclick="makeEditable(this);" 
                  onblur="save_element_text(this, '${storyId}', 'app_organization', 'Backlog', 'name')"
                  title="Moved back from story map">
                 ${storyName}
-                <small class="d-block text-muted" style="font-size: 0.55rem;">Available</small>
+                <small class="d-block text-muted" style="font-size: 0.6rem;">
+                    Available
+                </small>
             </div>
         `;
         
@@ -1652,8 +2221,8 @@ function moveFromMappedToUnmapped(storyId, storyName) {
         if (container.length === 0) {
             const backlogDropZone = $('.backlog-drop-zone');
             const newContainer = $(`
-                <div class="mb-2">
-                    <small class="text-muted"><strong>Available:</strong></small>
+                <div class="mb-3">
+                    <small class="text-muted"><strong>Available Items:</strong></small>
                     <div id="unmapped-items-container"></div>
                 </div>
             `);
@@ -1671,52 +2240,67 @@ function moveFromMappedToUnmapped(storyId, storyName) {
             });
         }
         
-        // Hide empty state
-        $('.empty-state').hide();
-    });
-}
-function refreshUnmappedItems() {
-    // This will be called after successful drag operations to ensure
-    // items appear in the correct section without duplicates
-    setTimeout(() => {
-        // Small delay to ensure backend processing is complete
-        window.location.reload(); // Simple but effective solution
-    }, 500);
-}
-
-// Enhanced refresh mapped items function
-function refreshMappedItems() {
-    $.ajax({
-        url: "{% url 'ajax_refresh_mapped_items' %}",
-        type: 'POST',
-        data: {
-            csrfmiddlewaretoken: '{{ csrf_token }}',
-            pro_id: '{{ pro_id }}',
-            persona_id: '{{ persona.id }}'
-        },
-        success: function(response) {
-            if (response.status === 'success') {
-                $('#mapped-items-section').html(response.html);
-                
-                // Update counters if provided
-                if (response.current_persona_count !== undefined) {
-                    $('#your-items-count').text(response.current_persona_count);
-                }
-                if (response.conflicts_count !== undefined) {
-                    $('#conflict-count').text(response.conflicts_count);
-                }
-                
-                console.log(`Refreshed: ${response.count} total items`);
-            } else {
-                console.error('Error refreshing mapped items:', response.message);
-                showMessage('Error refreshing mapped items', 'error');
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('Error refreshing mapped items:', error);
-            showMessage('Error refreshing mapped items', 'error');
+        // Refresh mapped items to update counts and conflicts
+        refreshMappedItems();
+        
+        // Hide mapped section if no items left
+        if ($('.mapped-item').length === 0) {
+            $('#mapped-items-section').hide();
         }
     });
+}
+
+// Initialize interactions for mapped items
+function initializeMappedItemsInteractions() {
+    // Add click handlers for persona markers
+    $('.persona-marker').off('click').on('click', function(e) {
+        e.stopPropagation();
+        const title = $(this).attr('title');
+        const personaName = title ? title.split(' - ')[0] : 'Unknown';
+        showMessage(`This item is mapped by: ${personaName}`, 'info');
+    });
+    
+    // Add double-click to highlight conflicts
+    $('.mapped-item[data-personas*=","]').off('dblclick').on('dblclick', function() {
+        $(this).addClass('highlighted');
+        setTimeout(() => {
+            $(this).removeClass('highlighted');
+        }, 2000);
+        
+        const personas = $(this).attr('data-personas').split(',');
+        showMessage(`Conflict: Mapped by ${personas.join(', ')}`, 'warning');
+    });
+    
+    // Add hover effects for better UX
+    $('.mapped-item').off('mouseenter mouseleave').hover(
+        function() {
+            $(this).addClass('shadow-sm');
+        },
+        function() {
+            $(this).removeClass('shadow-sm');
+        }
+    );
+}
+
+// Update mapping statistics
+function updateMappingStats() {
+    const totalMapped = $('.mapped-item').length;
+    const yourItems = $('.mapped-item[data-is-current="true"]').length; 
+    const conflicts = $('.mapped-item[data-personas*=","]').length;
+    
+    // Update stats display
+    $('#your-items-count').text(yourItems);
+    $('#conflict-count').text(conflicts);
+    
+    // Update conflict indicator color
+    const conflictElement = $('#conflict-count');
+    if (conflicts > 0) {
+        conflictElement.removeClass('text-success').addClass('text-danger');
+    } else {
+        conflictElement.removeClass('text-danger').addClass('text-success');
+    }
+    
+    console.log(`Stats updated: ${yourItems} your items, ${conflicts} conflicts out of ${totalMapped} total`);
 }
 
 // Enhanced drop function to handle multi-persona conflicts
@@ -1732,15 +2316,16 @@ function drop(event) {
     }
 
     const backlogId = draggedId.split('-')[1];
-    const storyName = draggedElement.textContent.trim().split('\n')[0];
+    const storyName = draggedElement.textContent.trim();
 
     // Check if item is already mapped to other personas
     const existingMappedItem = $(`.mapped-item[data-story-id="${backlogId}"]`);
     if (existingMappedItem.length > 0) {
         const personas = existingMappedItem.attr('data-personas');
         if (personas && personas.includes(',')) {
+            // Show conflict warning
             const conflictPersonas = personas.split(',');
-            if (!confirm(`Warning: "${storyName}" is already mapped by ${conflictPersonas.join(', ')}. Continue?`)) {
+            if (!confirm(`Warning: "${storyName}" is already mapped by ${conflictPersonas.join(', ')}. Continue mapping to your persona?`)) {
                 return;
             }
         }
@@ -1788,7 +2373,7 @@ function drop(event) {
         if (data.status === 'success') {
             // Move the dragged element to the drop zone
             const clonedElement = draggedElement.cloneNode(true);
-            clonedElement.classList.remove('backlog-item', 'draggable-backlog');
+            clonedElement.classList.remove('backlog-item');
             clonedElement.classList.add('step-item', 'card');
             dropZone.appendChild(clonedElement);
             
@@ -1798,7 +2383,7 @@ function drop(event) {
             // Refresh mapped items to show updated mapping
             refreshMappedItems();
             
-            showMessage(`"${storyName}" mapped successfully`, 'success');
+            showMessage(`"${storyName.split('\n')[0]}" mapped successfully`, 'success');
             console.log('Backlog item successfully assigned to the release.');
         } else {
             throw new Error(data.message);
@@ -1815,6 +2400,10 @@ function drop(event) {
 
 // Initialize on document ready
 $(document).ready(function() {
+    // Initialize interactions
+    initializeMappedItemsInteractions();
+    updateMappingStats();
+    
     // Add keyboard shortcut for persona switcher
     document.addEventListener('keydown', function(event) {
         if (event.ctrlKey && event.key === 'p') {
@@ -1823,38 +2412,42 @@ $(document).ready(function() {
         }
     });
     
-    console.log('Clean story mapping initialized');
+    // Auto-update mapped items every 30 seconds to catch changes from other users
+    setInterval(function() {
+        refreshMappedItems();
+    }, 30000);
+    
+    console.log('Multi-persona story mapping initialized');
 });
 
 
-// UTILITY: Function to remove duplicates from the DOM
-function removeDuplicateItems() {
-    const seen = new Set();
-    $('.backlog-item').each(function() {
-        const id = $(this).attr('id');
-        if (seen.has(id)) {
-            $(this).remove();
-        } else {
-            seen.add(id);
+
+function switchPersona(personaId) {
+    if (!personaId) return;
+    
+    // Show loading state
+    showMessage('Switching to persona...', 'info');
+    
+    // Get current URL and replace the persona_id parameter
+    const currentUrl = window.location.pathname;
+    
+    // For URL pattern: /org/backlog/create_backlog_from_story_map/{pro_id}/{persona_id}/
+    // Replace the last number (persona_id) with the new persona_id
+    const urlParts = currentUrl.split('/');
+    
+    // Find the index of the persona_id (should be the last numeric part before the trailing slash)
+    for (let i = urlParts.length - 1; i >= 0; i--) {
+        if (urlParts[i] && /^\d+$/.test(urlParts[i])) {
+            // This is the persona_id (last numeric part)
+            urlParts[i] = personaId;
+            break;
         }
-    });
-}
-
-
-$(document).ready(function() {
-    updateStatsCorrectly();
-});
-
-function updateStatsCorrectly() {
-    // Count current persona items
-    const yourItems = $('.mapped-item[data-is-current="true"]').length;
-    $('#js-your-count').text(yourItems);
+    }
     
-    // Count conflict items (items with comma in personas attribute)
-    const conflictItems = $('.mapped-item[data-personas*=","]').length;
-    $('#js-conflict-count').text(conflictItems);
+    const newUrl = urlParts.join('/');
     
-    console.log(`Stats: ${yourItems} your items, ${conflictItems} conflicts`);
+    console.log('Switching from:', currentUrl, 'to:', newUrl);
+    window.location.href = newUrl;
 }
 </script>
 {% endblock content %}

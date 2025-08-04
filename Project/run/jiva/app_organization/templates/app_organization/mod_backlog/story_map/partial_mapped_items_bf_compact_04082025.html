@@ -1,0 +1,108 @@
+<!-- partial_mapped_items.html - Enhanced to show all persona mappings -->
+<div class="mapped-items-section">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+        <small class="text-success"><strong>Already Mapped Items:</strong></small>
+        
+       
+    </div>
+    
+    {% for mapped_item in mapped_backlog_items %}
+    <div class="backlog-item post-it mapped-item position-relative" 
+         id="mapped-{{ mapped_item.backlog_item.id }}"
+         data-story-id="{{ mapped_item.backlog_item.id }}"
+         data-personas="{{ mapped_item.mapped_personas|join:',' }}"
+         data-is-current="{{ mapped_item.is_current_persona|yesno:'true,false' }}"
+         style="background-color: {% if mapped_item.is_current_persona %}#d4edda{% else %}#fff3cd{% endif %}; 
+                border-color: {% if mapped_item.is_current_persona %}#c3e6cb{% else %}#ffeaa7{% endif %}; 
+                opacity: {% if mapped_item.is_current_persona %}1{% else %}0.7{% endif %};"
+         title="{% if mapped_item.is_current_persona %}Your mapping{% else %}Mapped by other persona(s){% endif %}">
+        
+        <!-- Persona Markers -->
+        <div class="persona-markers position-absolute" style="top: 2px; right: 2px;">
+            {% for detail in mapped_item.mapping_details %}
+                <span class="persona-marker badge {% if detail.is_current_persona %}badge-success{% else %}badge-warning{% endif %}" 
+                      style="font-size: 0.5rem; margin: 1px;"
+                      title="{{ detail.persona_name }}{% if detail.release_name != 'Not Set' %} - {{ detail.release_name }}{% endif %}">
+                    {% if detail.is_current_persona %}
+                        <i class="fas fa-user"></i>
+                    {% else %}
+                        <i class="fas fa-lock"></i>
+                    {% endif %}
+                    {{ detail.persona_name|truncatechars:3 }}
+                </span>
+            {% endfor %}
+        </div>
+        
+        <!-- Item Content -->
+        <div class="mapped-item-content" style="margin-right: 40px;">
+            <div class="mapped-item-name" style="font-weight: 500; margin-bottom: 2px;">
+                {{ mapped_item.backlog_item.name }}
+            </div>
+            
+            <!-- Primary mapping details (current persona if available, otherwise first mapping) -->
+            {% with mapped_item.mapping_details|first as primary_detail %}
+            <small class="d-block text-muted mapped-item-details" style="font-size: 0.6rem;">
+                {% if mapped_item.is_current_persona %}
+                    <span class="text-success">✓ Your mapping:</span>
+                {% else %}
+                    <span class="text-warning">⚠ Mapped by {{ primary_detail.persona_name }}:</span>
+                {% endif %}
+                
+                {% if primary_detail.release_name and primary_detail.release_name != 'Not Set' %}
+                    <span class="release-name badge badge-light" style="font-size: 0.5rem;">{{ primary_detail.release_name }}</span>
+                {% endif %}
+                
+                {% if primary_detail.iteration_name and primary_detail.iteration_name != 'Not Set' %}
+                    <span class="iteration-name badge badge-light" style="font-size: 0.5rem;">{{ primary_detail.iteration_name }}</span>
+                {% endif %}
+            </small>
+            
+            {% if primary_detail.activity_name and primary_detail.activity_name != 'Not Set' %}
+            <small class="d-block text-muted" style="font-size: 0.5rem;">
+                {{ primary_detail.activity_name }}
+                {% if primary_detail.step_name and primary_detail.step_name != 'Not Set' %} → {{ primary_detail.step_name }}{% endif %}
+            </small>
+            {% endif %}
+            {% endwith %}
+            
+            <!-- Show conflict indicator if multiple personas -->
+            {% if mapped_item.mapped_personas_count > 1 %}
+            <small class="d-block text-danger" style="font-size: 0.5rem;">
+                <i class="fas fa-exclamation-triangle"></i> 
+                Conflict: {{ mapped_item.mapped_personas_count }} personas
+            </small>
+            {% endif %}
+        </div>
+        
+        <!-- Action Buttons (only show for current persona items) -->
+        {% if mapped_item.is_current_persona %}
+        <div class="item-actions position-absolute" style="bottom: 2px; right: 2px;">
+            <button class="btn btn-xs btn-outline-warning" 
+                    onclick="unmapFromPersona({{ mapped_item.backlog_item.id }}, '{{ mapped_item.backlog_item.name|escapejs }}')"
+                    style="font-size: 0.6rem; padding: 1px 4px;"
+                    title="Remove from your persona">
+                <i class="fas fa-minus"></i>
+            </button>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+    
+    <!-- Summary Stats -->
+    <div class="mapping-stats mt-2 p-2" style="background-color: #f8f9fa; border-radius: 4px; font-size: 0.7rem;">
+        <div class="row">
+            <div class="col-6">
+                <strong>Your Items:</strong> 
+                <span class="text-success" id="your-items-count">
+                    {% for item in mapped_backlog_items %}{% if item.is_current_persona %}{{ forloop.counter0|add:1 }}{% endif %}{% endfor %}
+                </span>
+            </div>
+            <div class="col-6">
+                <strong>Conflicts:</strong> 
+                <span class="text-danger" id="conflict-count">
+                    {% for item in mapped_backlog_items %}{% if item.has_conflict %}{{ forloop.counter0|add:1 }}{% endif %}{% endfor %}
+                </span>
+            </div>
+        </div>
+    </div>
+</div>

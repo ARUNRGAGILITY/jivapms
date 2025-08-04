@@ -1,34 +1,67 @@
-<!-- Create this file: partial_mapped_items.html -->
-{% if mapped_backlog_items %}
-    <small class="text-success"><strong>Already Mapped ({{ mapped_backlog_items|length }}):</strong></small>
+<!-- partial_mapped_items.html - Clean compact version -->
+<div class="mb-2">
+    <small class="text-success"><strong>Mapped Items:</strong></small>
+    
     {% for mapped_item in mapped_backlog_items %}
-        <div class="backlog-item post-it mapped-item" 
-             id="mapped-{{ mapped_item.backlog_item.id }}"
-             data-story-id="{{ mapped_item.backlog_item.id }}"
-             style="background-color: #d4edda; border-color: #c3e6cb; opacity: 0.8; cursor: default;"
-             title="Mapped to: {% if mapped_item.release %}{{ mapped_item.release.name }}{% endif %}{% if mapped_item.iteration %} / {{ mapped_item.iteration.name }}{% endif %}">
-            <div class="mapped-item-name">{{ mapped_item.backlog_item.name }}</div>
-            <small class="d-block text-success mapped-item-details" style="font-size: 0.6rem; font-weight: bold;">
-                ✓ 
-                {% if mapped_item.release %}
-                    <span class="release-name">{{ mapped_item.release.name }}</span>
-                {% else %}
-                    <span class="release-name text-muted">No Release</span>
-                {% endif %}
-                {% if mapped_item.iteration %}
-                    / <span class="iteration-name">{{ mapped_item.iteration.name }}</span>
-                {% endif %}
-            </small>
-            <small class="d-block text-muted" style="font-size: 0.5rem;">
-                {% if mapped_item.activity %}
-                    <i class="fas fa-layer-group"></i> {{ mapped_item.activity.name }}
-                {% endif %}
-                {% if mapped_item.step %}
-                    <i class="fas fa-step-forward"></i> {{ mapped_item.step.name }}
-                {% endif %}
-            </small>
+    <div class="mapped-item" 
+         id="mapped-{{ mapped_item.backlog_item.id }}"
+         data-story-id="{{ mapped_item.backlog_item.id }}"
+         data-personas="{{ mapped_item.mapped_personas|join:',' }}"
+         data-is-current="{{ mapped_item.is_current_persona|yesno:'true,false' }}"
+         title="{% if mapped_item.is_current_persona %}Your mapping{% else %}Mapped by: {{ mapped_item.mapped_personas|join:', ' }}{% endif %}">
+        
+        <!-- Compact persona indicator -->
+        <span class="persona-indicator {% if mapped_item.is_current_persona %}current{% elif mapped_item.has_conflict %}conflict{% else %}other{% endif %}">
+            {% if mapped_item.is_current_persona %}
+                YOU
+            {% elif mapped_item.has_conflict %}
+                {{ mapped_item.mapped_personas_count }}
+            {% else %}
+                {{ mapped_item.mapped_personas.0|truncatechars:3|upper }}
+            {% endif %}
+        </span>
+        
+        <!-- Item name -->
+        <div class="mapped-item-name">
+            {{ mapped_item.backlog_item.name }}
         </div>
+        
+        <!-- Compact details -->
+        {% with mapped_item.mapping_details|first as primary_detail %}
+        {% if primary_detail.release_name and primary_detail.release_name != 'Not Set' %}
+        <div class="mapped-item-details">
+            {{ primary_detail.release_name }}
+            {% if primary_detail.activity_name and primary_detail.activity_name != 'Not Set' %} → {{ primary_detail.activity_name|truncatechars:12 }}{% endif %}
+        </div>
+        {% endif %}
+        {% endwith %}
+        
+        <!-- Action button (only for current persona items) -->
+        {% if mapped_item.is_current_persona %}
+        <button class="btn-remove mapped-item-action" 
+                onclick="unmapFromPersona({{ mapped_item.backlog_item.id }}, '{{ mapped_item.backlog_item.name|escapejs }}')"
+                title="Remove from your persona">
+            <i class="fas fa-times"></i>
+        </button>
+        {% endif %}
+    </div>
     {% endfor %}
-{% else %}
-    <small class="text-muted"><em>No mapped items</em></small>
-{% endif %}
+    
+    <!-- Compact Summary Stats -->
+    <div class="mapping-stats">
+        <span class="stat-item">
+            <i class="fas fa-user"></i>
+            <span class="stat-value success" id="your-items-count">
+                {% with mapped_backlog_items|length as total %}
+                    {% for item in mapped_backlog_items %}{% if item.is_current_persona %}{{ forloop.counter }}{% endif %}{% empty %}0{% endfor %}
+                {% endwith %}
+            </span>
+        </span>
+        <span class="stat-item">
+            <i class="fas fa-exclamation-triangle"></i>
+            <span class="stat-value danger" id="conflict-count">
+                {% for item in mapped_backlog_items %}{% if item.has_conflict %}{{ forloop.counter }}{% endif %}{% empty %}0{% endfor %}
+            </span>
+        </span>
+    </div>
+</div>
