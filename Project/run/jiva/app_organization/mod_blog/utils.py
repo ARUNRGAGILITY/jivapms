@@ -79,10 +79,11 @@ def clean_mermaid_from_html(html_content):
     
     print(f"DEBUG: Cleaning content: {repr(content[:200])}")
     
-    # Check if this actually contains mermaid keywords
+    # Check if this actually contains mermaid keywords  
     mermaid_keywords = ['graph TD', 'graph LR', 'pie title', 'xychart', 'erDiagram', 
                        'gitgraph', 'mindmap', 'quadrantChart', 'timeline', 
-                       'sequenceDiagram', 'classDiagram', 'stateDiagram', 'flowchart']
+                       'sequenceDiagram', 'classDiagram', 'stateDiagram', 'flowchart',
+                       'gantt']
     
     has_mermaid = any(keyword in content for keyword in mermaid_keywords)
     
@@ -117,9 +118,10 @@ def clean_mermaid_from_html(html_content):
     elif 'erDiagram' in content:
         content = fix_er_diagram(content)
     elif 'gitgraph' in content:
-        print("DEBUG: Converting gitgraph to flowchart for reliability")
         # Always convert gitgraph to flowchart since gitgraph syntax is finicky
         content = convert_gitgraph_to_flowchart(content)
+    elif 'gantt' in content:  # Add gantt processing
+        content = fix_gantt_chart(content)
     elif 'mindmap' in content:
         content = fix_mindmap(content)
     elif 'flowchart' in content:
@@ -132,6 +134,57 @@ def clean_mermaid_from_html(html_content):
         content = fix_timeline(content)
     
     return content.strip()
+
+
+
+def fix_gantt_chart(content):
+    """Fix Gantt chart formatting"""
+    lines = content.split('\n')
+    result = []
+    
+    # Start with gantt declaration
+    result.append('gantt')
+    
+    # Look for title
+    title_found = False
+    for line in lines:
+        line = line.strip()
+        if 'title' in line.lower() and not title_found:
+            if line.lower().startswith('title'):
+                result.append(f'    {line}')
+            else:
+                # Extract title from line
+                title_match = re.search(r'title\s+(.+)', line, re.IGNORECASE)
+                if title_match:
+                    result.append(f'    title {title_match.group(1)}')
+            title_found = True
+    
+    # Add date format if not present
+    result.append('    dateFormat YYYY-MM-DD')
+    result.append('    axisFormat %m/%d')
+    
+    # Process sections and tasks
+    current_section = None
+    for line in lines:
+        line = line.strip()
+        if 'section' in line.lower():
+            section_match = re.search(r'section\s+(.+)', line, re.IGNORECASE)
+            if section_match:
+                result.append(f'    section {section_match.group(1)}')
+                current_section = section_match.group(1)
+        elif ':' in line and any(keyword in line.lower() for keyword in ['task', 'dev', 'test', 'design', 'implementation']):
+            # This looks like a task definition
+            result.append(f'    {line}')
+        elif line and current_section and not line.startswith(('gantt', 'title', 'dateFormat', 'axisFormat')):
+            # Might be a task without proper formatting
+            if ':' not in line:
+                # Add basic task format
+                result.append(f'    {line} : task, {len(result)}, 2024-01-{len(result):02d}, 7d')
+            else:
+                result.append(f'    {line}')
+    
+    return '\n'.join(result)
+
 
 def replace_gitgraph_with_flowchart(content):
     """Replace problematic gitgraph with flowchart"""

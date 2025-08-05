@@ -30,8 +30,8 @@ def project_roadmap(request, org_id, project_id):
     project_id = int(project_id)
     org = Organization.objects.get(pk=org_id)
     project = Project.objects.get(pk=project_id)
-    #project_roadmaps = ProjectRoadmap.objects.filter(pro=project, roadmap_name="HIGH-LEVEL-ROADMAP").delete()
-    #logger.debug(f">>> === TEST: PROJECT ROADMAP: {project_roadmaps} === <<<")
+    project_roadmaps = ProjectRoadmap.objects.filter(pro=project, roadmap_name="HIGH-LEVEL-ROADMAP").delete()
+    logger.debug(f">>> === TEST: PROJECT ROADMAP: {project_roadmaps} === <<<")
     
     project_roadmap = ProjectRoadmap.objects.get_or_create(pro=project, roadmap_name="HIGH-LEVEL-ROADMAP", active=True)
     
