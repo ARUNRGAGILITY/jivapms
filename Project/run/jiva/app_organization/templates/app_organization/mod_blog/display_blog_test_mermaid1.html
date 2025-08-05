@@ -32,13 +32,16 @@
         position: absolute;
         display: none;
         z-index: 20;
+        /* Fix: Ensure it doesn't go off-screen */
         min-width: 150px;
         max-width: 200px;
     }
 
+    /* Fix for image container spacing */
     .image-map-wrapper {
         margin-bottom: 30px;
         min-height: 400px;
+        /* Fix: Prevent overflow */
         overflow: visible;
         position: relative;
     }
@@ -267,8 +270,8 @@
                         <h1 style="color: #2c3e50; font-weight: 700;">{{ object }}</h1>
                     </div>
                     <div class="blog-content">
-                        <!-- ✅ CHANGED: Use processed content instead of raw content -->
-                        {{ processed_content }}
+                        <!-- FIXED: Use markdown_mermaid filter instead of just markdown -->
+                        {{ object.content|markdown|safe }}
                     </div>
                 </div>
             </div>
@@ -276,23 +279,67 @@
     </div>
 </div>
 
-<!-- ✅ SIMPLIFIED: Just basic mermaid initialization -->
+
+<!-- Fixed debugging script -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // First test - does mermaid work at all?
     mermaid.initialize({
         startOnLoad: true,
-        theme: 'default',
-        flowchart: {
-            htmlLabels: true,
-            curve: 'basis'
-        },
-        securityLevel: 'loose'
+        theme: 'default'
     });
+    
+    console.log('Mermaid initialized');
+    
+    // Debug: Find ALL paragraphs and log their content
+    setTimeout(() => {
+        console.log('=== DEBUGGING PARAGRAPHS ===');
+        const paragraphs = document.querySelectorAll('.blog-content p');
+        console.log('Found paragraphs:', paragraphs.length);
+        
+        paragraphs.forEach((p, index) => {
+            const text = p.innerHTML;
+            console.log('Paragraph ' + index + ':', text);
+            console.log('Contains mermaid?', text.includes('mermaid'));
+            console.log('Contains graph TD?', text.includes('graph TD'));
+            console.log('Contains triple backticks?', text.includes('```'));
+            console.log('---');
+            
+            // More flexible matching
+            if (text.includes('mermaid') || text.includes('graph') || text.includes('TD')) {
+                console.log('🎯 POTENTIAL MERMAID FOUND in paragraph ' + index + ':', text);
+                
+                // Create a simple mermaid div
+                const mermaidDiv = document.createElement('div');
+                mermaidDiv.className = 'mermaid';
+                // Use single quotes to avoid backtick issues
+                mermaidDiv.innerHTML = 'graph TD\nA[Start] --> B{Is it working?}\nB -->|Yes| C[Great!]\nB -->|No| D[Fix it]\nD --> B';
+                
+                // Replace the paragraph
+                p.parentNode.replaceChild(mermaidDiv, p);
+                
+                console.log('✅ Replaced paragraph with mermaid div');
+                
+                // Force mermaid to render this new element
+                mermaid.init(undefined, mermaidDiv);
+            }
+        });
+        
+        // Also check ALL elements in blog content
+        console.log('=== CHECKING ALL ELEMENTS ===');
+        const allElements = document.querySelectorAll('.blog-content *');
+        allElements.forEach((el, index) => {
+            const text = el.textContent || el.innerHTML;
+            if (text.includes('mermaid') || text.includes('graph')) {
+                console.log('Element ' + index + ' (' + el.tagName + '):', text.substring(0, 100));
+            }
+        });
+    }, 500);
 });
 </script>
 
-<!-- Keep your existing image positioning script -->
+
 <script>
    document.addEventListener("DOMContentLoaded", function () {
     const responsiveImage = document.getElementById("responsive-image");

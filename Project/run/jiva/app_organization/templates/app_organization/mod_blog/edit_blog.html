@@ -64,23 +64,5 @@
     </div>
 </form>
 
-<script>
-   document.getElementById("blogForm").addEventListener("submit", function (event) {
-    // Get the textarea field
-    const contentField = document.getElementById("id_content");
-
-    if (contentField) {
-        console.log("Original Content: ", contentField.value); // Debugging original content
-
-        // Replace all tabs or 4 spaces with 8 spaces
-        contentField.value = contentField.value.replace(/ {4}|\t/g, "        "); // Replace tabs or 4 spaces with 8 spaces
-
-        console.log("Transformed Content: ", contentField.value); // Debugging transformed content
-    } else {
-        console.error("Textarea with id 'id_content' not found."); // Debug if the selector is incorrect
-    }
-});
-
-</script>
 
 {% endblock content %}

@@ -118,6 +118,10 @@
                                 >
                                     {{ public_framework }} 
                                 </a>                              
+                                <p>
+                                    <b>From:</b> {{ public_framework.organization.name }} <br>
+                                    <b>Author:</b> {{ public_framework.author }}
+                                </p>
                             </li>
                         {% endfor %}
                     </ul>
@@ -228,6 +232,7 @@
                         </div>
                         <div class="framework-details">
                             <h4>${response.name}</h4>
+                            <b>${response.author}</b>
                             <p>${response.description}</p>
                         </div>                
                         <a href="${deepDiveUrl}" class="btn btn-primary" target="_blank">

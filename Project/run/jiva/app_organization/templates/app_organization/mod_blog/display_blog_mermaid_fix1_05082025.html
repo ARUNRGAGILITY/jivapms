@@ -32,13 +32,16 @@
         position: absolute;
         display: none;
         z-index: 20;
+        /* Fix: Ensure it doesn't go off-screen */
         min-width: 150px;
         max-width: 200px;
     }
 
+    /* Fix for image container spacing */
     .image-map-wrapper {
         margin-bottom: 30px;
         min-height: 400px;
+        /* Fix: Prevent overflow */
         overflow: visible;
         position: relative;
     }
@@ -267,8 +270,8 @@
                         <h1 style="color: #2c3e50; font-weight: 700;">{{ object }}</h1>
                     </div>
                     <div class="blog-content">
-                        <!-- ✅ CHANGED: Use processed content instead of raw content -->
-                        {{ processed_content }}
+                        <!-- FIXED: Use markdown_mermaid filter instead of just markdown -->
+                        {{ object.content|markdown|safe }}
                     </div>
                 </div>
             </div>
@@ -276,23 +279,123 @@
     </div>
 </div>
 
-<!-- ✅ SIMPLIFIED: Just basic mermaid initialization -->
+
+
+
+
+
+<!-- Final fix for mermaid syntax -->
 <script src="https://cdnjs.cloudflare.com/ajax/libs/mermaid/10.6.1/mermaid.min.js"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
     mermaid.initialize({
-        startOnLoad: true,
-        theme: 'default',
-        flowchart: {
-            htmlLabels: true,
-            curve: 'basis'
-        },
-        securityLevel: 'loose'
+        startOnLoad: false,
+        theme: 'default'
     });
+
+    setTimeout(function() {
+        console.log('Looking for mermaid content...');
+
+        var paragraphs = document.querySelectorAll('.blog-content p');
+
+        for (var i = 0; i < paragraphs.length; i++) {
+            var p = paragraphs[i];
+            var html = p.innerHTML;
+
+            if (html.includes('mermaid') && html.includes('graph')) {
+                console.log('Found potential Mermaid block...');
+                console.log('Original HTML:', html);
+
+                // Clean the content
+                let cleanContent = html;
+
+                // Remove code fences and HTML tags
+                cleanContent = cleanContent
+                    .replace(/```mermaid/g, '')
+                    .replace(/```/g, '')
+                    .replace(/<[^>]+>/g, '')
+                    .replace(/<br\s*\/?>/gi, '\n')
+                    .replace(/&gt;/g, '>')
+                    .replace(/&lt;/g, '<')
+                    .replace(/&amp;/g, '&')
+                    .replace(/&nbsp;/g, ' ')
+                    .replace(/&quot;/g, '"')
+                    .replace(/&apos;/g, "'")
+                    .replace(/–/g, '-')
+                    .replace(/—/g, '-')
+                    .trim();
+
+                // Split into lines and filter bad ones
+                const lines = cleanContent.split('\n');
+                const cleanedLines = lines
+                    .map(line => line.trim())
+                    .filter(line =>
+                        line.length > 0 &&
+                        !line.includes('localhost') &&
+                        !line.includes('http') &&
+                        !line.includes('area_id') &&
+                        line.length < 100
+                    );
+
+                cleanContent = cleanedLines.join('\n');
+
+                // ✅ CRITICAL FIXES for mermaid syntax:
+                
+                // Fix 1: Ensure space between "graph TD" and first node
+                cleanContent = cleanContent.replace(/(graph\s+TD)([A-Z])/i, '$1\n$2');
+                
+                // Fix 2: Convert single arrows to double arrows
+                cleanContent = cleanContent.replace(/\s*->\s*/g, ' --> ');
+                
+                // Fix 3: Ensure proper spacing around arrows
+                cleanContent = cleanContent.replace(/([A-Z]\[[^\]]+\])\s*-->\s*/g, '$1 --> ');
+                cleanContent = cleanContent.replace(/([A-Z])\s*-->\s*\|([^|]+)\|\s*/g, '$1 -->|$2| ');
+                
+                // Fix 4: Ensure each statement is on its own line
+                cleanContent = cleanContent.replace(/([A-Z]\[[^\]]+\]|[A-Z]\{[^}]+\}|[A-Z])\s*-->/g, '\n$1 -->');
+                
+                // Fix 5: Clean up extra newlines and spaces
+                cleanContent = cleanContent.replace(/\n+/g, '\n').trim();
+
+                console.log('Cleaned Mermaid content:\n', cleanContent);
+
+                try {
+                    // ✅ Validate Mermaid syntax before rendering
+                    mermaid.parse(cleanContent);
+
+                    // ✅ Create a div with Mermaid content
+                    const mermaidDiv = document.createElement('div');
+                    mermaidDiv.className = 'mermaid';
+                    mermaidDiv.textContent = cleanContent; // Use textContent, not innerHTML
+                    
+                    p.parentNode.replaceChild(mermaidDiv, p);
+
+                    // ✅ Render the Mermaid diagram
+                    mermaid.init(undefined, mermaidDiv);
+
+                    console.log('Rendered Mermaid diagram successfully');
+                } catch (e) {
+                    console.error('Mermaid parse/render error:', e.message);
+
+                    // Show error visually in place
+                    const errorDiv = document.createElement('div');
+                    errorDiv.style.cssText = 'color: red; background: #fee; padding: 10px; border: 1px solid red; margin: 10px 0;';
+                    errorDiv.innerHTML = `
+<strong>Mermaid Syntax Error:</strong> ${e.message}<br><br>
+<strong>Content:</strong><br>
+<pre>${cleanContent}</pre>
+                    `;
+                    p.parentNode.replaceChild(errorDiv, p);
+                }
+
+                break; // Handle only the first mermaid block
+            }
+        }
+    }, 500);
 });
 </script>
 
-<!-- Keep your existing image positioning script -->
+
 <script>
    document.addEventListener("DOMContentLoaded", function () {
     const responsiveImage = document.getElementById("responsive-image");
