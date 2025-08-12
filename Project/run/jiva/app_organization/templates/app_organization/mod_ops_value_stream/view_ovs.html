@@ -226,7 +226,7 @@
         box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     }
 
-    /* Enhanced chevron step styling */
+    /* Enhanced chevron step styling - all blue, no black */
     .step {
         position: relative;
         display: flex;
@@ -270,9 +270,9 @@
         color: white;
     }
 
-    /* First and last steps with different styling */
+    /* All steps use the same blue color - no black */
     .step.first-step, .step.last-step {
-        background: linear-gradient(135deg, var(--secondary-color) 0%, #1a252f 100%);
+        background: linear-gradient(135deg, var(--primary-color) 0%, #2980b9 100%);
     }
 
     /* OVS and DVS Wrappers */
@@ -364,7 +364,7 @@
         font-weight: bold;
     }
 
-    /* Enhanced SVG connector styling */
+    /* Enhanced SVG connector styling - solid straight lines */
     svg {
         position: absolute;
         top: 0;
@@ -376,18 +376,9 @@
     }
 
     .connector-line {
-        stroke: var(--connector-color);
-        stroke-width: 3;
+        stroke-width: 2;
         stroke-linecap: round;
-        stroke-dasharray: 5, 5;
-        animation: dash 2s linear infinite;
-        filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
-    }
-
-    @keyframes dash {
-        to {
-            stroke-dashoffset: -10;
-        }
+        filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1));
     }
 
     /* Responsive styles */
@@ -582,23 +573,25 @@
         }
     }
 
-    /* Connection point styling for bottom of chevrons */
-    .step::after {
+    /* Connection point styling - 10px gray circle for visibility testing */
+    .step.has-connection::after {
         content: '';
         position: absolute;
-        bottom: -8px;
+        bottom: -15px; /* Position circle below chevron with some gap */
         left: 50%;
         transform: translateX(-50%);
         width: 8px;
-        height: 8px;
-        background: var(--primary-color);
+        height: 10px;
+        background: #999999; /* Gray background for visibility */
         border-radius: 50%;
-        z-index: 10;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        z-index: 15;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     }
 
-    .step.first-step::after, .step.last-step::after {
-        background: var(--secondary-color);
+    /* Ensure the step allows the dot to be fully visible */
+    .step.has-connection {
+        overflow: visible;
+        position: relative;
     }
 </style>
 
@@ -775,12 +768,12 @@
         document.addEventListener("DOMContentLoaded", function () {
             const svg = document.getElementById("connections");
     
-            // Helper function to get the bottom center position of chevron steps
+            // Helper function to get the connection point position (center of the circle near chevron)
             function getBottomCenterPosition(element) {
                 const rect = element.getBoundingClientRect();
                 return {
                     x: rect.left + rect.width / 2 + window.scrollX,
-                    y: rect.bottom + window.scrollY - 5, // Bottom of chevron minus connection point offset
+                    y: rect.bottom + window.scrollY + 4, // Position at center of 10px circle below chevron
                 };
             }
 
@@ -793,38 +786,38 @@
                 };
             }
     
-            // Function to create a curved path element in SVG
-            function createCurvedPath(start, end, color = "#95a5a6") {
-                const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+            // Function to create a solid straight line element in SVG
+            function createStraightLine(start, end, color = "#999999") {
+                const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+                line.setAttribute("x1", start.x);
+                line.setAttribute("y1", start.y);
+                line.setAttribute("x2", end.x);
+                line.setAttribute("y2", end.y);
+                line.setAttribute("stroke", color);
+                line.setAttribute("stroke-width", "2");
+                line.setAttribute("stroke-linecap", "round");
+                line.setAttribute("class", "connector-line");
                 
-                // Calculate control points for smooth curve
-                const midY = start.y + (end.y - start.y) * 0.5;
-                const controlPoint1 = { x: start.x, y: midY };
-                const controlPoint2 = { x: end.x, y: midY };
-                
-                // Create curved path
-                const pathData = `M ${start.x} ${start.y} C ${controlPoint1.x} ${controlPoint1.y}, ${controlPoint2.x} ${controlPoint2.y}, ${end.x} ${end.y}`;
-                
-                path.setAttribute("d", pathData);
-                path.setAttribute("stroke", color);
-                path.setAttribute("stroke-width", "3");
-                path.setAttribute("stroke-linecap", "round");
-                path.setAttribute("fill", "none");
-                path.setAttribute("stroke-dasharray", "8, 4");
-                path.setAttribute("class", "connector-line");
-                path.style.filter = "drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1))";
-                
-                return path;
+                return line;
             }
 
-            // Main function to draw curved connections from DVS containers to OVS steps
+            // Main function to draw connections with color-coded lines and matching connection points
             function drawConnections() {
                 svg.innerHTML = ""; // Clear existing lines
+                
+                // First, remove all existing connection classes and styles
+                document.querySelectorAll(".step").forEach(step => {
+                    step.classList.remove('has-connection');
+                    step.style.removeProperty('--connection-color');
+                });
+                
+                // Clear any existing dynamic styles
+                document.querySelectorAll('[id^="connection-style-"]').forEach(style => style.remove());
                 
                 // Color map for different DVS containers
                 const dvsColors = {
                     1: "#3498db",   // Blue
-                    2: "#e74c3c",   // Red
+                    2: "#e74c3c",   // Red  
                     3: "#2ecc71",   // Green
                     4: "#f39c12",   // Orange
                     5: "#9b59b6",   // Purple
@@ -838,19 +831,38 @@
                 document.querySelectorAll(".dvs-container").forEach((dvsContainer) => {
                     const connectSteps = dvsContainer.getAttribute("data-connect-steps").split(",");
                     const dvsId = dvsContainer.getAttribute("data-dvs-id");
-                    const lineColor = dvsColors[dvsId] || "#95a5a6";
+                    const lineColor = dvsColors[dvsId] || "#999999";
                     
                     connectSteps.forEach((stepId) => {
                         const ovsStep = document.getElementById(stepId.trim());
 
                         if (ovsStep) {
-                            // Get positions: bottom of chevron to top of DVS container
+                            // Add connection class and set color for the connected step
+                            ovsStep.classList.add('has-connection');
+                            
+                            // Create dynamic style for this specific connection point with matching color
+                            const afterElement = document.createElement('style');
+                            afterElement.textContent = `
+                                #${stepId.trim()}.has-connection::after {
+                                    background: #999999 !important;
+                                }
+                            `;
+                            afterElement.id = `connection-style-${stepId.trim()}`;
+                            document.head.appendChild(afterElement);
+                            
+                            // Get positions: connection point at bottom of chevron to top of DVS container
                             const start = getBottomCenterPosition(ovsStep);
                             const end = getTopCenterPosition(dvsContainer);
 
-                            // Create and append the curved path
-                            const path = createCurvedPath(start, end, lineColor);
-                            svg.appendChild(path);
+                            // Create and append the line with matching color
+                            const line = createStraightLine(start, end, lineColor);
+                            svg.appendChild(line);
+                            const circle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+                            circle.setAttribute("cx", start.x);
+                            circle.setAttribute("cy", start.y);
+                            circle.setAttribute("r", 4); // 8px diameter
+                            circle.setAttribute("fill", lineColor);
+                            svg.appendChild(circle);
                         } else {
                             console.warn(`No matching OVS step found for ID: ${stepId}`);
                         }
