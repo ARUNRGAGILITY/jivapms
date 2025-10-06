@@ -260,9 +260,6 @@ def create_backlog_from_story_map(request, pro_id, persona_id):
     current_persona_mapped = len([item for item in mapped_backlog_items if item['is_current_persona']])
     conflicts_count = len([item for item in mapped_backlog_items if item['has_conflict']])
     
-<<<<<<< HEAD
-    
-=======
     # Get all personas for the persona switcher
     all_personas = Persona.objects.filter(
         organization_id=organization.id,
@@ -279,7 +276,6 @@ def create_backlog_from_story_map(request, pro_id, persona_id):
     total_mapped = len(mapped_backlog_items)
     current_persona_mapped = len([item for item in mapped_backlog_items if item['is_current_persona']])
     conflicts_count = len([item for item in mapped_backlog_items if item['has_conflict']])
->>>>>>> edd30f9d73e54fa33b864879aedf55c629e174ff
 
     if request.method == 'POST':
         print(f">>> POST request received: {request.POST}")
@@ -385,12 +381,6 @@ def create_backlog_from_story_map(request, pro_id, persona_id):
                 })
             else:
                 return redirect('create_story_map_from_backlog', pro_id=pro_id)
-<<<<<<< HEAD
-        
-    # ... existing POST handling code ...
-    
-    # Enhanced context
-=======
     
     # Only show new items that aren't already categorized
     # Get mapped and unmapped items using the existing function
@@ -418,7 +408,6 @@ def create_backlog_from_story_map(request, pro_id, persona_id):
             backlog_item.id not in excluded_ids):  # KEY FIX: Exclude already categorized items
             new_persona_items.append(backlog_item)
    # Enhanced context
->>>>>>> edd30f9d73e54fa33b864879aedf55c629e174ff
     context = {
         'parent_page': '___PARENTPAGE___',
         'page': 'create_backlog_from_story_map',
@@ -433,10 +422,7 @@ def create_backlog_from_story_map(request, pro_id, persona_id):
         'default_activity_id': default_activity_id,
         'story_maps': story_maps,
         'initial_backlog': initial_backlog,
-<<<<<<< HEAD
-=======
         'new_persona_items': new_persona_items,
->>>>>>> edd30f9d73e54fa33b864879aedf55c629e174ff
         'mapped_backlog_items': mapped_backlog_items,
         'unmapped_backlog_items': unmapped_backlog_items,
         'mapped_items': mapped_backlog_items,
@@ -1911,11 +1897,8 @@ def ajax_save_to_persona(request):
             return JsonResponse({'status': 'error', 'message': str(e)})
     
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
-<<<<<<< HEAD
-=======
 
 
->>>>>>> edd30f9d73e54fa33b864879aedf55c629e174ff
 @login_required
 def ajax_refresh_mapped_items(request):
     """Refresh the mapped items section with current mapping details - showing all personas"""
@@ -1984,8 +1967,6 @@ def ajax_refresh_mapped_items(request):
                 'count': len(mapped_backlog_items),
                 'current_persona_count': current_persona_count,
                 'conflicts_count': conflicts_count
-<<<<<<< HEAD
-=======
             })
             
         except Exception as e:
@@ -2278,7 +2259,6 @@ def ajax_force_move_item(request):
             return JsonResponse({
                 'status': 'success',
                 'message': 'Item successfully moved to your persona'
->>>>>>> edd30f9d73e54fa33b864879aedf55c629e174ff
             })
             
         except Exception as e:
@@ -2291,79 +2271,6 @@ def ajax_force_move_item(request):
 
 # # Alternative approach that keeps everything as QuerySets where possible:
 
-<<<<<<< HEAD
-# def get_mapped_and_unmapped_items(pro_id, persona_id, initial_backlog):
-#     """Get mapped and unmapped items, returning consistent data types"""
-    
-#     # Get story maps
-#     story_maps = StoryMapping.objects.filter(
-#         pro_id=pro_id, 
-#         persona_id=persona_id, 
-#         active=True
-#     )
-    
-#     mapped_story_ids = list(story_maps.values_list('story_id', flat=True))
-    
-#     # Get QuerySets for both mapped and unmapped
-#     if mapped_story_ids:
-#         mapped_backlog_queryset = initial_backlog.filter(id__in=mapped_story_ids)
-#         unmapped_backlog_queryset = initial_backlog.exclude(id__in=mapped_story_ids)
-#     else:
-#         mapped_backlog_queryset = initial_backlog.none()  # Empty QuerySet
-#         unmapped_backlog_queryset = initial_backlog
-    
-#     # Convert mapped items to list with additional details
-#     mapped_backlog_items = []
-#     for backlog_item in mapped_backlog_queryset:
-#         # Find the story mapping for this item
-#         story_mapping = story_maps.filter(story_id=backlog_item.id).first()
-        
-#         release_name = "Not Set"
-#         iteration_name = "Not Set"
-#         activity_name = "Not Set"
-#         step_name = "Not Set"
-        
-#         if story_mapping:
-#             # Try to get names safely
-#             try:
-#                 if hasattr(story_mapping, 'release_id') and story_mapping.release_id:
-#                     release = OrgRelease.objects.get(id=story_mapping.release_id)
-#                     release_name = release.name
-#             except:
-#                 pass
-                
-#             try:
-#                 if hasattr(story_mapping, 'iteration_id') and story_mapping.iteration_id:
-#                     from app_organization.mod_org_iteration.models_org_iteration import OrgIteration
-#                     iteration = OrgIteration.objects.get(id=story_mapping.iteration_id)
-#                     iteration_name = iteration.name
-#             except:
-#                 pass
-                
-#             try:
-#                 if hasattr(story_mapping, 'activity_id') and story_mapping.activity_id:
-#                     activity = Activity.objects.get(id=story_mapping.activity_id)
-#                     activity_name = activity.name
-#             except:
-#                 pass
-                
-#             try:
-#                 if hasattr(story_mapping, 'step_id') and story_mapping.step_id:
-#                     step = Step.objects.get(id=story_mapping.step_id)
-#                     step_name = step.name
-#             except:
-#                 pass
-        
-#         mapped_backlog_items.append({
-#             'backlog_item': backlog_item,
-#             'release_name': release_name,
-#             'iteration_name': iteration_name,
-#             'activity_name': activity_name,
-#             'step_name': step_name,
-#         })
-    
-#     return mapped_backlog_items, unmapped_backlog_queryset, mapped_backlog_queryset
-=======
 def get_release_name(release_id):
     """Helper to safely get release name"""
     if not release_id:
@@ -2385,7 +2292,6 @@ def get_iteration_name(iteration_id):
         return iteration.name
     except:
         return "Unknown Iteration"
->>>>>>> edd30f9d73e54fa33b864879aedf55c629e174ff
 
 
 @login_required
@@ -2547,193 +2453,6 @@ def ajax_update_step_name(request):
     
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
 
-<<<<<<< HEAD
-
-# ===================================================================================== #
-def get_mapped_and_unmapped_items(pro_id, persona_id, initial_backlog):
-    """Get mapped and unmapped items, showing ALL mapped items across ALL personas"""
-    
-    # Get ALL story maps for this project (not just current persona)
-    all_story_maps = StoryMapping.objects.filter(
-        pro_id=pro_id, 
-        active=True
-    ).select_related('persona')
-    
-    # Get all mapped story IDs across ALL personas
-    all_mapped_story_ids = list(all_story_maps.values_list('story_id', flat=True))
-    
-    # Get QuerySets for mapped and unmapped
-    if all_mapped_story_ids:
-        mapped_backlog_queryset = initial_backlog.filter(id__in=all_mapped_story_ids)
-        unmapped_backlog_queryset = initial_backlog.exclude(id__in=all_mapped_story_ids)
-    else:
-        mapped_backlog_queryset = initial_backlog.none()
-        unmapped_backlog_queryset = initial_backlog
-    
-    # Convert mapped items to list with multi-persona details
-    mapped_backlog_items = []
-    for backlog_item in mapped_backlog_queryset:
-        # Get ALL story mappings for this item (could be multiple personas)
-        item_mappings = all_story_maps.filter(story_id=backlog_item.id)
-        
-        # Check if current persona has mapped this item
-        current_persona_mapping = item_mappings.filter(persona_id=persona_id).first()
-        is_current_persona = current_persona_mapping is not None
-        
-        # Get all personas that have mapped this item
-        mapped_personas = []
-        mapping_details = []
-        
-        for mapping in item_mappings:
-            persona_name = mapping.persona.name if mapping.persona else "Unknown"
-            
-            # Get mapping details safely
-            release_name = "Not Set"
-            iteration_name = "Not Set" 
-            activity_name = "Not Set"
-            step_name = "Not Set"
-            
-            try:
-                if hasattr(mapping, 'release_id') and mapping.release_id:
-                    release = OrgRelease.objects.get(id=mapping.release_id)
-                    release_name = release.name
-            except:
-                pass
-                
-            try:
-                if hasattr(mapping, 'iteration_id') and mapping.iteration_id:
-                    from app_organization.mod_org_iteration.models_org_iteration import OrgIteration
-                    iteration = OrgIteration.objects.get(id=mapping.iteration_id)
-                    iteration_name = iteration.name
-            except:
-                pass
-                
-            try:
-                if hasattr(mapping, 'activity_id') and mapping.activity_id:
-                    activity = Activity.objects.get(id=mapping.activity_id)
-                    activity_name = activity.name
-            except:
-                pass
-                
-            try:
-                if hasattr(mapping, 'step_id') and mapping.step_id:
-                    step = Step.objects.get(id=mapping.step_id)
-                    step_name = step.name
-            except:
-                pass
-            
-            mapped_personas.append(persona_name)
-            mapping_details.append({
-                'persona_id': mapping.persona_id,
-                'persona_name': persona_name,
-                'release_name': release_name,
-                'iteration_name': iteration_name,
-                'activity_name': activity_name,
-                'step_name': step_name,
-                'is_current_persona': mapping.persona_id == int(persona_id),
-                'mapping_id': mapping.id
-            })
-        
-        # Sort mapping details to put current persona first
-        mapping_details.sort(key=lambda x: not x['is_current_persona'])
-        
-        mapped_backlog_items.append({
-            'backlog_item': backlog_item,
-            'is_current_persona': is_current_persona,
-            'mapped_personas': mapped_personas,
-            'mapped_personas_count': len(mapped_personas),
-            'mapping_details': mapping_details,
-            'has_conflict': len(mapped_personas) > 1,
-            # Keep these for backward compatibility (use first mapping details)
-            'release_name': mapping_details[0]['release_name'] if mapping_details else "Not Set",
-            'iteration_name': mapping_details[0]['iteration_name'] if mapping_details else "Not Set",
-            'activity_name': mapping_details[0]['activity_name'] if mapping_details else "Not Set",
-            'step_name': mapping_details[0]['step_name'] if mapping_details else "Not Set",
-        })
-    
-    return mapped_backlog_items, unmapped_backlog_queryset, mapped_backlog_queryset
-
-
-# Alternative: Separate functions for better clarity
-def get_all_mapped_items_with_personas(pro_id, persona_id, initial_backlog):
-    """Get all mapped items showing which personas have mapped them"""
-    
-    # Get ALL story mappings for this project
-    all_mappings = StoryMapping.objects.filter(
-        pro_id=pro_id, 
-        active=True
-    ).select_related('persona').prefetch_related()
-    
-    # Group mappings by story_id
-    mappings_by_story = {}
-    for mapping in all_mappings:
-        story_id = mapping.story_id
-        if story_id not in mappings_by_story:
-            mappings_by_story[story_id] = []
-        mappings_by_story[story_id].append(mapping)
-    
-    # Get all mapped story IDs
-    all_mapped_ids = list(mappings_by_story.keys())
-    
-    # Separate mapped and unmapped items
-    if all_mapped_ids:
-        mapped_items = initial_backlog.filter(id__in=all_mapped_ids)
-        unmapped_items = initial_backlog.exclude(id__in=all_mapped_ids)
-    else:
-        mapped_items = initial_backlog.none()
-        unmapped_items = initial_backlog
-    
-    # Build detailed mapped items list
-    detailed_mapped_items = []
-    for backlog_item in mapped_items:
-        item_mappings = mappings_by_story.get(backlog_item.id, [])
-        
-        # Check if current persona has this item
-        current_persona_mapping = next(
-            (m for m in item_mappings if m.persona_id == int(persona_id)), 
-            None
-        )
-        
-        # Build personas list
-        personas_info = []
-        for mapping in item_mappings:
-            persona_info = {
-                'id': mapping.persona_id,
-                'name': mapping.persona.name if mapping.persona else "Unknown",
-                'is_current': mapping.persona_id == int(persona_id),
-                'mapping_id': mapping.id
-            }
-            personas_info.append(persona_info)
-        
-        detailed_mapped_items.append({
-            'backlog_item': backlog_item,
-            'mappings': item_mappings,
-            'personas': personas_info,
-            'is_current_persona_item': current_persona_mapping is not None,
-            'current_persona_mapping': current_persona_mapping,
-            'conflict_count': len(item_mappings),  # How many personas have mapped this
-        })
-    
-    return detailed_mapped_items, unmapped_items
-
-# Helper function to check if item can be moved
-def can_move_backlog_item(story_id, target_persona_id):
-    """Check if a backlog item can be moved to target persona"""
-    existing_mappings = StoryMapping.objects.filter(
-        story_id=story_id,
-        active=True
-    ).exclude(persona_id=target_persona_id)
-    
-    if existing_mappings.exists():
-        # Item is already mapped to other personas
-        mapped_personas = [
-            mapping.persona.name 
-            for mapping in existing_mappings.select_related('persona')
-        ]
-        return False, f"Item already mapped to: {', '.join(mapped_personas)}"
-    
-    return True, "Item can be moved"
-=======
 # Updated get_mapped_and_unmapped_items function for multi-persona support
 
     
@@ -2811,7 +2530,6 @@ def ajax_check_persona_switch_conflicts(request):
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
 
 
->>>>>>> edd30f9d73e54fa33b864879aedf55c629e174ff
 
 @login_required
 def ajax_check_item_conflicts(request):
@@ -3001,78 +2719,6 @@ def ajax_get_persona_conflicts_summary(request):
     
     return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
 
-<<<<<<< HEAD
-@login_required
-def ajax_check_persona_switch_conflicts(request):
-    """Check for conflicts when switching personas"""
-    if request.method == 'POST':
-        try:
-            target_persona_id = request.POST.get('target_persona_id')
-            pro_id = request.POST.get('pro_id')
-            
-            if not target_persona_id or not pro_id:
-                return JsonResponse({
-                    'status': 'error', 
-                    'message': 'Target persona ID and project ID are required'
-                })
-            
-            # Get target persona info
-            target_persona = Persona.objects.get(id=target_persona_id)
-            
-            # Get mapping conflicts for this project
-            all_mappings = StoryMapping.objects.filter(
-                pro_id=pro_id,
-                active=True
-            ).select_related('persona', 'story')
-            
-            # Group by story_id to find conflicts
-            story_mappings = {}
-            for mapping in all_mappings:
-                story_id = mapping.story_id
-                if story_id not in story_mappings:
-                    story_mappings[story_id] = []
-                story_mappings[story_id].append(mapping)
-            
-            # Find items mapped by target persona
-            target_persona_items = []
-            conflicts = []
-            
-            for story_id, mappings in story_mappings.items():
-                target_mapping = next((m for m in mappings if m.persona_id == int(target_persona_id)), None)
-                if target_mapping:
-                    try:
-                        backlog_item = Backlog.objects.get(id=story_id)
-                        item_data = {
-                            'story_id': story_id,
-                            'story_name': backlog_item.name,
-                            'mapping_count': len(mappings),
-                            'other_personas': [m.persona.name for m in mappings if m.persona_id != int(target_persona_id)]
-                        }
-                        
-                        if len(mappings) > 1:
-                            conflicts.append(item_data)
-                        else:
-                            target_persona_items.append(item_data)
-                            
-                    except Backlog.DoesNotExist:
-                        continue
-            
-            return JsonResponse({
-                'status': 'success',
-                'target_persona_name': target_persona.name,
-                'target_persona_items': target_persona_items,
-                'conflicts': conflicts,
-                'total_items': len(target_persona_items),
-                'total_conflicts': len(conflicts)
-            })
-            
-        except Persona.DoesNotExist:
-            return JsonResponse({'status': 'error', 'message': 'Target persona not found'})
-        except Exception as e:
-            return JsonResponse({'status': 'error', 'message': str(e)})
-    
-    return JsonResponse({'status': 'error', 'message': 'Invalid request method'})
-=======
 
 # Helper function to check if item can be moved
 def can_move_backlog_item(story_id, target_persona_id):
@@ -3091,6 +2737,4 @@ def can_move_backlog_item(story_id, target_persona_id):
         return False, f"Item already mapped to: {', '.join(mapped_personas)}"
     
     return True, "Item can be moved"
->>>>>>> edd30f9d73e54fa33b864879aedf55c629e174ff
-
 
