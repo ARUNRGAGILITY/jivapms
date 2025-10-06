@@ -5,12 +5,6 @@ import os
 from django.conf import settings
 from django.apps import apps
 import re
-from django.utils.safestring import mark_safe
-import logging
-
-logger = logging.getLogger(__name__)
-register = template.Library()
-
 register = template.Library()
 
 @register.filter(name='contains')
@@ -289,5 +283,3 @@ def get_mapping_info(backlog_item, story_maps):
             'iteration': mapping.iteration.name if mapping.iteration else 'No Iteration'
         }
     return None
-
-

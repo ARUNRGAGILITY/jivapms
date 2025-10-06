@@ -338,7 +338,6 @@ def ajax_display_public_framework(request, framework_id):
             'description': framework.description,  # Assuming Framework has a `description` field
             'content': framework.content,  # Assuming Framework has a `content` field
             'default_text': framework.default_text,  # Assuming Framework has a `default_text` field
-            'author': str(framework.author) if framework.author else '',
             'image_url': image_url,
             'image_original_url': image_original_url,
         })
@@ -759,16 +758,3 @@ def ajax_soft_delete_user(request, user_id):
     user.is_active = False  # Soft delete
     user.save()
     return JsonResponse({"success": True, "message": "User deleted successfully."})
-
-
-
-def jivapms_launch(request):
-
-    
-    context = {
-        'parent_page': 'home',
-        'page': 'jivapms_launch',
-        'page_title': 'JivaPMS Launch',
-    }
-    template_url = f"app_jivapms/mod_web/launch/jivapms_launch.html"
-    return render(request, template_url, context)   

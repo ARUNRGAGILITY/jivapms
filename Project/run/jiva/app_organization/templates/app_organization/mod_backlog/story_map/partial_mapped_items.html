@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 <!-- partial_mapped_items.html - Enhanced to show all persona mappings -->
 <div class="mapped-items-section">
     <div class="d-flex justify-content-between align-items-center mb-2">
@@ -115,72 +114,5 @@
                 </span>
             </div>
         </div>
-=======
-<!-- partial_mapped_items.html - Clean compact version -->
-<div class="mb-2">
-    <small class="text-success"><strong>Mapped Items:</strong></small>
-    
-    {% for mapped_item in mapped_backlog_items %}
-    <div class="mapped-item" 
-         id="mapped-{{ mapped_item.backlog_item.id }}"
-         data-story-id="{{ mapped_item.backlog_item.id }}"
-         data-personas="{{ mapped_item.mapped_personas|join:',' }}"
-         data-is-current="{{ mapped_item.is_current_persona|yesno:'true,false' }}"
-         title="{% if mapped_item.is_current_persona %}Your mapping{% else %}Mapped by: {{ mapped_item.mapped_personas|join:', ' }}{% endif %}">
-        
-        <!-- Compact persona indicator -->
-        <span class="persona-indicator {% if mapped_item.is_current_persona %}current{% elif mapped_item.has_conflict %}conflict{% else %}other{% endif %}">
-            {% if mapped_item.is_current_persona %}
-                YOU
-            {% elif mapped_item.has_conflict %}
-                {{ mapped_item.mapped_personas_count }}
-            {% else %}
-                {{ mapped_item.mapped_personas.0|truncatechars:3|upper }}
-            {% endif %}
-        </span>
-        
-        <!-- Item name -->
-        <div class="mapped-item-name">
-            {{ mapped_item.backlog_item.name }}
-        </div>
-        
-        <!-- Compact details -->
-        {% with mapped_item.mapping_details|first as primary_detail %}
-        {% if primary_detail.release_name and primary_detail.release_name != 'Not Set' %}
-        <div class="mapped-item-details">
-            {{ primary_detail.release_name }}
-            {% if primary_detail.activity_name and primary_detail.activity_name != 'Not Set' %} → {{ primary_detail.activity_name|truncatechars:12 }}{% endif %}
-        </div>
-        {% endif %}
-        {% endwith %}
-        
-        <!-- Action button (only for current persona items) -->
-        {% if mapped_item.is_current_persona %}
-        <button class="btn-remove mapped-item-action" 
-                onclick="unmapFromPersona({{ mapped_item.backlog_item.id }}, '{{ mapped_item.backlog_item.name|escapejs }}')"
-                title="Remove from your persona">
-            <i class="fas fa-times"></i>
-        </button>
-        {% endif %}
-    </div>
-    {% endfor %}
-    
-    <!-- Compact Summary Stats -->
-    <div class="mapping-stats">
-        <span class="stat-item">
-            <i class="fas fa-user"></i>
-            <span class="stat-value success" id="your-items-count">
-                {% with mapped_backlog_items|length as total %}
-                    {% for item in mapped_backlog_items %}{% if item.is_current_persona %}{{ forloop.counter }}{% endif %}{% empty %}0{% endfor %}
-                {% endwith %}
-            </span>
-        </span>
-        <span class="stat-item">
-            <i class="fas fa-exclamation-triangle"></i>
-            <span class="stat-value danger" id="conflict-count">
-                {% for item in mapped_backlog_items %}{% if item.has_conflict %}{{ forloop.counter }}{% endif %}{% empty %}0{% endfor %}
-            </span>
-        </span>
->>>>>>> edd30f9d73e54fa33b864879aedf55c629e174ff
     </div>
 </div>

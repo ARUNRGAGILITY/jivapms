@@ -112,10 +112,4 @@ urlpatterns = [
 
     # list the project personas if empty user creates one to start
     path('project_personas/<int:org_id>/<int:project_id>/', views_story_map.project_personas, name='project_personas'),
-
-     # Multi-persona conflict management URLs
-     path('ajax/check-item-conflicts/', views_story_map.ajax_check_item_conflicts, name='ajax_check_item_conflicts'),
-     path('ajax/force-move-item/', views_story_map.ajax_force_move_item, name='ajax_force_move_item'),
-     path('ajax/get-persona-conflicts-summary/', views_story_map.ajax_get_persona_conflicts_summary, name='ajax_get_persona_conflicts_summary'),
-     path('ajax/check-persona-switch-conflicts/', views_story_map.ajax_check_persona_switch_conflicts, name='ajax_check_persona_switch_conflicts'),
 ]

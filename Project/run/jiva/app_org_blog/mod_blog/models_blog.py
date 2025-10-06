@@ -8,10 +8,10 @@ from markdownx.models import MarkdownxField
 
 class Blog(BaseModelImpl):
     organization = models.ForeignKey('app_organization.Organization', on_delete=models.CASCADE, 
-                            related_name="organization_app_blogs", null=True, blank=True)
+                            related_name="organization_blogs", null=True, blank=True)
     
     author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True,
-                               related_name="app_author_blogs")
+                               related_name="author_blogs")
     
     # Enhanced blog fields
     title = models.CharField(max_length=200, blank=True, null=True)

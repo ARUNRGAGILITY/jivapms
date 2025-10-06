@@ -643,7 +643,7 @@ def dashboard_organizations(request):
     user = request.user       
     
     # Variables for dashboard stats
-    total_organizations = 0
+    total_organizations_count = 0
     active_projects = 0
     total_members = 0
     recent_activities = 0
@@ -663,7 +663,7 @@ def dashboard_organizations(request):
     if is_site_admin:
         # Make sure we're only counting active=True and deleted=False
         organizations = Organization.objects.filter(active=True, deleted=False)
-        total_organizations = organizations.count()
+        total_organizations_count = organizations.count()
         active_projects = Project.objects.filter(active=True, deleted=False).count()
         # Rest of the code remains the same...
 
@@ -680,7 +680,7 @@ def dashboard_organizations(request):
             org_ids = org_admin_roles.values_list('org_id', flat=True).distinct()
             # Update the filter here too
             organizations = Organization.objects.filter(id__in=org_ids, active=True, deleted=False).order_by('position')
-            total_organizations = Organization.objects.filter(active=True, deleted=False)
+            total_organizations_count = Organization.objects.filter(active=True, deleted=False).count()
             my_organizations = organizations.count()
             active_projects = Project.objects.filter(org_id__in=org_ids, active=True).count()
             member_org_roles = MemberOrganizationRole.objects.filter(org_id__in=org_ids)
@@ -698,7 +698,7 @@ def dashboard_organizations(request):
             if is_project_admin:
                 project_org_ids = project_admin_roles.values_list('org_id', flat=True).distinct()
                 organizations = Organization.objects.filter(id__in=project_org_ids, active=True)
-                total_organizations = organizations.count()
+                total_organizations_count = organizations.count()
                 active_projects = Project.objects.filter(org_id__in=project_org_ids, active=True).count()
                 project_memberships = Projectmembership.objects.filter(project__org_id__in=project_org_ids, active=True)
                 member_ids = project_memberships.values_list('member_id', flat=True).distinct()
@@ -712,7 +712,7 @@ def dashboard_organizations(request):
                 )
                 project_org_ids = project_member_roles.values_list('org_id', flat=True).distinct()
                 organizations = Organization.objects.filter(id__in=project_org_ids, active=True)
-                total_organizations = organizations.count()
+                total_organizations_count = organizations.count()
                 active_projects = Project.objects.filter(
                     projectmembership__member__in=memberships, 
                     active=True
@@ -780,9 +780,9 @@ def dashboard_organizations(request):
         'module_path': module_path,
         'user': user,
         'organizations': organizations,
-        'total_organizations_count': total_organizations.count(),
+        'total_organizations_count': total_organizations_count,
         'my_organizations_count': my_organizations,
-        'total_organizations': total_organizations,
+        'total_organizations': organizations,
         'my_organizations': organizations,
         'active_projects': active_projects,
         'total_members': total_members,

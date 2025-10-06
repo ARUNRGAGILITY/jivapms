@@ -32,9 +32,7 @@
                             <td>
                                 <!-- Example link for viewing the project -->
                                 <!-- Ensure to use Django URL template tag for real URLs -->
-                                <a href="{% url 'list_projects' project.org.id %}" class="btn btn-warning btn-sm">List</a>
                                 <a href="{% url 'view_project' project.org.id project.project_id %}" class="btn btn-primary btn-sm">View</a>
-                                <a href="{% url 'project_homepage' project.org.id project.project_id %}" class="btn btn-primary btn-sm">Home Page</a>
                                 <!-- Add more action buttons as needed -->
                             </td>
                         </tr>
