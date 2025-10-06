@@ -45,7 +45,7 @@ class Command(BaseCommand):
                 last_name = random.choice(last_names)
                 username = f"{first_name.lower()}.{last_name.lower()}{user_count + 1}"
                 email = f"{first_name.lower()}.{last_name.lower()}{user_count + 1}@example.com"
-                password = 'password123'  # Default password for all fake users
+                password = 'great@123'  # Default password for all fake users
                 
                 # Create the user
                 user = User.objects.create_user(username=username, email=email, password=password)

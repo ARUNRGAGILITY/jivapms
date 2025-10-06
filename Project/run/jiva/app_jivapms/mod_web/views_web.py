@@ -758,3 +758,16 @@ def ajax_soft_delete_user(request, user_id):
     user.is_active = False  # Soft delete
     user.save()
     return JsonResponse({"success": True, "message": "User deleted successfully."})
+
+
+
+def jivapms_launch(request):
+
+    
+    context = {
+        'parent_page': 'home',
+        'page': 'jivapms_launch',
+        'page_title': 'JivaPMS Launch',
+    }
+    template_url = f"app_jivapms/mod_web/launch/jivapms_launch.html"
+    return render(request, template_url, context)   

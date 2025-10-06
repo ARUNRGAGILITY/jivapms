@@ -42,5 +42,8 @@ urlpatterns = [
     path('ajax_edit_user/<int:userid>/', web.ajax_edit_user, name="ajax_edit_user"),
     path('ajax_soft_delete_user/<int:userid>/', web.ajax_soft_delete_user, name="ajax_soft_delete_user"),
     path('search_users/', web.search_users, name="search_users"),
+
+    # product launch
+    path('jivapms_launch/', web.jivapms_launch, name='jivapms_launch'),
     
 ]

@@ -90,7 +90,7 @@ class Command(BaseCommand):
 
                 # Create the user if they don't already exist
                 username = f"{first_name.lower()}.{last_name.lower()}"
-                password = 'password123'  # Default password for all users
+                password = 'great@123'  # Default password for all users
                 user, created = User.objects.get_or_create(username=username, email=email)
                 if created:
                     user.set_password(password)

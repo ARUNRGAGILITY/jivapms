@@ -201,7 +201,89 @@ def list_deleted_blogs(request, organization_id):
 
 
 
-# Create View
+# # Create View
+# @login_required
+# def create_blog(request, organization_id):
+#     user = request.user
+#     organization = Organization.objects.get(id=organization_id, active=True, 
+#                                                 **first_viewable_dict)
+    
+#     if request.method == 'POST':
+#         form = BlogForm(request.POST)
+#         if form.is_valid():
+#             form.instance.author = user
+#             form.instance.organization_id = organization_id
+#             # Use regex to replace either 4 spaces or a tab with 8 spaces
+#             content = form.cleaned_data['content']
+#             replaced_content = re.sub(r"( {3}|\t)", "        ", content)  
+#             # Replace 4 spaces or tab with 8 spaces
+#             form.instance.content = replaced_content
+            
+#             form.save()
+#         else:
+#             print(f">>> === form.errors: {form.errors} === <<<")
+#         return redirect('list_blogs', organization_id=organization_id)
+#     else:
+#         form = BlogForm()
+
+#     context = {
+#         'parent_page': '___PARENTPAGE___',
+#         'page': 'create_blog',
+#         'organization': organization,
+#         'organization_id': organization_id,
+#         'org_id': organization_id,
+#         'module_path': module_path,
+#         'form': form,
+#         'page_title': f'Create Blog',
+#     }
+#     template_file = f"{app_name}/{module_path}/create_blog.html"
+#     return render(request, template_file, context)
+
+
+
+
+# # Edit
+# @login_required
+# def edit_blog(request, organization_id, blog_id):
+#     user = request.user
+#     organization = Organization.objects.get(id=organization_id, active=True, 
+#                                                 **first_viewable_dict)
+    
+#     object = get_object_or_404(Blog, pk=blog_id, active=True,**viewable_dict)
+#     if request.method == 'POST':
+#         form = BlogForm(request.POST, instance=object)
+#         if form.is_valid():
+#             form.instance.author = user
+#             form.instance.organization_id = organization_id
+#             # Use regex to replace either 4 spaces or a tab with 8 spaces
+#             content = form.cleaned_data['content']
+#             replaced_content = re.sub(r"( {3}|\t)", "        ", content)  
+#             # Replace 4 spaces or tab with 8 spaces
+#             form.instance.content = replaced_content
+
+#             form.save()
+#         else:
+#             print(f">>> === form.errors: {form.errors} === <<<")
+#         return redirect('list_blogs', organization_id=organization_id)
+#     else:
+#         form = BlogForm(instance=object)
+
+#     context = {
+#         'parent_page': '___PARENTPAGE___',
+#         'page': 'edit_blog',
+#         'organization': organization,
+#         'organization_id': organization_id,
+#         'org_id': organization_id,
+#         'module_path': module_path,
+#         'form': form,
+#         'object': object,
+#         'page_title': f'Edit Blog',
+#     }
+#     template_file = f"{app_name}/{module_path}/edit_blog.html"
+#     return render(request, template_file, context)
+
+# Update your create_blog and edit_blog views
+
 @login_required
 def create_blog(request, organization_id):
     user = request.user
@@ -213,16 +295,19 @@ def create_blog(request, organization_id):
         if form.is_valid():
             form.instance.author = user
             form.instance.organization_id = organization_id
-            # Use regex to replace either 4 spaces or a tab with 8 spaces
+            
+            # Get the cleaned content (should already have proper newlines from form.clean_content)
             content = form.cleaned_data['content']
-            replaced_content = re.sub(r"( {3}|\t)", "        ", content)  
-            # Replace 4 spaces or tab with 8 spaces
+            
+            # Only do the space/tab replacement, don't mess with newlines
+            # Use regex to replace either 4 spaces or a tab with 8 spaces
+            replaced_content = re.sub(r"(    |\t)", "        ", content)  
             form.instance.content = replaced_content
             
             form.save()
+            return redirect('list_blogs', organization_id=organization_id)
         else:
             print(f">>> === form.errors: {form.errors} === <<<")
-        return redirect('list_blogs', organization_id=organization_id)
     else:
         form = BlogForm()
 
@@ -239,10 +324,6 @@ def create_blog(request, organization_id):
     template_file = f"{app_name}/{module_path}/create_blog.html"
     return render(request, template_file, context)
 
-
-
-
-# Edit
 @login_required
 def edit_blog(request, organization_id, blog_id):
     user = request.user
@@ -250,21 +331,24 @@ def edit_blog(request, organization_id, blog_id):
                                                 **first_viewable_dict)
     
     object = get_object_or_404(Blog, pk=blog_id, active=True,**viewable_dict)
+    
     if request.method == 'POST':
         form = BlogForm(request.POST, instance=object)
         if form.is_valid():
             form.instance.author = user
             form.instance.organization_id = organization_id
-            # Use regex to replace either 4 spaces or a tab with 8 spaces
+            
+            # Get the cleaned content
             content = form.cleaned_data['content']
-            replaced_content = re.sub(r"( {3}|\t)", "        ", content)  
-            # Replace 4 spaces or tab with 8 spaces
+            
+            # Only do the space/tab replacement
+            replaced_content = re.sub(r"(    |\t)", "        ", content)  
             form.instance.content = replaced_content
 
             form.save()
+            return redirect('list_blogs', organization_id=organization_id)
         else:
             print(f">>> === form.errors: {form.errors} === <<<")
-        return redirect('list_blogs', organization_id=organization_id)
     else:
         form = BlogForm(instance=object)
 
@@ -281,8 +365,6 @@ def edit_blog(request, organization_id, blog_id):
     }
     template_file = f"{app_name}/{module_path}/edit_blog.html"
     return render(request, template_file, context)
-
-
 
 @login_required
 def delete_blog(request, organization_id, blog_id):
@@ -371,45 +453,122 @@ def view_blog(request, organization_id, blog_id):
     template_file = f"{app_name}/{module_path}/view_blog.html"
     return render(request, template_file, context)
 
-#@login_required
-# MODIFIED FOR GA
+# #@login_required
+# # MODIFIED FOR GA
+# def display_blog(request, organization_id, blog_id):
+#     user = request.user
+#     organization = Organization.objects.get(id=organization_id, active=True, 
+#                                                 **first_viewable_dict)
+    
+#     object = get_object_or_404(Blog, pk=blog_id, active=True,**viewable_dict)    
+#     # Retrieve query parameters
+#     org_image_map_id = request.GET.get('org_image_map_id')  # Image map ID
+#     area_id = request.GET.get('area_id')  # Area ID
+#     area_name = request.GET.get('area_name')  # Area name
+#     link_ref = request.GET.get('link_ref')  # Link reference
+#     current_url = request.GET.get('current_url')  # Current URL
+#     print(f">>> === current_url: {current_url} === <<<")
+#     selected_area = request.GET.get('selected_area')  # Custom detail
+
+#     # Optional: Validate or use the parameters as needed
+#     # For example, fetch related objects or log information
+#     if org_image_map_id:
+#         org_image_map = OrgImageMap.objects.filter(id=org_image_map_id, active=True).first()
+#     else:
+#         org_image_map = None
+        
+#     area = org_image_map.areas.filter(id=area_id).first() if area_id and org_image_map else None
+
+#     # Split the coordinates into x, y, width, height
+#     coords = list(map(float, area.coords.split(','))) if area and area.coords else [0, 0, 0, 0]
+#      # Dynamically generate cropped image
+#     cropped_image = org_image_map.generate_cropped_image(coords) if org_image_map and coords != [0, 0, 0, 0] else None
+
+#     if cropped_image:
+#         # Save cropped image temporarily for use in the template
+#         cropped_image_url = f"/media/temp/{cropped_image.name}"
+#         with open(f"{settings.MEDIA_ROOT}/temp/{cropped_image.name}", "wb") as f:
+#             f.write(cropped_image.read())
+#     else:
+#         cropped_image_url = None
+
+#     context = {
+#         'parent_page': '___PARENTPAGE___',
+#         'page': 'display_blog',
+#         'organization': organization,
+#         'organization_id': organization_id,
+#         'org_id': organization_id,
+#         'module_path': module_path,
+#         'object': object,
+#         'org_image_map': org_image_map,  # Pass the image map if found
+#         'org_image_map_id': org_image_map_id,
+#         'area_coords': coords,  
+#         'cropped_image_url': cropped_image_url, 
+#         'area_id': area_id,
+#         'area_name': area_name,
+#         'link_ref': link_ref,
+#         'current_url': current_url,
+#         'selected_area': selected_area,
+        
+#         'page_title': f'Display Blog',
+#     }
+#     template_file = f"{app_name}/{module_path}/display_blog.html"
+#     return render(request, template_file, context)
+
+
+import re
+import markdown
+import os
+from django.conf import settings
+from django.shortcuts import render, get_object_or_404
+
+from .utils import process_markdown_with_mermaid  # Add this import
+
 def display_blog(request, organization_id, blog_id):
     user = request.user
-    organization = Organization.objects.get(id=organization_id, active=True, 
-                                                **first_viewable_dict)
+    organization = Organization.objects.get(id=organization_id, active=True,
+                                             **first_viewable_dict)
+         
+    object = get_object_or_404(Blog, pk=blog_id, active=True, **viewable_dict)
     
-    object = get_object_or_404(Blog, pk=blog_id, active=True,**viewable_dict)    
+    # ✅ ADD THIS: Process the blog content with mermaid support
+    processed_content = process_markdown_with_mermaid(object.content)
+             
     # Retrieve query parameters
-    org_image_map_id = request.GET.get('org_image_map_id')  # Image map ID
-    area_id = request.GET.get('area_id')  # Area ID
-    area_name = request.GET.get('area_name')  # Area name
-    link_ref = request.GET.get('link_ref')  # Link reference
-    current_url = request.GET.get('current_url')  # Current URL
-    print(f">>> === current_url: {current_url} === <<<")
-    selected_area = request.GET.get('selected_area')  # Custom detail
-
-    # Optional: Validate or use the parameters as needed
-    # For example, fetch related objects or log information
+    org_image_map_id = request.GET.get('org_image_map_id')
+    area_id = request.GET.get('area_id')
+    area_name = request.GET.get('area_name')
+    link_ref = request.GET.get('link_ref')
+    current_url = request.GET.get('current_url')
+    selected_area = request.GET.get('selected_area')
+     
+    # Initialize default values
+    org_image_map = None
+    area = None
+    coords = [0, 0, 0, 0]
+    cropped_image_url = None
+     
+    # Handle image map logic
     if org_image_map_id:
         org_image_map = OrgImageMap.objects.filter(id=org_image_map_id, active=True).first()
-    else:
-        org_image_map = None
-        
-    area = org_image_map.areas.filter(id=area_id).first() if area_id and org_image_map else None
-
-    # Split the coordinates into x, y, width, height
-    coords = list(map(float, area.coords.split(','))) if area and area.coords else [0, 0, 0, 0]
-     # Dynamically generate cropped image
-    cropped_image = org_image_map.generate_cropped_image(coords) if org_image_map and coords != [0, 0, 0, 0] else None
-
-    if cropped_image:
-        # Save cropped image temporarily for use in the template
-        cropped_image_url = f"/media/temp/{cropped_image.name}"
-        with open(f"{settings.MEDIA_ROOT}/temp/{cropped_image.name}", "wb") as f:
-            f.write(cropped_image.read())
-    else:
-        cropped_image_url = None
-
+                 
+        if org_image_map and area_id:
+            area = org_image_map.areas.filter(id=area_id).first()
+                         
+            if area and area.coords:
+                coords = list(map(float, area.coords.split(',')))
+                                 
+                # Generate cropped image
+                cropped_image = org_image_map.generate_cropped_image(coords)
+                if cropped_image:
+                    # Ensure temp directory exists
+                    temp_dir = f"{settings.MEDIA_ROOT}/temp"
+                    os.makedirs(temp_dir, exist_ok=True)
+                                         
+                    cropped_image_url = f"/media/temp/{cropped_image.name}"
+                    with open(f"{settings.MEDIA_ROOT}/temp/{cropped_image.name}", "wb") as f:
+                        f.write(cropped_image.read())
+     
     context = {
         'parent_page': '___PARENTPAGE___',
         'page': 'display_blog',
@@ -418,16 +577,16 @@ def display_blog(request, organization_id, blog_id):
         'org_id': organization_id,
         'module_path': module_path,
         'object': object,
-        'org_image_map': org_image_map,  # Pass the image map if found
+        'processed_content': processed_content,  # ✅ ADD THIS LINE
+        'org_image_map': org_image_map,
         'org_image_map_id': org_image_map_id,
-        'area_coords': coords,  
-        'cropped_image_url': cropped_image_url, 
+        'area_coords': coords,
+        'cropped_image_url': cropped_image_url,
         'area_id': area_id,
         'area_name': area_name,
         'link_ref': link_ref,
         'current_url': current_url,
         'selected_area': selected_area,
-        
         'page_title': f'Display Blog',
     }
     template_file = f"{app_name}/{module_path}/display_blog.html"
