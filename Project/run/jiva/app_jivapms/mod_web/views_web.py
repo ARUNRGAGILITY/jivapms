@@ -338,6 +338,7 @@ def ajax_display_public_framework(request, framework_id):
             'description': framework.description,  # Assuming Framework has a `description` field
             'content': framework.content,  # Assuming Framework has a `content` field
             'default_text': framework.default_text,  # Assuming Framework has a `default_text` field
+            'author': framework.author.get_full_name() if framework.author else '',
             'image_url': image_url,
             'image_original_url': image_original_url,
         })
