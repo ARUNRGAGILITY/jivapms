@@ -1,0 +1,34 @@
+<!-- Create this file: partial_mapped_items.html -->
+{% if mapped_backlog_items %}
+    <small class="text-success"><strong>Already Mapped ({{ mapped_backlog_items|length }}):</strong></small>
+    {% for mapped_item in mapped_backlog_items %}
+        <div class="backlog-item post-it mapped-item" 
+             id="mapped-{{ mapped_item.backlog_item.id }}"
+             data-story-id="{{ mapped_item.backlog_item.id }}"
+             style="background-color: #d4edda; border-color: #c3e6cb; opacity: 0.8; cursor: default;"
+             title="Mapped to: {% if mapped_item.release %}{{ mapped_item.release.name }}{% endif %}{% if mapped_item.iteration %} / {{ mapped_item.iteration.name }}{% endif %}">
+            <div class="mapped-item-name">{{ mapped_item.backlog_item.name }}</div>
+            <small class="d-block text-success mapped-item-details" style="font-size: 0.6rem; font-weight: bold;">
+                ✓ 
+                {% if mapped_item.release %}
+                    <span class="release-name">{{ mapped_item.release.name }}</span>
+                {% else %}
+                    <span class="release-name text-muted">No Release</span>
+                {% endif %}
+                {% if mapped_item.iteration %}
+                    / <span class="iteration-name">{{ mapped_item.iteration.name }}</span>
+                {% endif %}
+            </small>
+            <small class="d-block text-muted" style="font-size: 0.5rem;">
+                {% if mapped_item.activity %}
+                    <i class="fas fa-layer-group"></i> {{ mapped_item.activity.name }}
+                {% endif %}
+                {% if mapped_item.step %}
+                    <i class="fas fa-step-forward"></i> {{ mapped_item.step.name }}
+                {% endif %}
+            </small>
+        </div>
+    {% endfor %}
+{% else %}
+    <small class="text-muted"><em>No mapped items</em></small>
+{% endif %}

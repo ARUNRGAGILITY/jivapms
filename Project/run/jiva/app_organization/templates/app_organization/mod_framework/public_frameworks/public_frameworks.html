@@ -217,18 +217,24 @@
             method: 'GET',
             success: function (response) {
                 if (response.status === 'success') {
+            // Safeguards for possibly missing fields
+            const name = response.name ?? '';
+            const description = response.description ?? '';
+            const imageUrl = response.image_url ?? '';
+            const imageOriginalUrl = response.image_original_url || imageUrl;
+            const altText = description ? `${name}::${description}` : name;
                     // Populate static details
                     $('#static-details').html(`
                         <div class="framework-image">
-                            <img src="${response.image_url}" 
-                                 data-original="${response.image_original_url}" 
-                                 alt="${response.name}::${response.description}" 
+                <img src="${imageUrl}" 
+                 data-original="${imageOriginalUrl}" 
+                 alt="${altText}" 
                                  class="img-fluid"
                                  style="cursor: pointer;">
                         </div>
                         <div class="framework-details">
-                            <h4>${response.name}</h4>
-                            <p>${response.description}</p>
+                <h4>${name}</h4>
+                ${description ? `<p>${description}</p>` : ''}
                         </div>                
                         <a href="${deepDiveUrl}" class="btn btn-primary" target="_blank">
                         Deep Dive <i class="bi bi-arrow-right"></i>
@@ -236,8 +242,8 @@
                     `);
 
                     // Populate scrollable content
-                    const mdContent = marked.parse(response.content);
-                    const mdDefaultText = marked.parse(response.default_text);
+            const mdContent = marked.parse(response.content || '');
+            const mdDefaultText = marked.parse(response.default_text || '');
                     $('#scrolling-content').html(`
                         <div class="framework-md-content">
                             ${mdContent}
