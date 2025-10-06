@@ -644,6 +644,7 @@ def dashboard_organizations(request):
     
     # Variables for dashboard stats
     total_organizations_count = 0
+    my_organizations = 0
     active_projects = 0
     total_members = 0
     recent_activities = 0
@@ -664,8 +665,13 @@ def dashboard_organizations(request):
         # Make sure we're only counting active=True and deleted=False
         organizations = Organization.objects.filter(active=True, deleted=False)
         total_organizations_count = organizations.count()
+        my_organizations = total_organizations_count  # Site admin has access to all orgs
         active_projects = Project.objects.filter(active=True, deleted=False).count()
-        # Rest of the code remains the same...
+        # Get all members and recent activities for site admin
+        all_member_roles = MemberOrganizationRole.objects.filter(org__active=True, org__deleted=False)
+        member_ids = all_member_roles.values_list('member_id', flat=True).distinct()
+        total_members = member_ids.count()
+        recent_activities = MemberOrganizationRole.objects.filter(org__active=True, org__deleted=False).order_by('-id')[:10]
 
     # And similarly update all other organization queries to include both active=True and deleted=False:
     else:
@@ -699,6 +705,7 @@ def dashboard_organizations(request):
                 project_org_ids = project_admin_roles.values_list('org_id', flat=True).distinct()
                 organizations = Organization.objects.filter(id__in=project_org_ids, active=True)
                 total_organizations_count = organizations.count()
+                my_organizations = organizations.count()
                 active_projects = Project.objects.filter(org_id__in=project_org_ids, active=True).count()
                 project_memberships = Projectmembership.objects.filter(project__org_id__in=project_org_ids, active=True)
                 member_ids = project_memberships.values_list('member_id', flat=True).distinct()
@@ -713,6 +720,7 @@ def dashboard_organizations(request):
                 project_org_ids = project_member_roles.values_list('org_id', flat=True).distinct()
                 organizations = Organization.objects.filter(id__in=project_org_ids, active=True)
                 total_organizations_count = organizations.count()
+                my_organizations = organizations.count()
                 active_projects = Project.objects.filter(
                     projectmembership__member__in=memberships, 
                     active=True
