@@ -2045,7 +2045,7 @@ def get_mapped_and_unmapped_items(pro_id, persona_id, initial_backlog):
     all_story_maps = StoryMapping.objects.filter(
         pro_id=pro_id, 
         active=True
-    ).select_related('persona')
+    )
     
     # Get all mapped story IDs across ALL personas
     all_mapped_story_ids = list(all_story_maps.values_list('story_id', flat=True))
@@ -2073,7 +2073,12 @@ def get_mapped_and_unmapped_items(pro_id, persona_id, initial_backlog):
         mapping_details = []
         
         for mapping in item_mappings:
-            persona_name = mapping.persona.name if mapping.persona else "Unknown"
+            # Get persona name using persona_id
+            try:
+                persona = Persona.objects.get(id=mapping.persona_id)
+                persona_name = persona.name if persona.name else f"Persona {mapping.persona_id}"
+            except Persona.DoesNotExist:
+                persona_name = f"Unknown Persona ({mapping.persona_id})"
             
             # Get mapping details safely
             release_name = "Not Set"
@@ -2150,7 +2155,7 @@ def get_all_mapped_items_with_personas(pro_id, persona_id, initial_backlog):
     all_mappings = StoryMapping.objects.filter(
         pro_id=pro_id, 
         active=True
-    ).select_related('persona').prefetch_related()
+    )
     
     # Group mappings by story_id
     mappings_by_story = {}
@@ -2185,9 +2190,16 @@ def get_all_mapped_items_with_personas(pro_id, persona_id, initial_backlog):
         # Build personas list
         personas_info = []
         for mapping in item_mappings:
+            # Get persona name using persona_id
+            try:
+                persona = Persona.objects.get(id=mapping.persona_id)
+                persona_name = persona.name if persona.name else f"Persona {mapping.persona_id}"
+            except Persona.DoesNotExist:
+                persona_name = f"Unknown Persona ({mapping.persona_id})"
+                
             persona_info = {
                 'id': mapping.persona_id,
-                'name': mapping.persona.name if mapping.persona else "Unknown",
+                'name': persona_name,
                 'is_current': mapping.persona_id == int(persona_id),
                 'mapping_id': mapping.id
             }
@@ -2214,10 +2226,14 @@ def can_move_backlog_item(story_id, target_persona_id):
     
     if existing_mappings.exists():
         # Item is already mapped to other personas
-        mapped_personas = [
-            mapping.persona.name 
-            for mapping in existing_mappings.select_related('persona')
-        ]
+        mapped_personas = []
+        for mapping in existing_mappings:
+            try:
+                persona = Persona.objects.get(id=mapping.persona_id)
+                persona_name = persona.name if persona.name else f"Persona {mapping.persona_id}"
+            except Persona.DoesNotExist:
+                persona_name = f"Unknown Persona ({mapping.persona_id})"
+            mapped_personas.append(persona_name)
         return False, f"Item already mapped to: {', '.join(mapped_personas)}"
     
     return True, "Item can be moved"
@@ -2240,15 +2256,22 @@ def ajax_check_item_conflicts(request):
             existing_mappings = StoryMapping.objects.filter(
                 story_id=story_id,
                 active=True
-            ).exclude(persona_id=target_persona_id).select_related('persona')
+            ).exclude(persona_id=target_persona_id)
             
             if existing_mappings.exists():
                 # Get conflict details
                 conflicts = []
                 for mapping in existing_mappings:
+                    # Get persona name using persona_id
+                    try:
+                        persona = Persona.objects.get(id=mapping.persona_id)
+                        persona_name = persona.name if persona.name else f"Persona {mapping.persona_id}"
+                    except Persona.DoesNotExist:
+                        persona_name = f"Unknown Persona ({mapping.persona_id})"
+                        
                     conflicts.append({
                         'persona_id': mapping.persona_id,
-                        'persona_name': mapping.persona.name if mapping.persona else "Unknown",
+                        'persona_name': persona_name,
                         'release_name': get_release_name(mapping.release_id),
                         'iteration_name': get_iteration_name(mapping.iteration_id)
                     })
@@ -2379,15 +2402,21 @@ def ajax_get_persona_conflicts_summary(request):
                     mappings = StoryMapping.objects.filter(
                         story_id=story_id,
                         active=True
-                    ).select_related('persona')
+                    )
                     
-                    personas = [
-                        {
+                    personas = []
+                    for m in mappings:
+                        # Get persona name using persona_id
+                        try:
+                            persona = Persona.objects.get(id=m.persona_id)
+                            persona_name = persona.name if persona.name else f"Persona {m.persona_id}"
+                        except Persona.DoesNotExist:
+                            persona_name = f"Unknown Persona ({m.persona_id})"
+                            
+                        personas.append({
                             'id': m.persona_id,
-                            'name': m.persona.name if m.persona else "Unknown"
-                        }
-                        for m in mappings
-                    ]
+                            'name': persona_name
+                        })
                     
                     conflict_details.append({
                         'story_id': story_id,
@@ -2431,7 +2460,7 @@ def ajax_check_persona_switch_conflicts(request):
             all_mappings = StoryMapping.objects.filter(
                 pro_id=pro_id,
                 active=True
-            ).select_related('persona', 'story')
+            )
             
             # Group by story_id to find conflicts
             story_mappings = {}
@@ -2450,11 +2479,23 @@ def ajax_check_persona_switch_conflicts(request):
                 if target_mapping:
                     try:
                         backlog_item = Backlog.objects.get(id=story_id)
+                        
+                        # Get other persona names
+                        other_personas = []
+                        for m in mappings:
+                            if m.persona_id != int(target_persona_id):
+                                try:
+                                    persona = Persona.objects.get(id=m.persona_id)
+                                    persona_name = persona.name if persona.name else f"Persona {m.persona_id}"
+                                except Persona.DoesNotExist:
+                                    persona_name = f"Unknown Persona ({m.persona_id})"
+                                other_personas.append(persona_name)
+                        
                         item_data = {
                             'story_id': story_id,
                             'story_name': backlog_item.name,
                             'mapping_count': len(mappings),
-                            'other_personas': [m.persona.name for m in mappings if m.persona_id != int(target_persona_id)]
+                            'other_personas': other_personas
                         }
                         
                         if len(mappings) > 1:
