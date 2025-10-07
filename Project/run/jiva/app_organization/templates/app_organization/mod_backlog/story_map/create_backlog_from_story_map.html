@@ -1282,26 +1282,26 @@ function dropToBacklog(event) {
 // AJAX UPDATE ALREADY MAPPED
 // Add this JavaScript to your template to handle dynamic updates
 
-// Function to refresh the mapped items section
-function refreshMappedItems() {
-    $.ajax({
-        url: "{% url 'ajax_refresh_mapped_items' %}",
-        type: 'POST',
-        data: {
-            csrfmiddlewaretoken: '{{ csrf_token }}',
-            pro_id: '{{ pro_id }}',
-            persona_id: '{{ persona.id }}'
-        },
-        success: function(response) {
-            if (response.status === 'success') {
-                $('#mapped-items-section').html(response.html);
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('Error refreshing mapped items:', error);
-        }
-    });
-}
+// // Function to refresh the mapped items section
+// function refreshMappedItems() {
+//     $.ajax({
+//         url: "{% url 'ajax_refresh_mapped_items' %}",
+//         type: 'POST',
+//         data: {
+//             csrfmiddlewaretoken: '{{ csrf_token }}',
+//             pro_id: '{{ pro_id }}',
+//             persona_id: '{{ persona.id }}'
+//         },
+//         success: function(response) {
+//             if (response.status === 'success') {
+//                 $('#mapped-items-section').html(response.html);
+//             }
+//         },
+//         error: function(xhr, status, error) {
+//             console.error('refreshMappedItems: Error refreshing mapped items:', error);
+//         }
+//     });
+// }
 
 // Function to move item from mapped to unmapped section
 function moveToUnmapped(storyId, storyName) {
@@ -1772,47 +1772,48 @@ function switchPersona(personaId) {
     window.location.href = newUrl;
 }
 
-// Unmap item from current persona
-function unmapFromPersona(storyId, storyName) {
-    if (!confirm(`Remove "${storyName}" from your persona mapping?`)) {
-        return;
-    }
+// // Unmap item from current persona
+// function unmapFromPersona(storyId, storyName) {
+//     if (!confirm(`Remove "${storyName}" from your persona mapping?`)) {
+//         return;
+//     }
     
-    // Show loading state
-    const button = event.target.closest('button');
-    const originalContent = button.innerHTML;
-    button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-    button.disabled = true;
+//     // Show loading state
+//     const button = event.target.closest('button');
+//     const originalContent = button.innerHTML;
+//     button.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+//     button.disabled = true;
     
-    $.ajax({
-        url: "{% url 'ajax_update_backlog_release' %}",
-        type: 'POST',
-        data: {
-            csrfmiddlewaretoken: '{{ csrf_token }}',
-            backlog_id: storyId,
-            release_id: null,
-            persona_id: {{ persona.id }}
-        },
-        success: function(response) {
-            if (response.status === 'success') {
-                // Remove from mapped section and add to unmapped
-                moveFromMappedToUnmapped(storyId, storyName);
-                showMessage('Item removed from your persona', 'success');
-                updateMappingStats();
-            } else {
-                showMessage('Error: ' + response.message, 'error');
-            }
-        },
-        error: function(xhr, status, error) {
-            showMessage('Error removing item: ' + error, 'error');
-        },
-        complete: function() {
-            // Reset button state
-            button.innerHTML = originalContent;
-            button.disabled = false;
-        }
-    });
-}
+//     $.ajax({
+//         url: "{% url 'ajax_update_backlog_release' %}",
+//         type: 'POST',
+//         data: {
+//             csrfmiddlewaretoken: '{{ csrf_token }}',
+//             backlog_id: storyId,
+//             release_id: null,
+//             persona_id: {{ persona.id }}
+//         },
+//         success: function(response) {
+//             if (response.status === 'success') {
+//                 // Remove from mapped section and add to unmapped
+//                 moveFromMappedToUnmapped(storyId, storyName);
+//                 showMessage('Item removed from your persona', 'success');
+//                 updateMappingStats();
+//             } else {
+//                 showMessage('Error: ' + response.message, 'error');
+//             }
+//         },
+//         error: function(xhr, status, error) {
+//             console.error('unmapFromPersonaError refreshing mapped items:', error);
+//             //showMessage('Error removing item: ' + error, 'error');
+//         },
+//         complete: function() {
+//             // Reset button state
+//             button.innerHTML = originalContent;
+//             button.disabled = false;
+//         }
+//     });
+// }
 
 // Move item from mapped to unmapped section
 function moveFromMappedToUnmapped(storyId, storyName) {
@@ -1884,31 +1885,31 @@ function updateMappingStats() {
     }
 }
 
-// Enhanced refresh mapped items function
-function refreshMappedItems() {
-    $.ajax({
-        url: "{% url 'ajax_refresh_mapped_items' %}",
-        type: 'POST',
-        data: {
-            csrfmiddlewaretoken: '{{ csrf_token }}',
-            pro_id: '{{ pro_id }}',
-            persona_id: '{{ persona.id }}'
-        },
-        success: function(response) {
-            if (response.status === 'success') {
-                $('#mapped-items-section').html(response.html);
-                updateMappingStats();
+// // Enhanced refresh mapped items function
+// function refreshMappedItems() {
+//     $.ajax({
+//         url: "{% url 'ajax_refresh_mapped_items' %}",
+//         type: 'POST',
+//         data: {
+//             csrfmiddlewaretoken: '{{ csrf_token }}',
+//             pro_id: '{{ pro_id }}',
+//             persona_id: '{{ persona.id }}'
+//         },
+//         success: function(response) {
+//             if (response.status === 'success') {
+//                 $('#mapped-items-section').html(response.html);
+//                 updateMappingStats();
                 
-                // Re-initialize tooltips and interactions
-                initializeMappedItemsInteractions();
-            }
-        },
-        error: function(xhr, status, error) {
-            console.error('Error refreshing mapped items:', error);
-            showMessage('Error refreshing mapped items', 'error');
-        }
-    });
-}
+//                 // Re-initialize tooltips and interactions
+//                 initializeMappedItemsInteractions();
+//             }
+//         },
+//         error: function(xhr, status, error) {
+//             console.error('Error refreshing mapped items:', error);
+//             //showMessage('Error refreshing mapped items', 'error');
+//         }
+//     });
+// }
 
 // Initialize interactions for mapped items
 function initializeMappedItemsInteractions() {
@@ -2138,13 +2139,13 @@ function refreshMappedItems() {
                 
                 console.log(`Refreshed: ${response.count} total items, ${response.current_persona_count} yours, ${response.conflicts_count} conflicts`);
             } else {
-                console.error('Error refreshing mapped items:', response.message);
-                showMessage('Error refreshing mapped items', 'error');
+                console.error('refreshMappedItems Error refreshing mapped items:', response.message);
+                //showMessage('Error refreshing mapped items', 'error');
             }
         },
         error: function(xhr, status, error) {
-            console.error('Error refreshing mapped items:', error);
-            showMessage('Error refreshing mapped items', 'error');
+            console.error('refreshMappedItems outerror Error refreshing mapped items:', error);
+            //showMessage('Error refreshing mapped items', 'error');
         }
     });
 }
@@ -2195,8 +2196,8 @@ function unmapFromPersona(storyId, storyName) {
         }
     })
     .catch(error => {
-        console.error('Error removing item:', error.message);
-        showMessage('Error removing item: ' + error.message, 'error');
+        console.error('UNMAPFROMPERSONA: Error removing item:', error.message);
+        //showMessage('Error removing item: ' + error.message, 'error');
     })
     .finally(() => {
         // Reset button state
