@@ -109,7 +109,7 @@ urlpatterns = [
     path('ajax/refresh-mapped-items/', views_story_map.ajax_refresh_mapped_items, name='ajax_refresh_mapped_items'),
 
     path('ajax_update_step_name/', views_story_map.ajax_update_step_name, name='ajax_update_step_name'),
-
+    path('ajax_force_move_item/', views_story_map.ajax_force_move_item, name='ajax_force_move_item'),
     # list the project personas if empty user creates one to start
     path('project_personas/<int:org_id>/<int:project_id>/', views_story_map.project_personas, name='project_personas'),
 ]
