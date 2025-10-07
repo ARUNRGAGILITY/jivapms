@@ -703,9 +703,9 @@
             <!-- Right-Aligned Section (60%) -->
             <div class="right-section">
                 <!-- Persona Switcher Dropdown -->
-                 TEST
+                 
                 <div class="persona-switcher">
-                    <select class="form-select form-select-sm" id="persona-switcher" onchange="switchPersona(this.value)" style="width: auto; font-size: 0.75rem;">
+                    <select class="form-select form-select-sm" id="persona-switcher-header" onchange="switchPersona(this.value)" style="width: auto; font-size: 0.75rem;">
                         <option value="">Switch Persona...</option>
                         {% for p in all_personas %}
                             {% if p.id != persona.id %}
@@ -787,7 +787,7 @@
         
         <!-- Persona Switcher Dropdown -->
         <div class="persona-switcher">
-            <select class="form-select form-select-sm" id="persona-switcher" onchange="switchPersona(this.value)" style="width: auto; font-size: 0.75rem;">
+            <select class="form-select form-select-sm" id="persona-switcher-sidebar" onchange="switchPersona(this.value)" style="width: auto; font-size: 0.75rem;">
                 <option value="">Switch Persona...</option>
                 {% for p in all_personas %}
                     {% if p.id != persona.id %}
@@ -2090,7 +2090,7 @@ $(document).ready(function() {
     document.addEventListener('keydown', function(event) {
         if (event.ctrlKey && event.key === 'p') {
             event.preventDefault();
-            $('#persona-switcher').focus();
+            $('#persona-switcher-header').focus();
         }
     });
 });
@@ -2419,7 +2419,7 @@ $(document).ready(function() {
     document.addEventListener('keydown', function(event) {
         if (event.ctrlKey && event.key === 'p') {
             event.preventDefault();
-            $('#persona-switcher').focus();
+            $('#persona-switcher-header').focus();
         }
     });
     
