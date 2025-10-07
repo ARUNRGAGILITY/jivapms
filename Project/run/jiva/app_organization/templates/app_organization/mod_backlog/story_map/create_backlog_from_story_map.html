@@ -1768,7 +1768,9 @@ function switchPersona(personaId) {
     
     // Redirect to the selected persona's story map
     const currentUrl = window.location.pathname;
-    const newUrl = currentUrl.replace(/persona_id\/\d+/, `persona_id/${personaId}`);
+    // URL pattern: /org/backlog/create_backlog_from_story_map/<pro_id>/<persona_id>/
+    // Replace the last number (persona_id) with the new persona ID
+    const newUrl = currentUrl.replace(/(\d+)\/(\d+)\/$/, `$1/${personaId}/`);
     window.location.href = newUrl;
 }
 
@@ -2108,7 +2110,9 @@ function switchPersona(personaId) {
     
     // Redirect to the selected persona's story map
     const currentUrl = window.location.pathname;
-    const newUrl = currentUrl.replace(/persona_id\/\d+/, `persona_id/${personaId}`);
+    // URL pattern: /org/backlog/create_backlog_from_story_map/<pro_id>/<persona_id>/
+    // Replace the last number (persona_id) with the new persona ID
+    const newUrl = currentUrl.replace(/(\d+)\/(\d+)\/$/, `$1/${personaId}/`);
     window.location.href = newUrl;
 }
 
@@ -2438,7 +2442,9 @@ function switchPersona(personaId) {
     
     // Simple redirect to switch persona
     const currentUrl = window.location.pathname;
-    const newUrl = currentUrl.replace(/persona_id\/\d+/, `persona_id/${personaId}`);
+    // URL pattern: /org/backlog/create_backlog_from_story_map/<pro_id>/<persona_id>/
+    // Replace the last number (persona_id) with the new persona ID
+    const newUrl = currentUrl.replace(/(\d+)\/(\d+)\/$/, `$1/${personaId}/`);
     window.location.href = newUrl;
 }
 </script>
