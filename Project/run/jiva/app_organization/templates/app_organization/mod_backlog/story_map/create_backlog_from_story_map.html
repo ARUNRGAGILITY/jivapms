@@ -236,6 +236,7 @@
 .backlog-item {
     background-color: #fff9c4; /* Light Yellow Background */
     border: 1px solid #f0e68c; /* Khaki Border */
+    color: #5a5a00 !important; /* Dark yellow/brown text for better contrast */
 }
 
 .backlog-item::after {
@@ -384,6 +385,7 @@
 .backlog-item.draggable-backlog {
     background-color: #fff9c4; /* Light yellow - available for mapping */
     border: 1px solid #f0e68c;
+    color: #5a5a00 !important; /* Dark yellow/brown text for better contrast */
     cursor: grab;
     transition: all 0.2s ease;
 }
@@ -402,30 +404,34 @@
 .backlog-item.mapped-item {
     background-color: #d4edda !important;
     border-color: #c3e6cb !important;
-    opacity: 0.8;
+    color: #155724 !important; /* Dark green text for better contrast */
+    opacity: 1; /* Increase opacity for better visibility */
     cursor: default;
     border-left: 3px solid #28a745;
 }
 
 .mapped-item-name {
-    font-weight: 500;
+    font-weight: 600; /* Slightly bolder for better readability */
     margin-bottom: 2px;
+    color: #0d4017 !important; /* Darker green for main text */
 }
 
 .mapped-item-details {
-    color: #155724 !important;
-    font-weight: bold;
+    color: #0d4017 !important; /* Darker green instead of light green */
+    font-weight: 500; /* Slightly less bold */
 }
 
 .mapped-item-details .release-name {
-    background-color: #c3e6cb;
+    background-color: #a3d9a5; /* Darker green background */
+    color: #0d4017 !important; /* Dark text */
     padding: 1px 4px;
     border-radius: 2px;
     font-size: 0.5rem;
 }
 
 .mapped-item-details .iteration-name {
-    background-color: #b3d9b8;
+    background-color: #8fbc8f; /* Darker green background */
+    color: #0d4017 !important; /* Dark text */
     padding: 1px 4px;
     border-radius: 2px;
     font-size: 0.5rem;
@@ -436,6 +442,7 @@
     background-color: #fff3cd !important;
     border-color: #ffeaa7 !important;
     border-left: 3px solid #f39c12;
+    color: #856404 !important; /* Dark orange text for better contrast */
 }
 
 /* Backlog section improvements */
@@ -489,6 +496,19 @@
     .col-md-2 {
         margin-bottom: 20px;
     }
+}
+
+/* General text contrast improvements for sidebar */
+.col-md-2 {
+    color: #212529; /* Dark text for better readability */
+}
+
+.col-md-2 .text-muted {
+    color: #495057 !important; /* Darker than default muted text */
+}
+
+.col-md-2 small {
+    color: #495057 !important; /* Ensure small text is readable */
 }
 </style>
 
