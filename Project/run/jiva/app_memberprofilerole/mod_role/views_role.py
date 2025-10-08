@@ -435,6 +435,7 @@ def view_my_role(request):
         'user_roles_data': [],
         'multiple_roles': False,
         'no_of_roles': 0,
+    'admin_orgs_unique': [],
     }
 
     if user.is_superuser:
@@ -454,9 +455,22 @@ def view_my_role(request):
                         'role_id': role.role.id if role.role else None,
                         'role_name': role.role.name if role.role else 'No Role',
                         'org_name': role.org.name if role.org else 'No Organization',
+                        'lc_role_name': (role.role.name.lower().replace(' ', '_') if role.role else 'no_page'),
                     } for role in roles]
                 }
                 context['user_roles_data'].append(user_data)
+
+            # Build a unique list of orgs where the user is Org Admin
+            admin_orgs = set()
+            for member_info in context['user_roles_data']:
+                for role in member_info['roles']:
+                    if role['role_name'] == 'Org Admin' and role['org_id']:
+                        admin_orgs.add((role['org_id'], role['org_name']))
+
+            # Convert to list of dicts for template consumption
+            context['admin_orgs_unique'] = [
+                {'org_id': org_id, 'org_name': org_name} for (org_id, org_name) in sorted(admin_orgs, key=lambda x: x[1] or '')
+            ]
 
             context.update({
                 'no_of_roles': sum(len(member['roles']) for member in context['user_roles_data']),

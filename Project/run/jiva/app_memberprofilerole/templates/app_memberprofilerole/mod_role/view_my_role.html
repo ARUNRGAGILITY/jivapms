@@ -29,15 +29,13 @@
                         </div>
                         <div class="col col-md-4 text-end">
                             {% if user.is_authenticated %}
-                                {% for member_info in user_roles_data %}
-                                    {% for role in member_info.roles %}
-                                        {% if role.role_name == 'Org Admin' %}
-                                            <a href="{% url 'org_admin_dashboard' role.org_id %}" class="btn btn-primary">
-                                                <i class="bi bi-speedometer2"></i> Org Admin Dashboard
-                                            </a>
-                                        {% endif %}
-                                    {% endfor %}
-                                {% endfor %}
+                                {% if admin_orgs_unique %}
+                                    {% with admin_orgs_unique|first as org %}
+                                        <a href="{% url 'org_admin_dashboard' org.org_id %}" class="btn btn-primary mb-1">
+                                            <i class="bi bi-speedometer2"></i> Org Admin Dashboard
+                                        </a>
+                                    {% endwith %}
+                                {% endif %}
                             {% endif %}
                         </div>
                     </div>
@@ -68,8 +66,19 @@
                         <ul>
                             {% for role in member_info.roles %}
                             <li>
-                                Organization ID: {{ role.org_id }}, OrgName: {{ role.org_name }},
-                                Role ID: {{ role.role_id }} (Role Name: {{ role.role_name }})
+                                Organization ID: {{ role.org_id }}, OrgName:
+                                {% if role.org_id %}
+                                    <a href="{% url 'org_homepage' role.org_id %}">{{ role.org_name }}</a>
+                                {% else %}
+                                    {{ role.org_name }}
+                                {% endif %},
+                                Role ID: {{ role.role_id }} (Role Name:
+                                {% if role.role_id and role.org_id %}
+                                    <a href="{% url 'role_homepage' role.lc_role_name %}?org_id={{role.org_id}}&role_id={{role.role_id}}">{{ role.role_name }}</a>
+                                {% else %}
+                                    {{ role.role_name }}
+                                {% endif %}
+                                )
                             </li>
                             {% empty %}
                             <li>No Roles Assigned</li>
