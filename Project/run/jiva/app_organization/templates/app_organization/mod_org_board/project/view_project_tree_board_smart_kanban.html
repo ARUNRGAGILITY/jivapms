@@ -100,6 +100,281 @@
       flex: 1;
     }
   }
+
+  /* Column Policies Styles */
+  .column-policies {
+    background-color: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    padding: 8px;
+    margin: 5px;
+    font-size: 0.75rem;
+  position: relative; /* for positioning the + button */
+  }
+  
+  .policies-toggle {
+    margin-bottom: 8px;
+    text-align: center;
+  }
+  
+  .policies-checkbox {
+    margin-right: 5px;
+  }
+  
+  .policies-list {
+    background-color: #fff;
+    border: 1px solid #e0e0e0;
+    border-radius: 4px;
+    min-height: 40px;
+    padding: 6px;
+    margin-top: 5px;
+    max-height: 120px;
+    overflow-y: auto;
+  padding-right: 28px; /* space for the + icon */
+  }
+  
+  .policy-item {
+    display: flex;
+    align-items: center;
+    padding: 4px 2px;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 0.7rem;
+    transition: background-color 0.2s ease;
+    border-radius: 2px;
+    position: relative;
+  }
+  
+  .policy-item:hover {
+    background-color: #f8f9fa;
+  }
+  
+  .policy-item:last-child {
+    border-bottom: none;
+  }
+  
+  .policy-text {
+    flex: 1;
+    margin-left: 4px;
+    padding-right: 50px; /* Space for hover icons */
+  }
+  
+  .policy-actions {
+    position: absolute;
+    right: 4px;
+    display: none;
+    gap: 4px;
+    opacity: 0;
+    transition: opacity 0.2s ease;
+  }
+  
+  .policy-item:hover .policy-actions {
+    display: flex;
+    opacity: 1;
+  }
+  
+  .policy-actions button {
+    padding: 2px 4px;
+    font-size: 0.7rem;
+    border: none;
+    border-radius: 2px;
+    cursor: pointer;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: transform 0.1s ease;
+  }
+  
+  .policy-actions button:hover {
+    transform: scale(1.1);
+  }
+  
+  .btn-edit-policy {
+    background-color: #17a2b8;
+    color: white;
+  }
+  
+  .btn-edit-policy:hover {
+    background-color: #138496;
+  }
+  
+  .btn-delete-policy {
+    background-color: #dc3545;
+    color: white;
+  }
+  
+  .btn-delete-policy:hover {
+    background-color: #c82333;
+  }
+  
+  .policy-form {
+    margin-top: 5px;
+    padding: 6px;
+    background-color: #f8f9fa;
+    border-radius: 4px;
+    display: none;
+  }
+  
+  .policy-form.active {
+    display: block;
+  }
+  
+  .policy-form input {
+    width: 100%;
+    padding: 4px;
+    border: 1px solid #ccc;
+    border-radius: 3px;
+    font-size: 0.7rem;
+  }
+  
+  .policy-form-buttons {
+    margin-top: 4px;
+    display: flex;
+    gap: 4px;
+  }
+  
+  .policy-form-buttons button {
+    padding: 2px 8px;
+    font-size: 0.65rem;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  
+  .btn-save-policy {
+    background-color: #28a745;
+    color: white;
+  }
+  
+  .btn-cancel-policy {
+    background-color: #6c757d;
+    color: white;
+  }
+  
+  .add-policy-btn {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    font-size: 16px;
+    line-height: 24px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  }
+  .add-policy-btn:hover { background-color: #0056b3; }
+  
+  .policies-hidden {
+    display: none;
+  }
+
+  /* Delete Confirmation Modal */
+  .delete-modal {
+    display: none;
+    position: fixed;
+    z-index: 9999;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0,0,0,0.5);
+    backdrop-filter: blur(2px);
+  }
+  
+  .delete-modal-content {
+    background-color: #fff;
+    margin: 15% auto;
+    padding: 20px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 400px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    animation: modalSlideIn 0.3s ease;
+  }
+  
+  @keyframes modalSlideIn {
+    from {
+      transform: translateY(-50px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+  
+  .delete-modal-header {
+    display: flex;
+    align-items: center;
+    margin-bottom: 15px;
+    color: #dc3545;
+  }
+  
+  .delete-modal-header i {
+    font-size: 1.5rem;
+    margin-right: 10px;
+  }
+  
+  .delete-modal-header h4 {
+    margin: 0;
+    font-size: 1.1rem;
+  }
+  
+  .delete-modal-body {
+    margin-bottom: 20px;
+    font-size: 0.9rem;
+    color: #333;
+  }
+  
+  .policy-preview {
+    background-color: #f8f9fa;
+    border-left: 4px solid #dc3545;
+    padding: 8px;
+    margin: 10px 0;
+    font-style: italic;
+    border-radius: 4px;
+  }
+  
+  .delete-modal-buttons {
+    display: flex;
+    gap: 10px;
+    justify-content: flex-end;
+  }
+  
+  .btn-modal {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background-color 0.2s ease;
+  }
+  
+  .btn-confirm-delete {
+    background-color: #dc3545;
+    color: white;
+  }
+  
+  .btn-confirm-delete:hover {
+    background-color: #c82333;
+  }
+  
+  .btn-cancel-delete {
+    background-color: #6c757d;
+    color: white;
+  }
+  
+  .btn-cancel-delete:hover {
+    background-color: #5a6268;
+  }
   /** display headers */
   .column_title {
     font-size: 0.75rem;
@@ -281,6 +556,7 @@
   color: #666;
   display: -webkit-box;
   -webkit-line-clamp: 2;
+  line-clamp: 2;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -638,6 +914,10 @@
 
     <div class="col col md-6 text-end">
 
+      <div class="policies-toggle mb-2">
+        <input type="checkbox" id="showColumnPolicies" class="policies-checkbox" checked>
+        <label for="showColumnPolicies"><small>Show Column Policies</small></label>
+      </div>
    
       
       <b class="me-2">Kanban Board</b>
@@ -651,6 +931,7 @@
     </div>
   </div>
 </div>
+
 <div class="kanban-board-container">
   <div class="row justify-content-center">
     <div class="col-12">
@@ -1023,6 +1304,72 @@
               {% endfor %}
 
           </tr>
+          
+          <!-- Policies Row -->
+          <tr class="policies_row">
+            <!-- swimlane placeholder -->
+            <td class="placeholder_column"></td>
+            
+            <!-- Backlog Policies -->
+            <td class="kanban_column policies_cell backlog_column sketchy_left_solid_border sketchy_right_solid_border sketchy_top_solid_border">
+              <div class="column-policies column-policies-content">
+                <div class="policies-list" id="policies-backlog">
+                  <!-- Policies will be loaded here -->
+                </div>
+                <div class="policy-form" id="form-backlog">
+                  <input type="text" placeholder="Enter new policy..." class="policy-input">
+                  <div class="policy-form-buttons">
+                    <button class="btn-save-policy" onclick="savePolicy('backlog')">Save</button>
+                    <button class="btn-cancel-policy" onclick="cancelPolicy('backlog')">Cancel</button>
+                  </div>
+                </div>
+                <button class="add-policy-btn" onclick="showAddPolicy('backlog')" aria-label="Add policy" title="Add policy">+</button>
+              </div>
+            </td>
+            
+            <!-- Other Column Policies -->              
+            {% for state in project_board_states %}
+              <!-- Step1: Display columns and then columns with buffer states -->
+              {% if state.buffer_column %}
+                {% with subcolumns=state.get_subcolumns %}
+                {% for substate_choice in subcolumns %}
+                <td class="kanban_column policies_cell buffer_column sketchy_top_solid_border {% if forloop.counter == 1 %}sketchy_right_dashed_border{% else %}sketchy_right_solid_border{% endif %}" colspan="1">
+                  <div class="column-policies column-policies-content">
+                    <div class="policies-list" id="policies-{{state.name|slugify}}-{{substate_choice|slugify}}">
+                      <!-- Policies will be loaded here -->
+                    </div>
+                    <div class="policy-form" id="form-{{state.name|slugify}}-{{substate_choice|slugify}}">
+                      <input type="text" placeholder="Enter new policy..." class="policy-input">
+                      <div class="policy-form-buttons">
+                        <button class="btn-save-policy" onclick="savePolicy('{{state.name|slugify}}-{{substate_choice|slugify}}')">Save</button>
+                        <button class="btn-cancel-policy" onclick="cancelPolicy('{{state.name|slugify}}-{{substate_choice|slugify}}')">Cancel</button>
+                      </div>
+                    </div>
+                    <button class="add-policy-btn" onclick="showAddPolicy('{{state.name|slugify}}-{{substate_choice|slugify}}')" aria-label="Add policy" title="Add policy">+</button>
+                  </div>
+                </td>
+                {% endfor %}
+                {% endwith %}
+              {% else %}
+              <td class="kanban_column policies_cell normal_column sketchy_right_solid_border sketchy_top_solid_border" colspan="1">
+                <div class="column-policies column-policies-content">
+                  <div class="policies-list" id="policies-{{state.name|slugify}}">
+                    <!-- Policies will be loaded here -->
+                  </div>
+                  <div class="policy-form" id="form-{{state.name|slugify}}">
+                    <input type="text" placeholder="Enter new policy..." class="policy-input">
+                    <div class="policy-form-buttons">
+                      <button class="btn-save-policy" onclick="savePolicy('{{state.name|slugify}}')">Save</button>
+                      <button class="btn-cancel-policy" onclick="cancelPolicy('{{state.name|slugify}}')">Cancel</button>
+                    </div>
+                  </div>
+                  <button class="add-policy-btn" onclick="showAddPolicy('{{state.name|slugify}}')" aria-label="Add policy" title="Add policy">+</button>
+                </div>
+              </td>
+              {% endif %}
+            {% endfor %}
+          </tr>
+          
           <!-- end of display -->
         </tbody>
 
@@ -1394,7 +1741,7 @@ function handleDrop(e) {
 
 function setupDragAndDrop() {
   const cards = document.querySelectorAll('.card[draggable="true"]');
-  const dropTargets = document.querySelectorAll('.kanban_column');
+  const dropTargets = document.querySelectorAll('.kanban_column:not(.policies_cell)');
 
   cards.forEach(card => {
     card.addEventListener('dragstart', handleDragStart);
@@ -1643,7 +1990,6 @@ function updateCardState(cardId, fromStateId, toStateId, destPositions, destColu
         body: JSON.stringify({
             card_id: isNewCard ? null : cardId,
             temp_id: isNewCard ? cardId : null,
-            board_id: {{ project_board.id }},
             from_state_id: fromStateId,
             to_state_id: toStateId,
             positions: destPositions,
@@ -2149,5 +2495,272 @@ function saveCardToServer(cardId, data) {
   });
 }
 </script>
+
+<!-- Column Policies Management JavaScript -->
+<script>
+// Column policies management functionality
+const columnPoliciesData = JSON.parse(localStorage.getItem('kanban-column-policies') || '{}');
+
+// Initialize policies on page load
+document.addEventListener('DOMContentLoaded', function() {
+    initializeColumnPolicies();
+    setupColumnPoliciesToggle();
+    loadDefaultColumnPolicies();
+});
+
+function initializeColumnPolicies() {
+    // Get all column policy containers
+    const policyContainers = document.querySelectorAll('[id^="policies-"]');
+    policyContainers.forEach(container => {
+        const columnName = container.id.replace('policies-', '');
+        if (!columnPoliciesData[columnName]) {
+            columnPoliciesData[columnName] = [];
+        }
+        displayColumnPolicies(columnName);
+    });
+}
+
+function setupColumnPoliciesToggle() {
+    const checkbox = document.getElementById('showColumnPolicies');
+    const policyContainers = document.querySelectorAll('.column-policies-content');
+    
+    // Load saved state
+    const isVisible = localStorage.getItem('show-column-policies') !== 'false';
+    checkbox.checked = isVisible;
+    policyContainers.forEach(container => {
+        container.style.display = isVisible ? 'block' : 'none';
+    });
+    
+    checkbox.addEventListener('change', function() {
+        const display = this.checked ? 'block' : 'none';
+        policyContainers.forEach(container => {
+            container.style.display = display;
+        });
+        localStorage.setItem('show-column-policies', this.checked);
+    });
+}
+
+function loadDefaultColumnPolicies() {
+    // Add some default policies for common columns if none exist
+    const defaultPolicies = {
+        'backlog': ['Items awaiting prioritization', 'New requests and features'],
+        'to-do': ['Ready for development', 'All requirements defined'],
+        'in-progress': ['Currently being worked on', 'Regular updates required'],
+        'testing': ['Under quality assurance', 'All tests must pass'],
+        'done': ['Completed and reviewed', 'Ready for deployment']
+    };
+    
+    Object.keys(defaultPolicies).forEach(column => {
+        if (columnPoliciesData[column] && columnPoliciesData[column].length === 0) {
+            columnPoliciesData[column] = [...defaultPolicies[column]];
+        }
+    });
+    
+    saveColumnPoliciesData();
+    Object.keys(columnPoliciesData).forEach(column => displayColumnPolicies(column));
+}
+
+function displayColumnPolicies(columnName) {
+    const container = document.getElementById(`policies-${columnName}`);
+    if (!container) return;
+    
+    container.innerHTML = '';
+    
+    if (columnPoliciesData[columnName] && columnPoliciesData[columnName].length > 0) {
+        columnPoliciesData[columnName].forEach((policy, index) => {
+            const policyItem = document.createElement('div');
+            policyItem.className = 'policy-item';
+            policyItem.innerHTML = `
+                <span class="policy-text">• ${policy}</span>
+                <div class="policy-actions">
+                    <button class="btn-edit-policy" onclick="editColumnPolicy('${columnName}', ${index})" title="Edit policy">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="btn-delete-policy" onclick="showDeleteModal('${columnName}', ${index}, '${policy.replace(/'/g, "\\'")}', this)" title="Delete policy">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            `;
+            container.appendChild(policyItem);
+        });
+    } else {
+        container.innerHTML = '<div class="policy-item"><span class="policy-text" style="color: #888; font-size: 0.6rem;">No policies</span></div>';
+    }
+}
+
+function showAddPolicy(columnName) {
+    const form = document.getElementById(`form-${columnName}`);
+    const input = form.querySelector('.policy-input');
+    
+    form.classList.add('active');
+    input.value = '';
+    input.focus();
+    
+    // Hide other forms
+    document.querySelectorAll('.policy-form').forEach(f => {
+        if (f !== form) f.classList.remove('active');
+    });
+}
+
+function savePolicy(columnName) {
+    const form = document.getElementById(`form-${columnName}`);
+    const input = form.querySelector('.policy-input');
+    const policyText = input.value.trim();
+    
+    if (policyText) {
+        if (!columnPoliciesData[columnName]) {
+            columnPoliciesData[columnName] = [];
+        }
+        
+        const editIndex = form.dataset.editIndex;
+        if (editIndex !== undefined) {
+            // Edit existing policy
+            columnPoliciesData[columnName][parseInt(editIndex)] = policyText;
+            delete form.dataset.editIndex;
+        } else {
+            // Add new policy
+            columnPoliciesData[columnName].push(policyText);
+        }
+        
+        saveColumnPoliciesData();
+        displayColumnPolicies(columnName);
+        cancelPolicy(columnName);
+    } else {
+        alert('Please enter a policy description.');
+    }
+}
+
+function editColumnPolicy(columnName, index) {
+    const form = document.getElementById(`form-${columnName}`);
+    const input = form.querySelector('.policy-input');
+    
+    form.classList.add('active');
+    input.value = columnPoliciesData[columnName][index];
+    form.dataset.editIndex = index;
+    input.focus();
+    
+    // Hide other forms
+    document.querySelectorAll('.policy-form').forEach(f => {
+        if (f !== form) f.classList.remove('active');
+    });
+}
+
+function deleteColumnPolicy(columnName, index) {
+    if (confirm('Delete this policy?')) {
+        columnPoliciesData[columnName].splice(index, 1);
+        saveColumnPoliciesData();
+        displayColumnPolicies(columnName);
+    }
+}
+
+// Modal-related variables
+let pendingDeleteData = null;
+
+function showDeleteModal(columnName, index, policyText, buttonElement) {
+    pendingDeleteData = { columnName, index };
+    
+    // Set the policy text in the preview
+    document.getElementById('policyPreview').textContent = '• ' + policyText;
+    
+    // Show the modal
+    document.getElementById('deletePolicyModal').style.display = 'block';
+    
+    // Add click outside to close
+    setTimeout(() => {
+        document.addEventListener('click', handleModalClick);
+    }, 100);
+}
+
+function handleModalClick(event) {
+    const modal = document.getElementById('deletePolicyModal');
+    const modalContent = modal.querySelector('.delete-modal-content');
+    
+    if (event.target === modal && !modalContent.contains(event.target)) {
+        cancelDeletePolicy();
+    }
+}
+
+function confirmDeletePolicy() {
+    if (pendingDeleteData) {
+        const { columnName, index } = pendingDeleteData;
+        columnPoliciesData[columnName].splice(index, 1);
+        saveColumnPoliciesData();
+        displayColumnPolicies(columnName);
+    }
+    closeDeleteModal();
+}
+
+function cancelDeletePolicy() {
+    closeDeleteModal();
+}
+
+function closeDeleteModal() {
+    document.getElementById('deletePolicyModal').style.display = 'none';
+    document.removeEventListener('click', handleModalClick);
+    pendingDeleteData = null;
+}
+
+function cancelPolicy(columnName) {
+    const form = document.getElementById(`form-${columnName}`);
+    const input = form.querySelector('.policy-input');
+    
+    form.classList.remove('active');
+    input.value = '';
+    delete form.dataset.editIndex;
+}
+
+function saveColumnPoliciesData() {
+    localStorage.setItem('kanban-column-policies', JSON.stringify(columnPoliciesData));
+}
+
+// Handle Enter key in policy input fields
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter' && e.target.classList.contains('policy-input')) {
+        const form = e.target.closest('.policy-form');
+        const columnName = form.id.replace('form-', '');
+        savePolicy(columnName);
+    }
+    
+    if (e.key === 'Escape' && e.target.classList.contains('policy-input')) {
+        const form = e.target.closest('.policy-form');
+        const columnName = form.id.replace('form-', '');
+        cancelPolicy(columnName);
+    }
+    
+    // Handle Escape key for modal
+    if (e.key === 'Escape') {
+        const modal = document.getElementById('deletePolicyModal');
+        if (modal && modal.style.display === 'block') {
+            cancelDeletePolicy();
+        }
+    }
+});
+</script>
+
+<!-- Delete Confirmation Modal -->
+<div id="deletePolicyModal" class="delete-modal">
+  <div class="delete-modal-content">
+    <div class="delete-modal-header">
+      <i class="fas fa-exclamation-triangle"></i>
+      <h4>Delete Policy</h4>
+    </div>
+    <div class="delete-modal-body">
+      <p>Are you sure you want to delete this policy?</p>
+      <div class="policy-preview" id="policyPreview">
+        <!-- Policy text will be inserted here -->
+      </div>
+      <p><small class="text-muted">This action cannot be undone.</small></p>
+    </div>
+    <div class="delete-modal-buttons">
+      <button type="button" class="btn-modal btn-cancel-delete" onclick="cancelDeletePolicy()">
+        <i class="fas fa-times"></i> Cancel
+      </button>
+      <button type="button" class="btn-modal btn-confirm-delete" onclick="confirmDeletePolicy()">
+        <i class="fas fa-trash"></i> Delete
+      </button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>
