@@ -101,6 +101,15 @@
     }
   }
 
+  /* Thin divider line below table header */
+  .header-divider-line {
+    border-bottom: 2px solid #e9ecef;
+    height: 0;
+    line-height: 0;
+    padding: 0;
+    margin: 0;
+  }
+
   /* Column Policies Styles */
   .column-policies {
     background-color: #f8f9fa;
@@ -125,11 +134,12 @@
     background-color: #fff;
     border: 1px solid #e0e0e0;
     border-radius: 4px;
-    min-height: 40px;
+  min-height: 40px;
     padding: 6px;
     margin-top: 5px;
-    max-height: 120px;
-    overflow-y: auto;
+  /* Allow natural height for general policies; column policies will stay compact */
+  max-height: none;
+  overflow-y: visible;
   padding-right: 28px; /* space for the + icon */
   }
   
@@ -375,6 +385,30 @@
   .btn-cancel-delete:hover {
     background-color: #5a6268;
   }
+  /* General policies container */
+  .common-policies-section {
+    background-color: #f8f9fa;
+    border: 1px solid #e0e0e0;
+    border-radius: 6px;
+    padding: 8px 8px 12px 8px;
+  }
+  .policies-header-common h6 { font-weight: 600; }
+  .common-policies-content .policies-list {
+    min-height: 40px;
+    max-height: none;
+    overflow: visible; /* no scrollbar */
+  }
+  .add-general-policy-btn {
+    background-color: #007bff;
+    color: #fff;
+    border: none;
+    padding: 6px 10px;
+    border-radius: 6px;
+    font-size: 0.8rem;
+    cursor: pointer;
+    white-space: nowrap;
+  }
+  .add-general-policy-btn:hover { background-color: #0056b3; }
   /** display headers */
   .column_title {
     font-size: 0.75rem;
@@ -904,30 +938,30 @@
   
 <!-- Begin:  Kanban Board -->
 <div class="container-fluid">
-  <div class="row mt-2">
-    <div class="col col md-4">
+  <div class="row mt-2 align-items-start">
+    <div class="col-md-4">
       <b class="">Project:</b>
        <a href="{% url 'project_homepage' project.org.id project.id %}">{{project}}</a>
       <b class="">Project Board:</b>
       {{project_board}}
     </div>
 
-    <div class="col col md-6 text-end">
-
-      <div class="policies-toggle mb-2">
+    <div class="col-md-4 d-flex justify-content-center">
+      <div class="policies-toggle mb-2 text-center">
         <input type="checkbox" id="showColumnPolicies" class="policies-checkbox" checked>
         <label for="showColumnPolicies"><small>Show Column Policies</small></label>
       </div>
-   
-      
-      <b class="me-2">Kanban Board</b>
-     
-      
-      <a href="{% url 'list_project_boards' project.id %}" class="btn btn-sm btn-primary me-2">Board <i class="fas fa-edit"></i></a>
-      <a href="{% url 'board_card_settings' project_board.id %}" class="btn btn-sm btn-success me-2">Card <i class="fas fa-cog"></i></a>
-      <a href="{% url 'view_project_tree_backlog' project.id  %}?project_id={{ project.id }}" class="btn btn-sm btn-primary">
-        <i class="bi bi-arrow-left"></i> Back to Backlog
-      </a>
+    </div>
+
+    <div class="col-md-4">
+      <div class="d-flex justify-content-end align-items-start gap-2 flex-wrap">
+        <b class="me-2">Kanban Board</b>
+        <a href="{% url 'list_project_boards' project.id %}" class="btn btn-sm btn-primary">Board <i class="fas fa-edit"></i></a>
+        <a href="{% url 'board_card_settings' project_board.id %}" class="btn btn-sm btn-success">Card <i class="fas fa-cog"></i></a>
+        <a href="{% url 'view_project_tree_backlog' project.id  %}?project_id={{ project.id }}" class="btn btn-sm btn-primary">
+          <i class="bi bi-arrow-left"></i> Back to Backlog
+        </a>
+      </div>
     </div>
   </div>
 </div>
@@ -988,6 +1022,12 @@
             </td>
             {% endif %}
             {% endfor %}
+          </tr>
+
+          <!-- HEADER DIVIDER ROW -->
+          <tr>
+            <td class="placeholder_column"></td>
+            <td class="header-divider-line" colspan="100"></td>
           </tr>
 
 
@@ -1369,16 +1409,43 @@
               {% endif %}
             {% endfor %}
           </tr>
+
+          <!-- General Policies as last full-width row -->
+          <tr class="general_policies_row">
+            <!-- swimlane placeholder cell -->
+            <td class="placeholder_column"></td>
+            <!-- single cell spanning all board columns for general policies -->
+            <td class="general_policies_cell sketchy_left_solid_border sketchy_right_solid_border sketchy_top_solid_border" colspan="100">
+              <div class="common-policies-section mt-2">
+                <div class="policies-header-common d-flex justify-content-between align-items-center mb-2">
+                  <h6 class="m-0">General Policies</h6>
+                  <button class="add-general-policy-btn" onclick="showAddGeneralPolicy()" aria-label="Add general policies" title="Add general policies">+ Add general policies</button>
+                </div>
+                <div class="common-policies-content">
+                  <div class="policies-list" id="general-policies-list"></div>
+                  <div class="policy-form" id="general-policy-form">
+                    <input type="text" placeholder="Enter new general policy..." class="policy-input">
+                    <div class="policy-form-buttons">
+                      <button class="btn-save-policy" onclick="saveGeneralPolicy()">Save</button>
+                      <button class="btn-cancel-policy" onclick="cancelGeneralPolicy()">Cancel</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </td>
+          </tr>
           
           <!-- end of display -->
         </tbody>
 
 
       </table>
+
       </div>
     </div>
   </div>
 </div>
+
 
 
 
@@ -2506,6 +2573,7 @@ document.addEventListener('DOMContentLoaded', function() {
     initializeColumnPolicies();
     setupColumnPoliciesToggle();
     loadDefaultColumnPolicies();
+  initializeGeneralPolicies();
 });
 
 function initializeColumnPolicies() {
@@ -2711,6 +2779,103 @@ function cancelPolicy(columnName) {
 
 function saveColumnPoliciesData() {
     localStorage.setItem('kanban-column-policies', JSON.stringify(columnPoliciesData));
+}
+
+// General policies management
+const generalPoliciesKey = 'kanban-general-policies';
+let generalPolicies = JSON.parse(localStorage.getItem(generalPoliciesKey) || '[]');
+
+function initializeGeneralPolicies() {
+  renderGeneralPolicies();
+}
+
+function renderGeneralPolicies() {
+  const list = document.getElementById('general-policies-list');
+  if (!list) return;
+  list.innerHTML = '';
+  if (generalPolicies.length === 0) {
+    list.innerHTML = '<div class="policy-item"><span class="policy-text" style="color:#888;font-size:0.6rem;">No policies</span></div>';
+    return;
+  }
+  generalPolicies.forEach((text, idx) => {
+    const el = document.createElement('div');
+    el.className = 'policy-item';
+    el.innerHTML = `
+      <span class="policy-text">• ${text}</span>
+      <div class="policy-actions">
+        <button class="btn-edit-policy" onclick="editGeneralPolicy(${idx})" title="Edit policy"><i class="fas fa-edit"></i></button>
+        <button class="btn-delete-policy" onclick="showGeneralDelete(${idx}, '${"" + text.replace(/'/g, "\\'")}')" title="Delete policy"><i class="fas fa-trash"></i></button>
+      </div>`;
+    list.appendChild(el);
+  });
+}
+
+function showAddGeneralPolicy() {
+  const form = document.getElementById('general-policy-form');
+  if (!form) return;
+  form.classList.add('active');
+  const input = form.querySelector('.policy-input');
+  input.value = '';
+  input.focus();
+  delete form.dataset.editIndex;
+}
+
+function saveGeneralPolicy() {
+  const form = document.getElementById('general-policy-form');
+  const input = form.querySelector('.policy-input');
+  const txt = input.value.trim();
+  if (!txt) return;
+  const editIndex = form.dataset.editIndex;
+  if (editIndex !== undefined) {
+    generalPolicies[parseInt(editIndex)] = txt;
+    delete form.dataset.editIndex;
+  } else {
+    generalPolicies.push(txt);
+  }
+  localStorage.setItem(generalPoliciesKey, JSON.stringify(generalPolicies));
+  renderGeneralPolicies();
+  cancelGeneralPolicy();
+}
+
+function editGeneralPolicy(index) {
+  const form = document.getElementById('general-policy-form');
+  const input = form.querySelector('.policy-input');
+  input.value = generalPolicies[index];
+  form.dataset.editIndex = index;
+  form.classList.add('active');
+  input.focus();
+}
+
+let pendingGeneralDeleteIndex = null;
+function showGeneralDelete(index, text) {
+  pendingGeneralDeleteIndex = index;
+  const preview = document.getElementById('policyPreview');
+  if (preview) preview.textContent = '• ' + text;
+  document.getElementById('deletePolicyModal').style.display = 'block';
+  setTimeout(() => document.addEventListener('click', handleModalClick), 100);
+}
+
+// Override confirm to support general delete when pending
+const _origConfirmDeletePolicy = confirmDeletePolicy;
+confirmDeletePolicy = function() {
+  if (pendingGeneralDeleteIndex !== null) {
+    generalPolicies.splice(pendingGeneralDeleteIndex, 1);
+    localStorage.setItem(generalPoliciesKey, JSON.stringify(generalPolicies));
+    renderGeneralPolicies();
+    pendingGeneralDeleteIndex = null;
+    closeDeleteModal();
+    return;
+  }
+  _origConfirmDeletePolicy();
+}
+
+function cancelGeneralPolicy() {
+  const form = document.getElementById('general-policy-form');
+  if (!form) return;
+  form.classList.remove('active');
+  const input = form.querySelector('.policy-input');
+  input.value = '';
+  delete form.dataset.editIndex;
 }
 
 // Handle Enter key in policy input fields
