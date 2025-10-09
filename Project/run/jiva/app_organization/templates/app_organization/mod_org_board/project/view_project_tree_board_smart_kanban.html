@@ -23,16 +23,82 @@
 
   <style>
 
+  /* Kanban Board Container */
+  .kanban-board-container {
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 0 15px;
+    overflow-x: auto;
+  }
+  
+  /* Responsive table wrapper */
+  .kanban-table-wrapper {
+    margin: 0 auto;
+    max-width: 100%;
+    overflow-x: auto;
+  }
+  
+  /* Main kanban table */
+  .kanban-table {
+    width: 100%;
+    min-width: 800px; /* Minimum width to prevent crushing */
+    margin: 0 auto;
+    table-layout: auto;
+    border-collapse: separate;
+    border-spacing: 0;
+  }
+  
   .placeholder_column {
-    width: 3vw;
+    width: 2%;
+    min-width: 30px;
   }
   .kanban_column, .count_column {
-    width: 10vw;
-    min-width: 8vw;
+    width: auto;
+    min-width: 150px;
+    max-width: 250px;
     vertical-align: top;
+    padding: 8px;
   }
   .third_row {
     vertical-align: top;
+  }
+  
+  /* Responsive adjustments */
+  @media (max-width: 1200px) {
+    .kanban_column, .count_column {
+      min-width: 120px;
+    }
+  }
+  
+  @media (max-width: 768px) {
+    .kanban-table {
+      min-width: 600px;
+    }
+    .kanban_column, .count_column {
+      min-width: 100px;
+      font-size: 0.85rem;
+    }
+  }
+
+  /* Additional responsive and centering styles */
+  .kanban-board-container {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  }
+  
+  .kanban-table-wrapper {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+  }
+  
+  /* Make columns grow to fill available space */
+  @media (min-width: 1200px) {
+    .kanban_column, .count_column {
+      width: auto;
+      flex: 1;
+    }
   }
   /** display headers */
   .column_title {
@@ -585,11 +651,12 @@
     </div>
   </div>
 </div>
-<div class="container-fluid mb-4">
-  <div class="row">
-    <div class="col col md-12">
-      <!-- Kanban Table-->
-      <table class=" ">
+<div class="kanban-board-container">
+  <div class="row justify-content-center">
+    <div class="col-12">
+      <div class="kanban-table-wrapper">
+        <!-- Kanban Table-->
+        <table class="kanban-table">
 
         <!-- Headers -->
         <thead>
@@ -961,6 +1028,7 @@
 
 
       </table>
+      </div>
     </div>
   </div>
 </div>
