@@ -110,6 +110,11 @@
     margin: 0;
   }
 
+  /* Draw divider at the bottom of the tallest header row */
+  .header-bottom-divider td { border-bottom: 2px solid #e9ecef; }
+  .header-bottom-divider .placeholder_column { border-bottom: none; }
+  .header-bottom-divider-cell { border-bottom: 2px solid #e9ecef; }
+
   /* Column Policies Styles */
   .column-policies {
     background-color: #f8f9fa;
@@ -1024,11 +1029,7 @@
             {% endfor %}
           </tr>
 
-          <!-- HEADER DIVIDER ROW -->
-          <tr>
-            <td class="placeholder_column"></td>
-            <td class="header-divider-line" colspan="100"></td>
-          </tr>
+          
 
 
 
@@ -1092,7 +1093,7 @@
               <!-- Place holder for swimlane -->
             </td>
             <!-- Backlog -->
-            <td class="third_row sketchy_left_solid_border sketchy_right_solid_border" rowspan="3">
+            <td class="third_row sketchy_left_solid_border sketchy_right_solid_border header-bottom-divider-cell" rowspan="3">
               <div class="container">
                 <div class="row">
                   <div class="col col md-6 text-center">
@@ -1172,7 +1173,7 @@
           FIFTH ROW
           HEADER
           -->
-          <tr class="">
+          <tr class="header-bottom-divider">
             <td class="placeholder_column ">
               <!-- Place holder for swimlane -->
             </td>
