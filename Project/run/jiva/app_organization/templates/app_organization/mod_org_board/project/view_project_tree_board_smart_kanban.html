@@ -1234,7 +1234,7 @@
                 <div class="swimlane_title">{{ lane.name|default:'Swimlane' }}</div>
               </td>
               <!-- Backlog column per swimlane: render empty to avoid duplicating backlog items; backlog is shown only once in General row -->
-        <td class="backlog_column sketchy_left_solid_border sketchy_right_solid_border"
+  <td class="kanban_column backlog_column sketchy_left_solid_border sketchy_right_solid_border"
           data-id="0" data-wip-limit="100" data-column-name="Backlog" data-state-id="0" data-swimlane-id="null" data-placeholder-backlog="true">
                 <!-- Intentionally left blank. Backlog items are displayed only in the General row. -->
               </td>
@@ -1880,7 +1880,14 @@ function handleDrop(e) {
     e.stopPropagation();
   }
   e.preventDefault();
-  const destColumn = this;
+  let destColumn = this;
+  // If dropping into a placeholder backlog (swimlane backlog cell), redirect to the single General backlog container
+  if (destColumn.classList.contains('backlog_column') && destColumn.hasAttribute('data-placeholder-backlog')) {
+    const generalBacklog = document.querySelector('.backlog_column.kanban_column[data-general-backlog="true"]');
+    if (generalBacklog) {
+      destColumn = generalBacklog;
+    }
+  }
   if (draggedCard) {
     const closestCard = getClosestCard(this, e.clientY);
     const currentCards = Array.from(destColumn.querySelectorAll('.card'));
@@ -1920,12 +1927,12 @@ function handleDrop(e) {
       }
     }
     
-    const destCards = Array.from(destColumn.querySelectorAll('.card'));
+  const destCards = Array.from(destColumn.querySelectorAll('.card'));
     // Create formatted positions array
     let formattedPositions = [];
     
     // Special handling for backlog
-    if (destColumn.classList.contains('backlog_column')) {
+  if (destColumn.classList.contains('backlog_column')) {
       formattedPositions = destCards.map((card, index) => {
         return {
           card_id: card.id,
@@ -1941,8 +1948,8 @@ function handleDrop(e) {
       });
     }
     const destPositions = formattedPositions;
-    const projectId = '{{ project.id }}';
-    const boardId = '{{ project_board.id }}';
+  const projectId = '{{ project.id }}';
+  const boardId = '{{ project_board.id }}';
     const card = draggedCard;
     const cardId = draggedCard.id;
     const cardTitle = draggedCard.innerText;
@@ -2004,12 +2011,8 @@ function handleDrop(e) {
 
 function setupDragAndDrop() {
   const cards = document.querySelectorAll('.card[draggable="true"]');
-  // Exclude placeholder backlog cells; only the single General backlog (data-general-backlog) is droppable
-  const dropTargets = Array.from(document.querySelectorAll('.kanban_column:not(.policies_cell)')).filter(el => {
-    if (!el.classList.contains('backlog_column')) return true;
-    if (el.hasAttribute('data-placeholder-backlog')) return false;
-    return el.hasAttribute('data-general-backlog');
-  });
+  // All kanban columns are droppable; when dropping on a placeholder backlog we'll redirect to the General backlog
+  const dropTargets = Array.from(document.querySelectorAll('.kanban_column:not(.policies_cell)'));
 
   cards.forEach(card => {
     card.addEventListener('dragstart', handleDragStart);
