@@ -16,9 +16,9 @@ module_path = f'mod_project_board_swimlane'
 # viewable flag
 first_viewable_flag = '__ALL__'  # 'all' or '__OWN__'
 viewable_flag = '__ALL__'  # 'all' or '__OWN__'
-# Setup dictionaries based on flags
-viewable_dict = {} if viewable_flag == '__ALL__' else {'author': user}
-first_viewable_dict = {} if first_viewable_flag == '__ALL__' else {'author': user}
+# Setup dictionaries based on flags (no request.user at import time)
+viewable_dict = {}
+first_viewable_dict = {}
 def get_viewable_dicts(user, viewable_flag, first_viewable_flag):
     viewable_dict = {} if viewable_flag == '__ALL__' else {'author': user}
     first_viewable_dict = {} if first_viewable_flag == '__ALL__' else {'author': user}
@@ -37,15 +37,24 @@ def list_project_board_swimlanes(request, project_id):
     deleted_count = 0
     project = Project.objects.get(id=project_id, active=True, 
                                                 **first_viewable_dict)
+    # Determine the selected/default board for this project
+    DEFAULT_BOARD_NAME = 'Default Board'
+    selected_board = ProjectBoard.objects.filter(project=project, default_board=True, active=True).first()
+    if not selected_board:
+        selected_board, _ = ProjectBoard.objects.get_or_create(
+            project=project,
+            name=DEFAULT_BOARD_NAME,
+            defaults={'author': user}
+        )
     
     search_query = request.GET.get('search', '')
     if search_query:
-        tobjects = ProjectBoardSwimlane.objects.filter(name__icontains=search_query, 
-                                            project_id=project_id, **viewable_dict).order_by('position')
+        tobjects = ProjectBoardSwimLane.objects.filter(name__icontains=search_query, 
+                                            board=selected_board, **viewable_dict).order_by('position')
     else:
-        tobjects = ProjectBoardSwimlane.objects.filter(active=True, project_id=project_id).order_by('position')
-        deleted = ProjectBoardSwimlane.objects.filter(active=False, deleted=False,
-                                project_id=project_id,
+        tobjects = ProjectBoardSwimLane.objects.filter(active=True, board=selected_board).order_by('position')
+        deleted = ProjectBoardSwimLane.objects.filter(active=False, deleted=False,
+                                board=selected_board,
                                **viewable_dict).order_by('position')
         deleted_count = deleted.count()
     
@@ -72,22 +81,22 @@ def list_project_board_swimlanes(request, project_id):
             for item_id in selected_items:
                 item = int(item_id)  # Ensure item_id is converted to int if necessary
                 if bulk_operation == 'bulk_delete':
-                    object = get_object_or_404(ProjectBoardSwimlane, pk=item, active=True, **viewable_dict)
+                    object = get_object_or_404(ProjectBoardSwimLane, pk=item, active=True, **viewable_dict)
                     object.active = False
                     object.save()
                     
                 elif bulk_operation == 'bulk_done':
-                    object = get_object_or_404(ProjectBoardSwimlane, pk=item, active=True, **viewable_dict)
+                    object = get_object_or_404(ProjectBoardSwimLane, pk=item, active=True, **viewable_dict)
                     object.done = True
                     object.save()
                     
                 elif bulk_operation == 'bulk_not_done':
-                    object = get_object_or_404(ProjectBoardSwimlane, pk=item, active=True, **viewable_dict)
+                    object = get_object_or_404(ProjectBoardSwimLane, pk=item, active=True, **viewable_dict)
                     object.done = False
                     object.save()
                     
                 elif bulk_operation == 'bulk_blocked':  # Correct the operation check here
-                    object = get_object_or_404(ProjectBoardSwimlane, pk=item, active=True, **viewable_dict)
+                    object = get_object_or_404(ProjectBoardSwimLane, pk=item, active=True, **viewable_dict)
                     object.blocked = True
                     object.save()
                     
@@ -99,8 +108,11 @@ def list_project_board_swimlanes(request, project_id):
     context = {
         'parent_page': '___PARENTPAGE___',
         'page': 'list_project_board_swimlanes',
-        'project': project,
+    'project': project,
+    'organization': project.org,
         'project_id': project_id,
+    'org_id': project.org.id,
+    'board': selected_board,
         
         'module_path': module_path,
         'user': user,
@@ -135,14 +147,22 @@ def list_deleted_project_board_swimlanes(request, project_id):
     selected_bulk_operations = None
     project = Project.objects.get(id=project_id, active=True, 
                                                 **first_viewable_dict)
+    DEFAULT_BOARD_NAME = 'Default Board'
+    selected_board = ProjectBoard.objects.filter(project=project, default_board=True, active=True).first()
+    if not selected_board:
+        selected_board, _ = ProjectBoard.objects.get_or_create(
+            project=project,
+            name=DEFAULT_BOARD_NAME,
+            defaults={'author': user}
+        )
     
     search_query = request.GET.get('search', '')
     if search_query:
-        tobjects = ProjectBoardSwimlane.objects.filter(name__icontains=search_query, 
+        tobjects = ProjectBoardSwimLane.objects.filter(name__icontains=search_query, 
                                             active=False, deleted=False,
-                                            project_id=project_id, **viewable_dict).order_by('position')
+                                            board=selected_board, **viewable_dict).order_by('position')
     else:
-        tobjects = ProjectBoardSwimlane.objects.filter(active=False, deleted=False, project_id=project_id,
+        tobjects = ProjectBoardSwimLane.objects.filter(active=False, deleted=False, board=selected_board,
                                             **viewable_dict).order_by('position')        
     
     if show_all == 'all':
@@ -166,11 +186,11 @@ def list_deleted_project_board_swimlanes(request, project_id):
                 for item_id in selected_items:
                     item = int(item_id)  # Ensure item_id is converted to int if necessary
                     if bulk_operation == 'bulk_restore':
-                        object = get_object_or_404(ProjectBoardSwimlane, pk=item, active=False, **viewable_dict)
+                        object = get_object_or_404(ProjectBoardSwimLane, pk=item, active=False, **viewable_dict)
                         object.active = True
                         object.save()         
                     elif bulk_operation == 'bulk_erase':
-                        object = get_object_or_404(ProjectBoardSwimlane, pk=item, active=False, **viewable_dict)
+                        object = get_object_or_404(ProjectBoardSwimLane, pk=item, active=False, **viewable_dict)
                         object.active = False  
                         object.deleted = True             
                         object.save()    
@@ -182,8 +202,11 @@ def list_deleted_project_board_swimlanes(request, project_id):
     context = {
         'parent_page': '___PARENTPAGE___',
         'page': 'list_deleted_project_board_swimlanes',
-        'project': project,
+    'project': project,
+    'organization': project.org,
         'project_id': project_id,
+    'org_id': project.org.id,
+    'board': selected_board,
         
         'module_path': module_path,
         'user': user,
@@ -207,12 +230,21 @@ def create_project_board_swimlane(request, project_id):
     user = request.user
     project = Project.objects.get(id=project_id, active=True, 
                                                 **first_viewable_dict)
+    # resolve board
+    DEFAULT_BOARD_NAME = 'Default Board'
+    selected_board = ProjectBoard.objects.filter(project=project, default_board=True, active=True).first()
+    if not selected_board:
+        selected_board, _ = ProjectBoard.objects.get_or_create(
+            project=project,
+            name=DEFAULT_BOARD_NAME,
+            defaults={'author': user}
+        )
     
     if request.method == 'POST':
         form = ProjectBoardSwimlaneForm(request.POST)
         if form.is_valid():
             form.instance.author = user
-            form.instance.project_id = project_id
+            form.instance.board = selected_board
             form.save()
         else:
             print(f">>> === form.errors: {form.errors} === <<<")
@@ -223,8 +255,11 @@ def create_project_board_swimlane(request, project_id):
     context = {
         'parent_page': '___PARENTPAGE___',
         'page': 'create_project_board_swimlane',
-        'project': project,
+    'project': project,
+    'organization': project.org,
         'project_id': project_id,
+    'org_id': project.org.id,
+    'board': selected_board,
         
         'module_path': module_path,
         'form': form,
@@ -242,13 +277,21 @@ def edit_project_board_swimlane(request, project_id, project_board_swimlane_id):
     user = request.user
     project = Project.objects.get(id=project_id, active=True, 
                                                 **first_viewable_dict)
+    DEFAULT_BOARD_NAME = 'Default Board'
+    selected_board = ProjectBoard.objects.filter(project=project, default_board=True, active=True).first()
+    if not selected_board:
+        selected_board, _ = ProjectBoard.objects.get_or_create(
+            project=project,
+            name=DEFAULT_BOARD_NAME,
+            defaults={'author': user}
+        )
     
-    object = get_object_or_404(ProjectBoardSwimlane, pk=project_board_swimlane_id, active=True,**viewable_dict)
+    object = get_object_or_404(ProjectBoardSwimLane, pk=project_board_swimlane_id, active=True,**viewable_dict)
     if request.method == 'POST':
         form = ProjectBoardSwimlaneForm(request.POST, instance=object)
         if form.is_valid():
             form.instance.author = user
-            form.instance.project_id = project_id
+            form.instance.board = selected_board
             form.save()
         else:
             print(f">>> === form.errors: {form.errors} === <<<")
@@ -259,8 +302,11 @@ def edit_project_board_swimlane(request, project_id, project_board_swimlane_id):
     context = {
         'parent_page': '___PARENTPAGE___',
         'page': 'edit_project_board_swimlane',
-        'project': project,
+    'project': project,
+    'organization': project.org,
         'project_id': project_id,
+    'org_id': project.org.id,
+    'board': selected_board,
         
         'module_path': module_path,
         'form': form,
@@ -278,7 +324,7 @@ def delete_project_board_swimlane(request, project_id, project_board_swimlane_id
     project = Project.objects.get(id=project_id, active=True, 
                                                 **first_viewable_dict)
     
-    object = get_object_or_404(ProjectBoardSwimlane, pk=project_board_swimlane_id, active=True,**viewable_dict)
+    object = get_object_or_404(ProjectBoardSwimLane, pk=project_board_swimlane_id, active=True,**viewable_dict)
     if request.method == 'POST':
         object.active = False
         object.save()
@@ -288,7 +334,9 @@ def delete_project_board_swimlane(request, project_id, project_board_swimlane_id
         'parent_page': '___PARENTPAGE___',
         'page': 'delete_project_board_swimlane',
         'project': project,
+    'organization': project.org,
         'project_id': project_id,
+    'org_id': project.org.id,
         
         'module_path': module_path,        
         'object': object,
@@ -304,7 +352,7 @@ def permanent_deletion_project_board_swimlane(request, project_id, project_board
     project = Project.objects.get(id=project_id, active=True, 
                                                 **first_viewable_dict)
     
-    object = get_object_or_404(ProjectBoardSwimlane, pk=project_board_swimlane_id, active=False, deleted=False, **viewable_dict)
+    object = get_object_or_404(ProjectBoardSwimLane, pk=project_board_swimlane_id, active=False, deleted=False, **viewable_dict)
     if request.method == 'POST':
         object.active = False
         object.deleted = True
@@ -315,7 +363,9 @@ def permanent_deletion_project_board_swimlane(request, project_id, project_board
         'parent_page': '___PARENTPAGE___',
         'page': 'permanent_deletion_project_board_swimlane',
         'project': project,
+    'organization': project.org,
         'project_id': project_id,
+    'org_id': project.org.id,
         
         'module_path': module_path,        
         'object': object,
@@ -328,7 +378,7 @@ def permanent_deletion_project_board_swimlane(request, project_id, project_board
 @login_required
 def restore_project_board_swimlane(request,  project_id, project_board_swimlane_id):
     user = request.user
-    object = get_object_or_404(ProjectBoardSwimlane, pk=project_board_swimlane_id, active=False,**viewable_dict)
+    object = get_object_or_404(ProjectBoardSwimLane, pk=project_board_swimlane_id, active=False,**viewable_dict)
     object.active = True
     object.save()
     return redirect('list_project_board_swimlanes', project_id=project_id)
@@ -341,13 +391,16 @@ def view_project_board_swimlane(request, project_id, project_board_swimlane_id):
     project = Project.objects.get(id=project_id, active=True, 
                                                 **first_viewable_dict)
     
-    object = get_object_or_404(ProjectBoardSwimlane, pk=project_board_swimlane_id, active=True,**viewable_dict)    
+    object = get_object_or_404(ProjectBoardSwimLane, pk=project_board_swimlane_id, active=True,**viewable_dict)    
 
     context = {
         'parent_page': '___PARENTPAGE___',
         'page': 'view_project_board_swimlane',
-        'project': project,
+    'project': project,
+    'organization': project.org,
         'project_id': project_id,
+    'org_id': project.org.id,
+    # board is not required for detail view context here
         
         'module_path': module_path,
         'object': object,

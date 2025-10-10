@@ -1,0 +1,15 @@
+{% extends 'app_common/common_files/base_template.html' %}
+{% block content %}
+{% include 'app_common/common_files/navbar.html' %}
+<div class="container mt-3">
+  <h3>View Class of Service</h3>
+  <dl class="row">
+    <dt class="col-sm-3">Name</dt>
+    <dd class="col-sm-9">{{ object.name }}</dd>
+    <dt class="col-sm-3">Color</dt>
+    <dd class="col-sm-9">{{ object.color }}</dd>
+  </dl>
+  <a href="{% url 'edit_project_board_cos' project_id object.id %}" class="btn btn-warning">Edit</a>
+  <a href="{% url 'list_project_board_cos' project_id %}" class="btn btn-secondary">Back</a>
+</div>
+{% endblock %}

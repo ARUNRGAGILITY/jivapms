@@ -40,6 +40,7 @@ urlpatterns = [
     path('project_board/', include('app_organization.mod_project_board.urls_project_board')),
     path('project_board_state/', include('app_organization.mod_project_board_state.urls_project_board_state')),
     path('project_board_swimlane/', include('app_organization.mod_project_board_swimlane.urls_project_board_swimlane')),
+    path('project_board_cos/', include('app_organization.mod_project_board_cos.urls_project_board_cos')),
     path('project_detail/', include('app_organization.mod_project_detail.urls_project_detail')),
     path('project_roadmap/', include('app_organization.mod_project_roadmap.urls_project_roadmap')),
     path('project_template/', include('app_organization.mod_project_template.urls_project_template')),

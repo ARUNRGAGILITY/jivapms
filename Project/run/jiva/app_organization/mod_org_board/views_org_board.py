@@ -25,9 +25,9 @@ module_path = f'mod_org_board'
 # viewable flag
 first_viewable_flag = '__ALL__'  # 'all' or '__OWN__'
 viewable_flag = '__ALL__'  # 'all' or '__OWN__'
-# Setup dictionaries based on flags
-viewable_dict = {} if viewable_flag == '__ALL__' else {'author': user}
-first_viewable_dict = {} if first_viewable_flag == '__ALL__' else {'author': user}
+# Setup dictionaries based on flags (no user available at import time)
+viewable_dict = {}
+first_viewable_dict = {}
 def get_viewable_dicts(user, viewable_flag, first_viewable_flag):
     viewable_dict = {} if viewable_flag == '__ALL__' else {'author': user}
     first_viewable_dict = {} if first_viewable_flag == '__ALL__' else {'author': user}
@@ -139,10 +139,13 @@ def ajax_list_policies(request):
         return JsonResponse({"error": "board_id required"}, status=400)
 
     # Column policies grouped by column_key
-    column_policies_qs = ProjectBoardColumnPolicy.objects.filter(board_id=board_id, active=True).order_by('position', 'id')
+    column_policies_qs = ProjectBoardColumnPolicy.objects.filter(
+        board_id=board_id,
+        active=True
+    ).order_by('position', 'id')
     grouped = {}
     for p in column_policies_qs:
-        key = p.column_key or ''
+        key = (p.column_key or '').strip()
         grouped.setdefault(key, []).append({
             'id': p.id,
             'text': p.text or '',
@@ -150,16 +153,20 @@ def ajax_list_policies(request):
         })
 
     # General policies
-    general_qs = ProjectBoardGeneralPolicy.objects.filter(board_id=board_id, active=True).order_by('position', 'id')
-    general = [{'id': gp.id, 'text': gp.text or '', 'position': gp.position} for gp in general_qs]
+    general_qs = ProjectBoardGeneralPolicy.objects.filter(
+        board_id=board_id,
+        active=True
+    ).order_by('position', 'id')
+    general = [
+        {'id': gp.id, 'text': gp.text or '', 'position': gp.position}
+        for gp in general_qs
+    ]
 
     return JsonResponse({
         'success': True,
         'columns': grouped,
         'general': general,
     })
-
-
 @login_required
 @require_POST
 def ajax_create_column_policy(request):
@@ -1577,6 +1584,7 @@ def _COMMON_for_kanban(request, project_id):
         'current_iteration': current_iteration,
         'project_type': project_type,
         'FLAG_board_swimlane_exists': FLAG_board_swimlane_exists,
+    'board_swimlanes': board_swimlanes,
         #'chart_data': chart_data,
     }
      

@@ -34,6 +34,10 @@ class ProjectBoardCard(BaseModelTrackDateImpl):
     swimlane = models.ForeignKey(
         'app_organization.ProjectBoardSwimLane', on_delete=models.SET_NULL, null=True, blank=True, related_name="swimlane_cards"
     )
+    # Optional Class of Service tag for prioritization (Expedite, Fixed Date, Standard, Intangible)
+    class_of_service = models.ForeignKey(
+        'app_organization.ProjectBoardClassOfService', on_delete=models.SET_NULL, null=True, blank=True, related_name='cards'
+    )
     SUBSTATE_CHOICE = [
         ('Doing', 'Doing'),
         ('Done', 'Done'),
@@ -213,3 +217,7 @@ class ProjectBoardGeneralPolicy(BaseModelImpl):
 
     def __str__(self):
         return f"General: {self.text[:40] if self.text else ''}"
+
+
+# === Classes of Service (CoS) ===
+    

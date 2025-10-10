@@ -972,6 +972,8 @@
         <b class="me-2">Kanban Board</b>
         <a href="{% url 'list_project_boards' project.id %}" class="btn btn-sm btn-primary">Board <i class="fas fa-edit"></i></a>
         <a href="{% url 'board_card_settings' project_board.id %}" class="btn btn-sm btn-success">Card <i class="fas fa-cog"></i></a>
+  <a href="{% url 'list_project_board_swimlanes' project.id %}" class="btn btn-sm btn-warning">Configure Swimlanes <i class="fas fa-sliders-h"></i></a>
+  <a href="{% url 'list_project_board_cos' project.id %}" class="btn btn-sm btn-outline-warning ms-2">Configure Classes of Service</a>
         <a href="{% url 'view_project_tree_backlog' project.id  %}?project_id={{ project.id }}" class="btn btn-sm btn-primary">
           <i class="bi bi-arrow-left"></i> Back to Backlog
         </a>
@@ -1225,66 +1227,279 @@
         BODY
         -->
         <tbody>
-          <!-- Step2: Display swimlanes and then cards in swimlanes
-           default swimlane is general, expedite, fixed-date, standard, intangible  -->
-          <tr class="general_row sketchy_top_solid_border ">
-            <!-- swimlane display -->
-             <td class="placeholder_column ">
-              <div class="swimlane_title">General</div>
-             </td>
-
-             <!-- Backlog items -->
-              <td class="kanban_column backlog_column sketchy_left_solid_border sketchy_right_solid_border"
-              data-id="0" id="backlog" data-wip-limit="100" data-column-name="Backlog" data-state-id="0"
-              >
-                {% for item in backlog_items %}
-                <div class="card {{item.priority}} mb-2" id="{{item.id}}" draggable="true"
-                data-release="{{item.release|default:'v1.0'}}" 
-                data-iteration="{{item.iteration|default:'Sprint 1'}}"
-                data-priority="{{item.priority|default:'Normal'}}" 
-                data-size="{{item.size|default:'Medium'}}">
-             
-                <div class="design-option">
-                  <div class="card card-design-5">
-                    <div class="card-header">
-                      <span class="card-id">{{project}}-{{item.id}}</span>
-                      <span class="status">{{item.priority|get_first_letter_caps}}</span>
-                    </div>
-                    <div class="card-body">
-                      <h5 class="card-title">{{item.name|display_if_not_none}}</h5>
-                      <p class="card-text">{{item.description|display_if_not_none}}</p>
-                      <div class="card-meta">
-                        <span class="meta-item"><i class="fas fa-calendar"></i>{{item.iteration|display_if_not_none}}</span>
-                        <span class="meta-item"><i class="fas fa-tag"></i>{{item.release|display_if_not_none}}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-                </div>  
-                {% endfor %}
+          {% if FLAG_board_swimlane_exists and board_swimlanes %}
+            {% for lane in board_swimlanes %}
+            <tr class="swimlane_row sketchy_top_solid_border">
+              <td class="placeholder_column">
+                <div class="swimlane_title">{{ lane.name|default:'Swimlane' }}</div>
               </td>
-
-              <!-- OTHER column items -->              
+              <!-- Backlog column per swimlane: render empty to avoid duplicating backlog items; backlog is shown only once in General row -->
+        <td class="backlog_column sketchy_left_solid_border sketchy_right_solid_border"
+          data-id="0" data-wip-limit="100" data-column-name="Backlog" data-state-id="0" data-swimlane-id="null" data-placeholder-backlog="true">
+                <!-- Intentionally left blank. Backlog items are displayed only in the General row. -->
+              </td>
               {% for state in project_board_states %}
-                <!-- Step1: Display columns and then columns with buffer states -->
                 {% if state.buffer_column %}
                   {% with subcolumns=state.get_subcolumns %}
                   {% for substate_choice in subcolumns %}
-                  
-                  <td class="kanban_column buffer_column sketchy_top_solid_border {% if forloop.counter == 1 %}sketchy_right_dashed_border{% else %}sketchy_right_solid_border{% endif %}" colspan="1"
-                      id="{{state.id}}"  data-column-name="{{state}}__{{substate_choice}}" 
+          <td class="kanban_column buffer_column sketchy_top_solid_border {% if forloop.counter == 1 %}sketchy_right_dashed_border{% else %}sketchy_right_solid_border{% endif %}" colspan="1"
+            id="{{state.id}}" data-column-name="{{state}}__{{substate_choice}}" data-swimlane-id="{{ lane.id }}"
+                      data-column-type="{{ state.column_type }}" data-sc-wip-limit="2"
+                      data-apply-wip-limit="{{ state.apply_wip_limit|yesno:'true,false' }}">
+                    {% for item in state_items|get_item:state.id %}
+                      {% if item.substate == substate_choice and item.swimlane_id == lane.id %}
+                        <div class="card {{item.backlog.priority}} mb-2" id="{{item.id}}" draggable="true"
+                             data-release="{{item.backlog.release|default:'v1.0'}}"
+                             data-iteration="{{item.backlog.iteration|default:'Sprint 1'}}"
+                             data-priority="{{item.backlog.priority|default:'Normal'}}"
+                             data-size="{{item.backlog.size|default:'Medium'}}">
+                          <div class="card_header">
+                            <div class="card_header_left">
+                              <span class="card_tag release">{{item.backlog.release|default:'v1.0'}}</span>
+                              <span class="card_tag iteration">{{item.backlog.iteration|default:'Sprint 1'}}</span>
+                            </div>
+                            <div class="card_header_right">
+                              <span class="card_tag priority-{{item.backlog.priority|default:'Normal'}}">{{item.backlog.priority|default:'Normal'}}</span>
+                              <span class="card_tag size-{{item.backlog.size|default:'Medium'}}">{{item.backlog.size|default:'Medium'}}</span>
+                            </div>
+                          </div>
+                          <div class="card_content">
+                            <div class="card_title">{{item|display_if_not_none}}
+                              {% if item.class_of_service_id %}
+                                <span class="badge bg-secondary ms-2">{{ item.class_of_service.name }}</span>
+                              {% endif %}
+                            </div>
+                            <div class="card_description">{{item.description|default:''}}</div>
+                          </div>
+                          <div class="card_footer"></div>
+                        </div>
+                      {% endif %}
+                    {% endfor %}
+                  </td>
+                  {% endfor %}
+                  {% endwith %}
+                {% else %}
+          <td class="kanban_column normal_column sketchy_right_solid_border" colspan="1"
+            id="{{state.id}}" data-column-name="{{state}}" data-state-id="{{ state.id }}" data-swimlane-id="{{ lane.id }}"
+                      data-column-type="{{ state.column_type }}" data-wip-limit="{{ state.wip_limit }}"
+                      data-apply-wip-limit="{{ state.apply_wip_limit|yesno:'true,false' }}">
+                    {% for item in state_items|get_item:state.id %}
+                      {% if item.swimlane_id == lane.id %}
+                        <div class="card {{item.backlog.priority}} mb-2" id="{{item.id}}" draggable="true"
+                             data-release="{{item.backlog.release|default:'v1.0'}}"
+                             data-iteration="{{item.backlog.iteration|default:'Sprint 1'}}"
+                             data-priority="{{item.backlog.priority|default:'Normal'}}"
+                             data-size="{{item.backlog.size|default:'Medium'}}">
+                          <div class="card_header">
+                            <div class="card_header_left">
+                              <span class="card_tag release">{{item.backlog.release|default:'v1.0'}}</span>
+                              <span class="card_tag iteration">{{item.backlog.iteration|default:'Sprint 1'}}</span>
+                            </div>
+                            <div class="card_header_right">
+                              <span class="card_tag priority-{{item.backlog.priority|default:'Normal'}}">{{item.backlog.priority|default:'Normal'}}</span>
+                              <span class="card_tag size-{{item.backlog.size|default:'Medium'}}">{{item.backlog.size|default:'Medium'}}</span>
+                            </div>
+                          </div>
+                          <div class="card_content">
+                            <div class="card_title">{{item|display_if_not_none}}
+                              {% if item.class_of_service_id %}
+                                <span class="badge bg-secondary ms-2">{{ item.class_of_service.name }}</span>
+                              {% endif %}
+                            </div>
+                            <div class="card_description">{{item.description|default:''}}</div>
+                          </div>
+                          <div class="card_footer"></div>
+                        </div>
+                      {% endif %}
+                    {% endfor %}
+                  </td>
+                {% endif %}
+              {% endfor %}
+            </tr>
+            {% endfor %}
+            <!-- Unassigned (General) row for cards without a swimlane -->
+            <tr class="swimlane_row sketchy_top_solid_border">
+              <td class="placeholder_column">
+                <div class="swimlane_title">General</div>
+              </td>
+              <!-- Backlog remains unchanged -->
+        <td class="kanban_column backlog_column sketchy_left_solid_border sketchy_right_solid_border"
+          data-id="0" id="backlog" data-wip-limit="100" data-column-name="Backlog" data-state-id="0" data-swimlane-id="null" data-general-backlog="true">
+                {% for item in backlog_items %}
+                  <div class="card {{item.priority}} mb-2" id="{{item.id}}" draggable="true"
+                       data-release="{{item.release|default:'v1.0'}}"
+                       data-iteration="{{item.iteration|default:'Sprint 1'}}"
+                       data-priority="{{item.priority|default:'Normal'}}"
+                       data-size="{{item.size|default:'Medium'}}">
+                    <div class="design-option">
+                      <div class="card card-design-5">
+                        <div class="card-header">
+                          <span class="card-id">{{project}}-{{item.id}}</span>
+                          <span class="status">{{item.priority|get_first_letter_caps}}</span>
+                        </div>
+                        <div class="card-body">
+                          <h5 class="card-title">{{item.name|display_if_not_none}}</h5>
+                          <p class="card-text">{{item.description|display_if_not_none}}</p>
+                          <div class="card-meta">
+                            <span class="meta-item"><i class="fas fa-calendar"></i>{{item.iteration|display_if_not_none}}</span>
+                            <span class="meta-item"><i class="fas fa-tag"></i>{{item.release|display_if_not_none}}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                {% endfor %}
+              </td>
+              {% for state in project_board_states %}
+                {% if state.buffer_column %}
+                  {% with subcolumns=state.get_subcolumns %}
+                  {% for substate_choice in subcolumns %}
+          <td class="kanban_column buffer_column sketchy_top_solid_border {% if forloop.counter == 1 %}sketchy_right_dashed_border{% else %}sketchy_right_solid_border{% endif %}" colspan="1"
+            id="{{state.id}}" data-column-name="{{state}}__{{substate_choice}}" data-swimlane-id="null"
+                      data-column-type="{{ state.column_type }}" data-sc-wip-limit="2"
+                      data-apply-wip-limit="{{ state.apply_wip_limit|yesno:'true,false' }}">
+                    {% for item in state_items|get_item:state.id %}
+                      {% if item.substate == substate_choice and not item.swimlane_id %}
+                        <div class="card {{item.backlog.priority}} mb-2" id="{{item.id}}" draggable="true"
+                             data-release="{{item.backlog.release|default:'v1.0'}}"
+                             data-iteration="{{item.backlog.iteration|default:'Sprint 1'}}"
+                             data-priority="{{item.backlog.priority|default:'Normal'}}"
+                             data-size="{{item.backlog.size|default:'Medium'}}">
+                          <div class="card_header">
+                            <div class="card_header_left">
+                              <span class="card_tag release">{{item.backlog.release|default:'v1.0'}}</span>
+                              <span class="card_tag iteration">{{item.backlog.iteration|default:'Sprint 1'}}</span>
+                            </div>
+                            <div class="card_header_right">
+                              <span class="card_tag priority-{{item.backlog.priority|default:'Normal'}}">{{item.backlog.priority|default:'Normal'}}</span>
+                              <span class="card_tag size-{{item.backlog.size|default:'Medium'}}">{{item.backlog.size|default:'Medium'}}</span>
+                            </div>
+                          </div>
+                          <div class="card_content">
+                            <div class="card_title">{{item|display_if_not_none}}</div>
+                            <div class="card_description">{{item.description|default:''}}</div>
+                          </div>
+                          <div class="card_footer"></div>
+                        </div>
+                      {% endif %}
+                    {% endfor %}
+                  </td>
+                  {% endfor %}
+                  {% endwith %}
+                {% else %}
+          <td class="kanban_column normal_column sketchy_right_solid_border" colspan="1"
+            id="{{state.id}}" data-column-name="{{state}}" data-state-id="{{ state.id }}" data-swimlane-id="null"
+                      data-column-type="{{ state.column_type }}" data-wip-limit="{{ state.wip_limit }}"
+                      data-apply-wip-limit="{{ state.apply_wip_limit|yesno:'true,false' }}">
+                    {% for item in state_items|get_item:state.id %}
+                      {% if not item.swimlane_id %}
+                        <div class="card {{item.backlog.priority}} mb-2" id="{{item.id}}" draggable="true"
+                             data-release="{{item.backlog.release|default:'v1.0'}}"
+                             data-iteration="{{item.backlog.iteration|default:'Sprint 1'}}"
+                             data-priority="{{item.backlog.priority|default:'Normal'}}"
+                             data-size="{{item.backlog.size|default:'Medium'}}">
+                          <div class="card_header">
+                            <div class="card_header_left">
+                              <span class="card_tag release">{{item.backlog.release|default:'v1.0'}}</span>
+                              <span class="card_tag iteration">{{item.backlog.iteration|default:'Sprint 1'}}</span>
+                            </div>
+                            <div class="card_header_right">
+                              <span class="card_tag priority-{{item.backlog.priority|default:'Normal'}}">{{item.backlog.priority|default:'Normal'}}</span>
+                              <span class="card_tag size-{{item.backlog.size|default:'Medium'}}">{{item.backlog.size|default:'Medium'}}</span>
+                            </div>
+                          </div>
+                          <div class="card_content">
+                            <div class="card_title">{{item|display_if_not_none}}</div>
+                            <div class="card_description">{{item.description|default:''}}</div>
+                          </div>
+                          <div class="card_footer"></div>
+                        </div>
+                      {% endif %}
+                    {% endfor %}
+                  </td>
+                {% endif %}
+              {% endfor %}
+            </tr>
+          {% else %}
+            <!-- No swimlanes: default single row -->
+            <tr class="general_row sketchy_top_solid_border ">
+              <td class="placeholder_column ">
+                <div class="swimlane_title">General</div>
+              </td>
+        <td class="kanban_column backlog_column sketchy_left_solid_border sketchy_right_solid_border"
+          data-id="0" id="backlog" data-wip-limit="100" data-column-name="Backlog" data-state-id="0" data-swimlane-id="null" data-general-backlog="true">
+                {% for item in backlog_items %}
+                  <div class="card {{item.priority}} mb-2" id="{{item.id}}" draggable="true"
+                       data-release="{{item.release|default:'v1.0'}}" 
+                       data-iteration="{{item.iteration|default:'Sprint 1'}}"
+                       data-priority="{{item.priority|default:'Normal'}}" 
+                       data-size="{{item.size|default:'Medium'}}">
+                    <div class="design-option">
+                      <div class="card card-design-5">
+                        <div class="card-header">
+                          <span class="card-id">{{project}}-{{item.id}}</span>
+                          <span class="status">{{item.priority|get_first_letter_caps}}</span>
+                        </div>
+                        <div class="card-body">
+                          <h5 class="card-title">{{item.name|display_if_not_none}}</h5>
+                          <p class="card-text">{{item.description|display_if_not_none}}</p>
+                          <div class="card-meta">
+                            <span class="meta-item"><i class="fas fa-calendar"></i>{{item.iteration|display_if_not_none}}</span>
+                            <span class="meta-item"><i class="fas fa-tag"></i>{{item.release|display_if_not_none}}</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>  
+                {% endfor %}
+              </td>
+              {% for state in project_board_states %}
+                {% if state.buffer_column %}
+                  {% with subcolumns=state.get_subcolumns %}
+                  {% for substate_choice in subcolumns %}
+          <td class="kanban_column buffer_column sketchy_top_solid_border {% if forloop.counter == 1 %}sketchy_right_dashed_border{% else %}sketchy_right_solid_border{% endif %}" colspan="1"
+            id="{{state.id}}"  data-column-name="{{state}}__{{substate_choice}}" data-swimlane-id="null"
                       data-column-type="{{ state.column_type }}" data-sc-wip-limit="2" 
-                      data-apply-wip-limit="{{ state.apply_wip_limit|yesno:'true,false' }}"
-                  >                
+                      data-apply-wip-limit="{{ state.apply_wip_limit|yesno:'true,false' }}">
                     {% for item in state_items|get_item:state.id %}
                       {% if item.substate == substate_choice %}
+                        <div class="card {{item.backlog.priority}} mb-2" id="{{item.id}}" draggable="true"
+                             data-release="{{item.backlog.release|default:'v1.0'}}" 
+                             data-iteration="{{item.backlog.iteration|default:'Sprint 1'}}"
+                             data-priority="{{item.backlog.priority|default:'Normal'}}" 
+                             data-size="{{item.backlog.size|default:'Medium'}}">
+                          <div class="card_header">
+                            <div class="card_header_left">
+                              <span class="card_tag release">{{item.backlog.release|default:'v1.0'}}</span>
+                              <span class="card_tag iteration">{{item.backlog.iteration|default:'Sprint 1'}}</span>
+                            </div>
+                            <div class="card_header_right">
+                              <span class="card_tag priority-{{item.backlog.priority|default:'Normal'}}">{{item.backlog.priority|default:'Normal'}}</span>
+                              <span class="card_tag size-{{item.backlog.size|default:'Medium'}}">{{item.backlog.size|default:'Medium'}}</span>
+                            </div>
+                          </div>
+                          <div class="card_content">
+                            <div class="card_title">{{item|display_if_not_none}}</div>
+                            <div class="card_description">{{item.description|default:''}}</div>
+                          </div>
+                          <div class="card_footer"></div>
+                        </div>
+                      {% endif %}
+                    {% endfor %}
+                  </td>
+                  {% endfor %}
+                  {% endwith %}
+                {% else %}
+          <td class="kanban_column normal_column sketchy_right_solid_border" colspan="1"
+            id="{{state.id}}"  data-column-name="{{state}}" data-state-id="{{ state.id }}" data-swimlane-id="null"
+                      data-column-type="{{ state.column_type }}" data-wip-limit="{{ state.wip_limit }}" 
+                      data-apply-wip-limit="{{ state.apply_wip_limit|yesno:'true,false' }}">
+                    {% for item in state_items|get_item:state.id %}
                       <div class="card {{item.backlog.priority}} mb-2" id="{{item.id}}" draggable="true"
-                          data-release="{{item.backlog.release|default:'v1.0'}}" 
-                          data-iteration="{{item.backlog.iteration|default:'Sprint 1'}}"
-                          data-priority="{{item.backlog.priority|default:'Normal'}}" 
-                          data-size="{{item.backlog.size|default:'Medium'}}">
-                        
-                        <!-- Card Header with Tags -->
+                           data-release="{{item.backlog.release|default:'v1.0'}}" 
+                           data-iteration="{{item.backlog.iteration|default:'Sprint 1'}}"
+                           data-priority="{{item.backlog.priority|default:'Normal'}}" 
+                           data-size="{{item.backlog.size|default:'Medium'}}">
                         <div class="card_header">
                           <div class="card_header_left">
                             <span class="card_tag release">{{item.backlog.release|default:'v1.0'}}</span>
@@ -1295,65 +1510,18 @@
                             <span class="card_tag size-{{item.backlog.size|default:'Medium'}}">{{item.backlog.size|default:'Medium'}}</span>
                           </div>
                         </div>
-                        
-                        <!-- Card Content -->
                         <div class="card_content">
                           <div class="card_title">{{item|display_if_not_none}}</div>
                           <div class="card_description">{{item.description|default:''}}</div>
                         </div>
-                        
-                        <!-- Card Footer with Action Buttons -->
-                        <div class="card_footer">
-                         
-                        </div>
+                        <div class="card_footer"></div>
                       </div>
-                      {% endif %}
                     {% endfor %}
                   </td>
-                  {% endfor %}
-                  {% endwith %}
-                {% else %}
-                <td class="kanban_column normal_column sketchy_right_solid_border" colspan="1"
-                id="{{state.id}}"  data-column-name="{{state}}" data-state-id="{{ state.id }}"
-                data-column-type="{{ state.column_type }}" data-wip-limit="{{ state.wip_limit }}" 
-                data-apply-wip-limit="{{ state.apply_wip_limit|yesno:'true,false' }}"
-                >
-                  {% for item in state_items|get_item:state.id %}
-                          <div class="card {{item.backlog.priority}} mb-2" id="{{item.id}}" draggable="true"
-                          data-release="{{item.backlog.release|default:'v1.0'}}" 
-                          data-iteration="{{item.backlog.iteration|default:'Sprint 1'}}"
-                          data-priority="{{item.backlog.priority|default:'Normal'}}" 
-                          data-size="{{item.backlog.size|default:'Medium'}}">
-                      
-                      <!-- Card Header with Tags -->
-                      <div class="card_header">
-                        <div class="card_header_left">
-                          <span class="card_tag release">{{item.backlog.release|default:'v1.0'}}</span>
-                          <span class="card_tag iteration">{{item.backlog.iteration|default:'Sprint 1'}}</span>
-                        </div>
-                        <div class="card_header_right">
-                          <span class="card_tag priority-{{item.backlog.priority|default:'Normal'}}">{{item.backlog.priority|default:'Normal'}}</span>
-                          <span class="card_tag size-{{item.backlog.size|default:'Medium'}}">{{item.backlog.size|default:'Medium'}}</span>
-                        </div>
-                      </div>
-                      
-                      <!-- Card Content -->
-                      <div class="card_content">
-                        <div class="card_title">{{item|display_if_not_none}}</div>
-                        <div class="card_description">{{item.description|default:''}}</div>
-                      </div>
-                      
-                      <!-- Card Footer with Action Buttons -->
-                      <div class="card_footer">
-                      
-                      </div>
-                    </div>
-                  {% endfor %}
-                </td>
                 {% endif %}
               {% endfor %}
-
-          </tr>
+            </tr>
+          {% endif %}
           
           <!-- Policies Row -->
           <tr class="policies_row">
@@ -1612,7 +1780,8 @@ crossorigin="anonymous" referrerpolicy="no-referrer"></script>
       countAllCards();
       addNotificationContainer();
     });
-    let draggedCard = null;
+  let draggedCard = null;
+  let originalFromSwimlaneId = null;
     let originalFromColumn = null;
     let originalFromStateId = null;
     let originalFromColumnName = null;
@@ -1687,6 +1856,7 @@ function handleDragStart(e) {
   originalFromColumn = this.closest('.kanban_column');
   originalFromStateId = originalFromColumn.dataset.stateId || originalFromColumn.id;
   originalFromColumnName = originalFromColumn.dataset.columnName || originalFromColumn.className;
+  originalFromSwimlaneId = (originalFromColumn && originalFromColumn.dataset && originalFromColumn.dataset.swimlaneId) ? originalFromColumn.dataset.swimlaneId : null;
   
   this.classList.add('dragging');
   e.dataTransfer.setData('text/plain', this.id);
@@ -1736,7 +1906,9 @@ function handleDrop(e) {
     }
     
     
-    const toStateId = destColumn.dataset.stateId || destColumn.id;
+  const toStateId = destColumn.dataset.stateId || destColumn.id;
+  const toSwimlaneIdRaw = destColumn.dataset.swimlaneId;
+  const toSwimlaneId = (toSwimlaneIdRaw === undefined) ? null : (toSwimlaneIdRaw === 'null' ? null : toSwimlaneIdRaw);
     
     const isBufferColumn = destColumn.classList.contains('buffer_column');
     let substate = null;
@@ -1788,6 +1960,16 @@ function handleDrop(e) {
       boardId,
       originalFromColumnName
     );
+    // If swimlane changed (including moving to/from General), persist it
+    try {
+      const prevSwimlaneIdRaw = originalFromSwimlaneId;
+      const prevSwimlaneId = (prevSwimlaneIdRaw === undefined) ? null : (prevSwimlaneIdRaw === 'null' ? null : prevSwimlaneIdRaw);
+      if (prevSwimlaneId !== toSwimlaneId) {
+        updateCardSwimlane(draggedCard.id, toSwimlaneId);
+      }
+    } catch (err) {
+      console.warn('Swimlane update skipped:', err);
+    }
     
     if (isBufferColumn && substate) {
       updateCardSubstate(draggedCard.id, toStateId, substate);
@@ -1822,7 +2004,12 @@ function handleDrop(e) {
 
 function setupDragAndDrop() {
   const cards = document.querySelectorAll('.card[draggable="true"]');
-  const dropTargets = document.querySelectorAll('.kanban_column:not(.policies_cell)');
+  // Exclude placeholder backlog cells; only the single General backlog (data-general-backlog) is droppable
+  const dropTargets = Array.from(document.querySelectorAll('.kanban_column:not(.policies_cell)')).filter(el => {
+    if (!el.classList.contains('backlog_column')) return true;
+    if (el.hasAttribute('data-placeholder-backlog')) return false;
+    return el.hasAttribute('data-general-backlog');
+  });
 
   cards.forEach(card => {
     card.addEventListener('dragstart', handleDragStart);
@@ -1945,7 +2132,7 @@ function countAllCards() {
   const DEFAULT_SUBCOLUMN_WIP_LIMIT = 2;
   
   // 1. Backlog column (first column)
-  const backlogColumn = document.querySelector('.backlog_column.kanban_column');
+  const backlogColumn = document.querySelector('.backlog_column.kanban_column[data-general-backlog="true"]');
   const backlogCountEl = document.querySelector('.backlog_column.count_column .count_wip');
   
   if (backlogColumn && backlogCountEl) {
@@ -2058,6 +2245,30 @@ function countAllCards() {
 
   
 <script>
+  // Persist swimlane change for a card; accepts null (General) or lane id
+  function updateCardSwimlane(id, swimlaneId) {
+    if (id && id.startsWith('temp-')) return; // don't update temporary cards
+    let formData = new FormData();
+    formData.append('id', id);
+    formData.append('model_name', 'ProjectBoardCard');
+    formData.append('app_name', 'app_organization');
+    formData.append('field_name', 'swimlane');
+    formData.append('new_value', swimlaneId === null ? '' : swimlaneId);
+    return fetch('/common/common_ajax/ajax_update_app_model_field_value/', {
+      method: 'POST',
+      headers: { 'X-CSRFToken': '{{ csrf_token }}' },
+      body: formData
+    })
+    .then(r => r.json())
+    .then(data => {
+      if (data && data.error) {
+        console.error('Swimlane Update Error:', data.error);
+      } else {
+        console.log('Swimlane Update Success:', data);
+      }
+    })
+    .catch(err => console.error('Swimlane Update Exception:', err));
+  }
 
 function updateCardState(cardId, fromStateId, toStateId, destPositions, destColumn, projectId, boardId, fromColumn, extra = {}) {
     const isNewCard = cardId && cardId.startsWith("temp-");
@@ -2578,13 +2789,7 @@ function saveCardToServer(cardId, data) {
 </script>
 
 <!-- Column Policies Management JavaScript -->
-<script>
-// Backend-driven policies (no browser storage)
-const policyBoardId = '{{ project_board.id }}';
-const columnPoliciesData = {}; // { columnKey: [{id, text, position}] }
-let generalPolicies = []; // [{id, text, position}]
-
-// Resolve named URLs if available; otherwise fall back to known paths
+<!-- Resolve named URLs before entering script to avoid JS parser errors in editors -->
 {% url 'ajax_list_policies' as ajax_list_policies_url %}
 {% url 'ajax_create_column_policy' as ajax_create_column_policy_url %}
 {% url 'ajax_update_column_policy' as ajax_update_column_policy_url %}
@@ -2593,6 +2798,11 @@ let generalPolicies = []; // [{id, text, position}]
 {% url 'ajax_create_general_policy' as ajax_create_general_policy_url %}
 {% url 'ajax_update_general_policy' as ajax_update_general_policy_url %}
 {% url 'ajax_delete_general_policy' as ajax_delete_general_policy_url %}
+<script>
+// Backend-driven policies (no browser storage)
+const policyBoardId = '{{ project_board.id }}';
+const columnPoliciesData = {}; // { columnKey: [{id, text, position}] }
+let generalPolicies = []; // [{id, text, position}]
 
 const __policyBase = '/org/org_board/ajax_policies';
 const __fallback = (u, f) => (u && u.length ? u : f);

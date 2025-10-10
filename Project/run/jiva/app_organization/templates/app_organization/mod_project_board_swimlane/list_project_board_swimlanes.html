@@ -38,7 +38,7 @@
                                 <div class="row pb-2">
                                     <div class="col col-md-5">                                
                                         <b class="h3">
-                                        <a href="{% url 'list_projects' %}" style="text-decoration: none;">
+                                        <a href="{% url 'list_projects' org_id %}" style="text-decoration: none;">
                                             {{organization}}
                                         </a>
                                         </b>
@@ -62,7 +62,7 @@
                                         class="btn btn-sm btn-success"><b>+ Create Project Board Swimlane</b></a>
                                         
                                         &nbsp;&nbsp;
-                                        <a href="{% url 'list_projects' %}" class="btn btn-primary">
+                                        <a href="{% url 'list_projects' org_id %}" class="btn btn-primary">
                                             <i class="bi bi-arrow-left"></i>
                                         </a>
                                         &nbsp;&nbsp;
@@ -122,10 +122,10 @@
                                         </td>
                                         <td>{{forloop.counter}}</td>
                                         <td width="20%" ondblclick="makeEditable(this)"
-                                        onblur="save_element_text(this, '{{ tobject.id }}',  'app_organization', 'ProjectBoardSwimlane', 'name')"
+                                        onblur="save_element_text(this, '{{ tobject.id }}',  'app_organization', 'ProjectBoardSwimLane', 'name')"
                                         ><strong>{% if tobject.name != None %}{{tobject.name}}{% endif %}</strong></td>
                                         <td width="" ondblclick="makeEditable(this)"
-                                        onblur="save_element_text(this, '{{ tobject.id }}',  'app_organization', 'ProjectBoardSwimlane', 'description')"
+                                        onblur="save_element_text(this, '{{ tobject.id }}',  'app_organization', 'ProjectBoardSwimLane', 'description')"
                                         >{% if tobject.description != None %}{{tobject.description}}{% endif %}</td>
                                         <td width="20%">
                                         
