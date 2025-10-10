@@ -450,6 +450,15 @@
     align-items: center;
   }
 
+  /* Orange swimlane tabs for Policies rows */
+  .swimlane_title.policies-tab,
+  .swimlane_title.general-policies-tab {
+    background-color: #ff8c00; /* orange */
+    color: #fff; /* white */
+    border-top-right-radius: 10px;
+    border-bottom-right-radius: 10px;
+  }
+
 
   /** card display **/
   .card {
@@ -1349,7 +1358,9 @@
           <!-- Policies Row -->
           <tr class="policies_row">
             <!-- swimlane placeholder -->
-            <td class="placeholder_column"></td>
+            <td class="placeholder_column">
+              <div class="swimlane_title policies-tab">Policies</div>
+            </td>
             
             <!-- Backlog Policies -->
             <td class="kanban_column policies_cell backlog_column sketchy_left_solid_border sketchy_right_solid_border sketchy_top_solid_border">
@@ -1414,7 +1425,9 @@
           <!-- General Policies as last full-width row -->
           <tr class="general_policies_row">
             <!-- swimlane placeholder cell -->
-            <td class="placeholder_column"></td>
+            <td class="placeholder_column">
+              <div class="swimlane_title general-policies-tab">General Policies</div>
+            </td>
             <!-- single cell spanning all board columns for general policies -->
             <td class="general_policies_cell sketchy_left_solid_border sketchy_right_solid_border sketchy_top_solid_border" colspan="100">
               <div class="common-policies-section mt-2">
@@ -2865,17 +2878,38 @@ function showGeneralDelete(index, text, id=null) {
   setTimeout(() => document.addEventListener('click', handleModalClick), 100);
 }
 
+// Clear and close the General Policies form
+function cancelGeneralPolicy() {
+  const form = document.getElementById('general-policy-form');
+  if (!form) return;
+  const input = form.querySelector('.policy-input');
+  if (input) input.value = '';
+  delete form.dataset.editIndex;
+  form.classList.remove('active');
+}
+
 // Handle Enter/Escape in inputs and modal escape
 document.addEventListener('keydown', function(e) {
   if (e.key === 'Enter' && e.target.classList.contains('policy-input')) {
     const form = e.target.closest('.policy-form');
-    const columnName = form.id.replace('form-', '');
-    savePolicy(columnName);
+    if (!form) return;
+    e.preventDefault();
+    if (form.id === 'general-policy-form') {
+      saveGeneralPolicy();
+    } else {
+      const columnName = form.id.replace('form-', '');
+      savePolicy(columnName);
+    }
   }
   if (e.key === 'Escape' && e.target.classList.contains('policy-input')) {
     const form = e.target.closest('.policy-form');
-    const columnName = form.id.replace('form-', '');
-    cancelPolicy(columnName);
+    if (!form) return;
+    if (form.id === 'general-policy-form') {
+      cancelGeneralPolicy();
+    } else {
+      const columnName = form.id.replace('form-', '');
+      cancelPolicy(columnName);
+    }
   }
   if (e.key === 'Escape') {
     const modal = document.getElementById('deletePolicyModal');
