@@ -191,3 +191,25 @@ class ProjectBoardCardManager(models.Manager):
         logger.debug(f"Story Points: {story_points}")
 
         return story_points
+
+
+# === Policies models (dev_env) ===
+class ProjectBoardColumnPolicy(BaseModelImpl):
+    board = models.ForeignKey(ProjectBoard, on_delete=models.CASCADE, related_name='column_policies', null=True, blank=True)
+    column_key = models.CharField(max_length=128, blank=True, null=True)
+    text = models.TextField(blank=True, null=True)
+    author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    position = models.IntegerField(default=1000)
+
+    def __str__(self):
+        return f"{self.column_key}: {self.text[:40] if self.text else ''}"
+
+
+class ProjectBoardGeneralPolicy(BaseModelImpl):
+    board = models.ForeignKey(ProjectBoard, on_delete=models.CASCADE, related_name='general_policies', null=True, blank=True)
+    text = models.TextField(blank=True, null=True)
+    author = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
+    position = models.IntegerField(default=1000)
+
+    def __str__(self):
+        return f"General: {self.text[:40] if self.text else ''}"

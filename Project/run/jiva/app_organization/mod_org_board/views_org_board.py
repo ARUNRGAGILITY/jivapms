@@ -14,6 +14,7 @@ from app_common.mod_common.models_common import *
 from app_common.mod_app.all_view_imports import *
 from app_jivapms.mod_app.all_view_imports import *
 from app_jivapms.mod_web.views_web import *
+from django.views.decorators.http import require_POST, require_GET
 
 app_name = 'app_organization'
 app_version = 'v1'
@@ -125,6 +126,145 @@ def list_org_boards(request, org_id):
     }       
     template_file = f"{app_name}/{module_path}/list_org_boards.html"
     return render(request, template_file, context)
+
+
+# ===================== POLICIES AJAX API (dev_env) ===================== #
+@login_required
+@require_GET
+def ajax_list_policies(request):
+    """Return all policies for a board grouped by column_key and general list."""
+    try:
+        board_id = int(request.GET.get('board_id'))
+    except (TypeError, ValueError):
+        return JsonResponse({"error": "board_id required"}, status=400)
+
+    # Column policies grouped by column_key
+    column_policies_qs = ProjectBoardColumnPolicy.objects.filter(board_id=board_id, active=True).order_by('position', 'id')
+    grouped = {}
+    for p in column_policies_qs:
+        key = p.column_key or ''
+        grouped.setdefault(key, []).append({
+            'id': p.id,
+            'text': p.text or '',
+            'position': p.position,
+        })
+
+    # General policies
+    general_qs = ProjectBoardGeneralPolicy.objects.filter(board_id=board_id, active=True).order_by('position', 'id')
+    general = [{'id': gp.id, 'text': gp.text or '', 'position': gp.position} for gp in general_qs]
+
+    return JsonResponse({
+        'success': True,
+        'columns': grouped,
+        'general': general,
+    })
+
+
+@login_required
+@require_POST
+def ajax_create_column_policy(request):
+    data = json.loads(request.body or '{}')
+    board_id = data.get('board_id')
+    column_key = data.get('column_key')
+    text = (data.get('text') or '').strip()
+    if not board_id or not column_key or not text:
+        return JsonResponse({"error": "board_id, column_key and text required"}, status=400)
+
+    policy = ProjectBoardColumnPolicy.objects.create(
+        board_id=board_id,
+        column_key=column_key,
+        text=text,
+        author=request.user,
+    )
+    return JsonResponse({'success': True, 'id': policy.id, 'text': policy.text})
+
+
+@login_required
+@require_POST
+def ajax_update_column_policy(request):
+    data = json.loads(request.body or '{}')
+    policy_id = data.get('id')
+    text = (data.get('text') or '').strip()
+    if not policy_id or text is None:
+        return JsonResponse({"error": "id and text required"}, status=400)
+    try:
+        policy = ProjectBoardColumnPolicy.objects.get(id=policy_id, active=True)
+    except ProjectBoardColumnPolicy.DoesNotExist:
+        return JsonResponse({"error": "Not found"}, status=404)
+    policy.text = text
+    policy.save()
+    return JsonResponse({'success': True})
+
+
+@login_required
+@require_POST
+def ajax_delete_column_policy(request):
+    data = json.loads(request.body or '{}')
+    policy_id = data.get('id')
+    if not policy_id:
+        return JsonResponse({"error": "id required"}, status=400)
+    updated = ProjectBoardColumnPolicy.objects.filter(id=policy_id).update(active=False, deleted=True)
+    if not updated:
+        return JsonResponse({"error": "Not found"}, status=404)
+    return JsonResponse({'success': True})
+
+
+@login_required
+@require_POST
+def ajax_reorder_column_policies(request):
+    """Update positions in bulk for a given column_key.
+    Payload: { board_id, column_key, order: [ {id, position}, ... ] }
+    """
+    data = json.loads(request.body or '{}')
+    order = data.get('order') or []
+    for item in order:
+        pid = item.get('id')
+        pos = item.get('position', 1000)
+        if pid:
+            ProjectBoardColumnPolicy.objects.filter(id=pid).update(position=pos)
+    return JsonResponse({'success': True})
+
+
+@login_required
+@require_POST
+def ajax_create_general_policy(request):
+    data = json.loads(request.body or '{}')
+    board_id = data.get('board_id')
+    text = (data.get('text') or '').strip()
+    if not board_id or not text:
+        return JsonResponse({"error": "board_id and text required"}, status=400)
+    gp = ProjectBoardGeneralPolicy.objects.create(board_id=board_id, text=text, author=request.user)
+    return JsonResponse({'success': True, 'id': gp.id, 'text': gp.text})
+
+
+@login_required
+@require_POST
+def ajax_update_general_policy(request):
+    data = json.loads(request.body or '{}')
+    policy_id = data.get('id')
+    text = (data.get('text') or '').strip()
+    if not policy_id or text is None:
+        return JsonResponse({"error": "id and text required"}, status=400)
+    try:
+        gp = ProjectBoardGeneralPolicy.objects.get(id=policy_id, active=True)
+    except ProjectBoardGeneralPolicy.DoesNotExist:
+        return JsonResponse({"error": "Not found"}, status=404)
+    gp.text = text
+    gp.save()
+    return JsonResponse({'success': True})
+
+
+@login_required
+@require_POST
+def ajax_delete_general_policy(request):
+    data = json.loads(request.body or '{}')
+    policy_id = data.get('id')
+    if not policy_id:
+        return JsonResponse({"error": "id required"}, status=400)
+    updated = ProjectBoardGeneralPolicy.objects.filter(id=policy_id).update(active=False, deleted=True)
+    if not updated:
+        return JsonResponse({"error": "Not found"}, status=404)
+    return JsonResponse({'success': True})
 
 
 

@@ -2566,246 +2566,247 @@ function saveCardToServer(cardId, data) {
 
 <!-- Column Policies Management JavaScript -->
 <script>
-// Column policies management functionality
-const columnPoliciesData = JSON.parse(localStorage.getItem('kanban-column-policies') || '{}');
+// Backend-driven policies (no browser storage)
+const policyBoardId = '{{ project_board.id }}';
+const columnPoliciesData = {}; // { columnKey: [{id, text, position}] }
+let generalPolicies = []; // [{id, text, position}]
 
-// Initialize policies on page load
+// Resolve named URLs if available; otherwise fall back to known paths
+{% url 'ajax_list_policies' as ajax_list_policies_url %}
+{% url 'ajax_create_column_policy' as ajax_create_column_policy_url %}
+{% url 'ajax_update_column_policy' as ajax_update_column_policy_url %}
+{% url 'ajax_delete_column_policy' as ajax_delete_column_policy_url %}
+{% url 'ajax_reorder_column_policies' as ajax_reorder_column_policies_url %}
+{% url 'ajax_create_general_policy' as ajax_create_general_policy_url %}
+{% url 'ajax_update_general_policy' as ajax_update_general_policy_url %}
+{% url 'ajax_delete_general_policy' as ajax_delete_general_policy_url %}
+
+const __policyBase = '/org/org_board/ajax_policies';
+const __fallback = (u, f) => (u && u.length ? u : f);
+
+const ajaxPolicies = {
+  list: __fallback("{{ ajax_list_policies_url }}", `${__policyBase}/list/`),
+  column: {
+    create: __fallback("{{ ajax_create_column_policy_url }}", `${__policyBase}/column/create/`),
+    update: __fallback("{{ ajax_update_column_policy_url }}", `${__policyBase}/column/update/`),
+    delete: __fallback("{{ ajax_delete_column_policy_url }}", `${__policyBase}/column/delete/`),
+    reorder: __fallback("{{ ajax_reorder_column_policies_url }}", `${__policyBase}/column/reorder/`)
+  },
+  general: {
+    create: __fallback("{{ ajax_create_general_policy_url }}", `${__policyBase}/general/create/`),
+    update: __fallback("{{ ajax_update_general_policy_url }}", `${__policyBase}/general/update/`),
+    delete: __fallback("{{ ajax_delete_general_policy_url }}", `${__policyBase}/general/delete/`)
+  }
+};
+
 document.addEventListener('DOMContentLoaded', function() {
-    initializeColumnPolicies();
-    setupColumnPoliciesToggle();
-    loadDefaultColumnPolicies();
-  initializeGeneralPolicies();
+  setupColumnPoliciesToggle();
+  fetch(`${ajaxPolicies.list}?board_id=${policyBoardId}`)
+    .then(r => r.json())
+    .then(data => {
+      if (data && data.success) {
+        Object.keys(data.columns || {}).forEach(key => {
+          columnPoliciesData[key] = (data.columns[key] || []).map(p => ({ id: p.id, text: p.text, position: p.position }));
+        });
+        generalPolicies = (data.general || []).map(p => ({ id: p.id, text: p.text, position: p.position }));
+      }
+    })
+    .finally(() => {
+      initializeColumnPolicies();
+      initializeGeneralPolicies();
+    });
 });
 
 function initializeColumnPolicies() {
-    // Get all column policy containers
-    const policyContainers = document.querySelectorAll('[id^="policies-"]');
-    policyContainers.forEach(container => {
-        const columnName = container.id.replace('policies-', '');
-        if (!columnPoliciesData[columnName]) {
-            columnPoliciesData[columnName] = [];
-        }
-        displayColumnPolicies(columnName);
-    });
+  const policyContainers = document.querySelectorAll('[id^="policies-"]');
+  policyContainers.forEach(container => {
+    const columnName = container.id.replace('policies-', '');
+    if (!columnPoliciesData[columnName]) columnPoliciesData[columnName] = [];
+    displayColumnPolicies(columnName);
+  });
 }
 
 function setupColumnPoliciesToggle() {
-    const checkbox = document.getElementById('showColumnPolicies');
-    const policyContainers = document.querySelectorAll('.column-policies-content');
-    
-    // Load saved state
-    const isVisible = localStorage.getItem('show-column-policies') !== 'false';
-    checkbox.checked = isVisible;
-    policyContainers.forEach(container => {
-        container.style.display = isVisible ? 'block' : 'none';
-    });
-    
-    checkbox.addEventListener('change', function() {
-        const display = this.checked ? 'block' : 'none';
-        policyContainers.forEach(container => {
-            container.style.display = display;
-        });
-        localStorage.setItem('show-column-policies', this.checked);
-    });
-}
-
-function loadDefaultColumnPolicies() {
-    // Add some default policies for common columns if none exist
-    const defaultPolicies = {
-        'backlog': ['Items awaiting prioritization', 'New requests and features'],
-        'to-do': ['Ready for development', 'All requirements defined'],
-        'in-progress': ['Currently being worked on', 'Regular updates required'],
-        'testing': ['Under quality assurance', 'All tests must pass'],
-        'done': ['Completed and reviewed', 'Ready for deployment']
-    };
-    
-    Object.keys(defaultPolicies).forEach(column => {
-        if (columnPoliciesData[column] && columnPoliciesData[column].length === 0) {
-            columnPoliciesData[column] = [...defaultPolicies[column]];
-        }
-    });
-    
-    saveColumnPoliciesData();
-    Object.keys(columnPoliciesData).forEach(column => displayColumnPolicies(column));
+  const checkbox = document.getElementById('showColumnPolicies');
+  const policyContainers = document.querySelectorAll('.column-policies-content');
+  const isVisible = true; // default visible, not persisted
+  if (checkbox) checkbox.checked = isVisible;
+  policyContainers.forEach(c => c.style.display = isVisible ? 'block' : 'none');
+  if (checkbox) checkbox.addEventListener('change', function() {
+    const display = this.checked ? 'block' : 'none';
+    policyContainers.forEach(c => c.style.display = display);
+  });
 }
 
 function displayColumnPolicies(columnName) {
-    const container = document.getElementById(`policies-${columnName}`);
-    if (!container) return;
-    
-    container.innerHTML = '';
-    
-    if (columnPoliciesData[columnName] && columnPoliciesData[columnName].length > 0) {
-        columnPoliciesData[columnName].forEach((policy, index) => {
-            const policyItem = document.createElement('div');
-            policyItem.className = 'policy-item';
-            policyItem.innerHTML = `
-                <span class="policy-text">• ${policy}</span>
-                <div class="policy-actions">
-                    <button class="btn-edit-policy" onclick="editColumnPolicy('${columnName}', ${index})" title="Edit policy">
-                        <i class="fas fa-edit"></i>
-                    </button>
-                    <button class="btn-delete-policy" onclick="showDeleteModal('${columnName}', ${index}, '${policy.replace(/'/g, "\\'")}', this)" title="Delete policy">
-                        <i class="fas fa-trash"></i>
-                    </button>
-                </div>
-            `;
-            container.appendChild(policyItem);
-        });
-    } else {
-        container.innerHTML = '<div class="policy-item"><span class="policy-text" style="color: #888; font-size: 0.6rem;">No policies</span></div>';
-    }
+  const container = document.getElementById(`policies-${columnName}`);
+  if (!container) return;
+  container.innerHTML = '';
+  const list = columnPoliciesData[columnName] || [];
+  if (list.length > 0) {
+    list.forEach((policy, index) => {
+      const ptext = typeof policy === 'string' ? policy : (policy.text || '');
+      const pid = typeof policy === 'string' ? null : policy.id;
+      const policyItem = document.createElement('div');
+      policyItem.className = 'policy-item';
+      policyItem.innerHTML = `
+        <span class="policy-text">• ${ptext}</span>
+        <div class="policy-actions">
+          <button class="btn-edit-policy" onclick="editColumnPolicy('${columnName}', ${index})" title="Edit policy">
+            <i class="fas fa-edit"></i>
+          </button>
+          <button class="btn-delete-policy" onclick="showDeleteModal('${columnName}', ${index}, '${ptext.replace(/'/g, "\\'")}', ${pid !== null ? pid : 'null'})" title="Delete policy">
+            <i class="fas fa-trash"></i>
+          </button>
+        </div>`;
+      container.appendChild(policyItem);
+    });
+  } else {
+    container.innerHTML = '<div class="policy-item"><span class="policy-text" style="color:#888;font-size:0.6rem;">No policies</span></div>';
+  }
 }
 
 function showAddPolicy(columnName) {
-    const form = document.getElementById(`form-${columnName}`);
-    const input = form.querySelector('.policy-input');
-    
-    form.classList.add('active');
-    input.value = '';
-    input.focus();
-    
-    // Hide other forms
-    document.querySelectorAll('.policy-form').forEach(f => {
-        if (f !== form) f.classList.remove('active');
-    });
+  const form = document.getElementById(`form-${columnName}`);
+  const input = form.querySelector('.policy-input');
+  form.classList.add('active');
+  input.value = '';
+  input.focus();
+  document.querySelectorAll('.policy-form').forEach(f => { if (f !== form) f.classList.remove('active'); });
 }
 
-function savePolicy(columnName) {
-    const form = document.getElementById(`form-${columnName}`);
-    const input = form.querySelector('.policy-input');
-    const policyText = input.value.trim();
-    
-    if (policyText) {
-        if (!columnPoliciesData[columnName]) {
-            columnPoliciesData[columnName] = [];
-        }
-        
-        const editIndex = form.dataset.editIndex;
-        if (editIndex !== undefined) {
-            // Edit existing policy
-            columnPoliciesData[columnName][parseInt(editIndex)] = policyText;
-            delete form.dataset.editIndex;
-        } else {
-            // Add new policy
-            columnPoliciesData[columnName].push(policyText);
-        }
-        
-        saveColumnPoliciesData();
-        displayColumnPolicies(columnName);
-        cancelPolicy(columnName);
-    } else {
-        alert('Please enter a policy description.');
+async function savePolicy(columnName) {
+  const form = document.getElementById(`form-${columnName}`);
+  const input = form.querySelector('.policy-input');
+  const policyText = input.value.trim();
+  if (!policyText) { alert('Please enter a policy description.'); return; }
+  const editIndex = form.dataset.editIndex;
+  if (editIndex !== undefined) {
+    const existing = columnPoliciesData[columnName][parseInt(editIndex)];
+    const pid = existing && existing.id;
+    if (pid) {
+  await saveColumnPoliciesData({ scope: 'column', op: 'update', data: { id: pid, text: policyText } });
+      existing.text = policyText;
     }
+    delete form.dataset.editIndex;
+  } else {
+    if (!columnPoliciesData[columnName]) columnPoliciesData[columnName] = [];
+  const data = await saveColumnPoliciesData({ scope: 'column', op: 'create', data: { board_id: policyBoardId, column_key: columnName, text: policyText } });
+    if (data && data.success) columnPoliciesData[columnName].push({ id: data.id, text: data.text, position: 1000 });
+  }
+  displayColumnPolicies(columnName);
+  cancelPolicy(columnName);
 }
 
 function editColumnPolicy(columnName, index) {
-    const form = document.getElementById(`form-${columnName}`);
-    const input = form.querySelector('.policy-input');
-    
-    form.classList.add('active');
-    input.value = columnPoliciesData[columnName][index];
-    form.dataset.editIndex = index;
-    input.focus();
-    
-    // Hide other forms
-    document.querySelectorAll('.policy-form').forEach(f => {
-        if (f !== form) f.classList.remove('active');
-    });
+  const form = document.getElementById(`form-${columnName}`);
+  const input = form.querySelector('.policy-input');
+  form.classList.add('active');
+  const policy = columnPoliciesData[columnName][index];
+  input.value = typeof policy === 'string' ? policy : (policy.text || '');
+  form.dataset.editIndex = index;
+  input.focus();
+  document.querySelectorAll('.policy-form').forEach(f => { if (f !== form) f.classList.remove('active'); });
 }
 
-function deleteColumnPolicy(columnName, index) {
-    if (confirm('Delete this policy?')) {
-        columnPoliciesData[columnName].splice(index, 1);
-        saveColumnPoliciesData();
-        displayColumnPolicies(columnName);
-    }
-}
+// Modal & delete handling
+let pendingDeleteData = null; // { type: 'column'|'general', columnName?, index?, id? }
 
-// Modal-related variables
-let pendingDeleteData = null;
-
-function showDeleteModal(columnName, index, policyText, buttonElement) {
-    pendingDeleteData = { columnName, index };
-    
-    // Set the policy text in the preview
-    document.getElementById('policyPreview').textContent = '• ' + policyText;
-    
-    // Show the modal
-    document.getElementById('deletePolicyModal').style.display = 'block';
-    
-    // Add click outside to close
-    setTimeout(() => {
-        document.addEventListener('click', handleModalClick);
-    }, 100);
+function showDeleteModal(columnName, index, policyText, policyId=null) {
+  pendingDeleteData = { type: 'column', columnName, index, id: policyId };
+  document.getElementById('policyPreview').textContent = '• ' + policyText;
+  document.getElementById('deletePolicyModal').style.display = 'block';
+  setTimeout(() => document.addEventListener('click', handleModalClick), 100);
 }
 
 function handleModalClick(event) {
-    const modal = document.getElementById('deletePolicyModal');
-    const modalContent = modal.querySelector('.delete-modal-content');
-    
-    if (event.target === modal && !modalContent.contains(event.target)) {
-        cancelDeletePolicy();
+  const modal = document.getElementById('deletePolicyModal');
+  const modalContent = modal.querySelector('.delete-modal-content');
+  if (event.target === modal && !modalContent.contains(event.target)) {
+    cancelDeletePolicy();
+  }
+}
+
+async function confirmDeletePolicy() {
+  if (pendingDeleteData) {
+    if (pendingDeleteData.type === 'column') {
+      const { columnName, index, id } = pendingDeleteData;
+      if (id) {
+  await saveColumnPoliciesData({ scope: 'column', op: 'delete', data: { id } });
+      }
+      columnPoliciesData[columnName].splice(index, 1);
+      displayColumnPolicies(columnName);
+    } else if (pendingDeleteData.type === 'general') {
+      const { index, id } = pendingDeleteData;
+      if (id) {
+  await saveColumnPoliciesData({ scope: 'general', op: 'delete', data: { id } });
+      }
+      generalPolicies.splice(index, 1);
+      renderGeneralPolicies();
     }
+  }
+  closeDeleteModal();
 }
 
-function confirmDeletePolicy() {
-    if (pendingDeleteData) {
-        const { columnName, index } = pendingDeleteData;
-        columnPoliciesData[columnName].splice(index, 1);
-        saveColumnPoliciesData();
-        displayColumnPolicies(columnName);
-    }
-    closeDeleteModal();
-}
-
-function cancelDeletePolicy() {
-    closeDeleteModal();
-}
-
+function cancelDeletePolicy() { closeDeleteModal(); }
 function closeDeleteModal() {
-    document.getElementById('deletePolicyModal').style.display = 'none';
-    document.removeEventListener('click', handleModalClick);
-    pendingDeleteData = null;
+  document.getElementById('deletePolicyModal').style.display = 'none';
+  document.removeEventListener('click', handleModalClick);
+  pendingDeleteData = null;
 }
 
 function cancelPolicy(columnName) {
-    const form = document.getElementById(`form-${columnName}`);
-    const input = form.querySelector('.policy-input');
-    
-    form.classList.remove('active');
-    input.value = '';
-    delete form.dataset.editIndex;
+  const form = document.getElementById(`form-${columnName}`);
+  const input = form.querySelector('.policy-input');
+  form.classList.remove('active');
+  input.value = '';
+  delete form.dataset.editIndex;
 }
 
-function saveColumnPoliciesData() {
-    localStorage.setItem('kanban-column-policies', JSON.stringify(columnPoliciesData));
+async function saveColumnPoliciesData({ scope, op, data }) {
+  let url = '';
+  if (scope === 'column') {
+    if (op === 'create') url = ajaxPolicies.column.create;
+    else if (op === 'update') url = ajaxPolicies.column.update;
+    else if (op === 'delete') url = ajaxPolicies.column.delete;
+    else if (op === 'reorder') url = ajaxPolicies.column.reorder;
+  } else if (scope === 'general') {
+    if (op === 'create') url = ajaxPolicies.general.create;
+    else if (op === 'update') url = ajaxPolicies.general.update;
+    else if (op === 'delete') url = ajaxPolicies.general.delete;
+  }
+  if (!url) throw new Error('Invalid scope/op');
+  const resp = await fetch(url, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'X-CSRFToken': '{{ csrf_token }}' },
+    body: JSON.stringify(data || {})
+  });
+  let json = {};
+  try { json = await resp.json(); } catch (e) {}
+  return json;
 }
 
-// General policies management
-const generalPoliciesKey = 'kanban-general-policies';
-let generalPolicies = JSON.parse(localStorage.getItem(generalPoliciesKey) || '[]');
-
-function initializeGeneralPolicies() {
-  renderGeneralPolicies();
-}
+// General policies
+function initializeGeneralPolicies() { renderGeneralPolicies(); }
 
 function renderGeneralPolicies() {
   const list = document.getElementById('general-policies-list');
   if (!list) return;
   list.innerHTML = '';
-  if (generalPolicies.length === 0) {
+  if (!generalPolicies || generalPolicies.length === 0) {
     list.innerHTML = '<div class="policy-item"><span class="policy-text" style="color:#888;font-size:0.6rem;">No policies</span></div>';
     return;
   }
-  generalPolicies.forEach((text, idx) => {
+  generalPolicies.forEach((item, idx) => {
+    const text = typeof item === 'string' ? item : (item.text || '');
+    const pid = typeof item === 'string' ? null : item.id;
     const el = document.createElement('div');
     el.className = 'policy-item';
     el.innerHTML = `
       <span class="policy-text">• ${text}</span>
       <div class="policy-actions">
         <button class="btn-edit-policy" onclick="editGeneralPolicy(${idx})" title="Edit policy"><i class="fas fa-edit"></i></button>
-        <button class="btn-delete-policy" onclick="showGeneralDelete(${idx}, '${"" + text.replace(/'/g, "\\'")}')" title="Delete policy"><i class="fas fa-trash"></i></button>
+        <button class="btn-delete-policy" onclick="showGeneralDelete(${idx}, '${"" + text.replace(/'/g, "\\'")}', ${pid !== null ? pid : 'null'})" title="Delete policy"><i class="fas fa-trash"></i></button>
       </div>`;
     list.appendChild(el);
   });
@@ -2821,19 +2822,25 @@ function showAddGeneralPolicy() {
   delete form.dataset.editIndex;
 }
 
-function saveGeneralPolicy() {
+async function saveGeneralPolicy() {
   const form = document.getElementById('general-policy-form');
   const input = form.querySelector('.policy-input');
   const txt = input.value.trim();
   if (!txt) return;
   const editIndex = form.dataset.editIndex;
   if (editIndex !== undefined) {
-    generalPolicies[parseInt(editIndex)] = txt;
+    const idx = parseInt(editIndex);
+    const existing = generalPolicies[idx];
+    const pid = existing && existing.id;
+    if (pid) {
+  await saveColumnPoliciesData({ scope: 'general', op: 'update', data: { id: pid, text: txt } });
+      existing.text = txt;
+    }
     delete form.dataset.editIndex;
   } else {
-    generalPolicies.push(txt);
+  const data = await saveColumnPoliciesData({ scope: 'general', op: 'create', data: { board_id: policyBoardId, text: txt } });
+    if (data && data.success) generalPolicies.push({ id: data.id, text: data.text, position: 1000 });
   }
-  localStorage.setItem(generalPoliciesKey, JSON.stringify(generalPolicies));
   renderGeneralPolicies();
   cancelGeneralPolicy();
 }
@@ -2841,65 +2848,39 @@ function saveGeneralPolicy() {
 function editGeneralPolicy(index) {
   const form = document.getElementById('general-policy-form');
   const input = form.querySelector('.policy-input');
-  input.value = generalPolicies[index];
+  const itm = generalPolicies[index];
+  input.value = typeof itm === 'string' ? itm : (itm.text || '');
   form.dataset.editIndex = index;
   form.classList.add('active');
   input.focus();
 }
 
 let pendingGeneralDeleteIndex = null;
-function showGeneralDelete(index, text) {
+function showGeneralDelete(index, text, id=null) {
   pendingGeneralDeleteIndex = index;
+  pendingDeleteData = { type: 'general', index, id };
   const preview = document.getElementById('policyPreview');
   if (preview) preview.textContent = '• ' + text;
   document.getElementById('deletePolicyModal').style.display = 'block';
   setTimeout(() => document.addEventListener('click', handleModalClick), 100);
 }
 
-// Override confirm to support general delete when pending
-const _origConfirmDeletePolicy = confirmDeletePolicy;
-confirmDeletePolicy = function() {
-  if (pendingGeneralDeleteIndex !== null) {
-    generalPolicies.splice(pendingGeneralDeleteIndex, 1);
-    localStorage.setItem(generalPoliciesKey, JSON.stringify(generalPolicies));
-    renderGeneralPolicies();
-    pendingGeneralDeleteIndex = null;
-    closeDeleteModal();
-    return;
-  }
-  _origConfirmDeletePolicy();
-}
-
-function cancelGeneralPolicy() {
-  const form = document.getElementById('general-policy-form');
-  if (!form) return;
-  form.classList.remove('active');
-  const input = form.querySelector('.policy-input');
-  input.value = '';
-  delete form.dataset.editIndex;
-}
-
-// Handle Enter key in policy input fields
+// Handle Enter/Escape in inputs and modal escape
 document.addEventListener('keydown', function(e) {
-    if (e.key === 'Enter' && e.target.classList.contains('policy-input')) {
-        const form = e.target.closest('.policy-form');
-        const columnName = form.id.replace('form-', '');
-        savePolicy(columnName);
-    }
-    
-    if (e.key === 'Escape' && e.target.classList.contains('policy-input')) {
-        const form = e.target.closest('.policy-form');
-        const columnName = form.id.replace('form-', '');
-        cancelPolicy(columnName);
-    }
-    
-    // Handle Escape key for modal
-    if (e.key === 'Escape') {
-        const modal = document.getElementById('deletePolicyModal');
-        if (modal && modal.style.display === 'block') {
-            cancelDeletePolicy();
-        }
-    }
+  if (e.key === 'Enter' && e.target.classList.contains('policy-input')) {
+    const form = e.target.closest('.policy-form');
+    const columnName = form.id.replace('form-', '');
+    savePolicy(columnName);
+  }
+  if (e.key === 'Escape' && e.target.classList.contains('policy-input')) {
+    const form = e.target.closest('.policy-form');
+    const columnName = form.id.replace('form-', '');
+    cancelPolicy(columnName);
+  }
+  if (e.key === 'Escape') {
+    const modal = document.getElementById('deletePolicyModal');
+    if (modal && modal.style.display === 'block') cancelDeletePolicy();
+  }
 });
 </script>
 

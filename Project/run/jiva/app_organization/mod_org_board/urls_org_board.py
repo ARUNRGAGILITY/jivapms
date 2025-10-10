@@ -24,4 +24,13 @@ urlpatterns = [
     path('view_project_tree_board_custom/<int:project_id>/', views_org_board.view_project_tree_board_custom, name='view_project_tree_board_custom'),
     path('view_project_tree_board_smart_kanban/<int:project_id>/', views_org_board.view_project_tree_board_smart_kanban, name='view_project_tree_board_smart_kanban'),
 
+    # Policies AJAX (dev_env)
+    path('ajax_policies/list/', views_org_board.ajax_list_policies, name='ajax_list_policies'),
+    path('ajax_policies/column/create/', views_org_board.ajax_create_column_policy, name='ajax_create_column_policy'),
+    path('ajax_policies/column/update/', views_org_board.ajax_update_column_policy, name='ajax_update_column_policy'),
+    path('ajax_policies/column/delete/', views_org_board.ajax_delete_column_policy, name='ajax_delete_column_policy'),
+    path('ajax_policies/column/reorder/', views_org_board.ajax_reorder_column_policies, name='ajax_reorder_column_policies'),
+    path('ajax_policies/general/create/', views_org_board.ajax_create_general_policy, name='ajax_create_general_policy'),
+    path('ajax_policies/general/update/', views_org_board.ajax_update_general_policy, name='ajax_update_general_policy'),
+    path('ajax_policies/general/delete/', views_org_board.ajax_delete_general_policy, name='ajax_delete_general_policy'),
 ]
