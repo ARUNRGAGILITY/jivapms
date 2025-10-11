@@ -115,6 +115,10 @@
   .header-bottom-divider .placeholder_column { border-bottom: none; }
   .header-bottom-divider-cell { border-bottom: 2px solid #e9ecef; }
 
+  /* Header rows subtle separators for clarity */
+  thead tr.header-row td { border-bottom: 2px solid #e9ecef; }
+  thead tr.header-row .placeholder_column { border-bottom: none; }
+
   /* Column Policies Styles */
   .column-policies {
     background-color: #f8f9fa;
@@ -449,6 +453,14 @@
     justify-content: center;
     align-items: center;
   }
+
+  /* Visual separation for each swimlane row */
+  .swimlane_row td { border-top: 2px solid #e9ecef; }
+  .swimlane_row:first-of-type td { border-top: 2px solid #d9dee3; }
+  .swimlane_row + .policies_row td { border-top: 2px solid #e9ecef; }
+
+  /* CoS badge toggle target */
+  .cos-badge { display: inline-block; }
 
   /* Orange swimlane tabs for Policies rows */
   .swimlane_title.policies-tab,
@@ -960,7 +972,7 @@
       {{project_board}}
     </div>
 
-    <div class="col-md-4 d-flex justify-content-center">
+  <div class="col-md-4 d-flex justify-content-center">
       <div class="policies-toggle mb-2 text-center">
         <input type="checkbox" id="showColumnPolicies" class="policies-checkbox" checked>
         <label for="showColumnPolicies"><small>Show Column Policies</small></label>
@@ -974,6 +986,10 @@
         <a href="{% url 'board_card_settings' project_board.id %}" class="btn btn-sm btn-success">Card <i class="fas fa-cog"></i></a>
   <a href="{% url 'list_project_board_swimlanes' project.id %}" class="btn btn-sm btn-warning">Configure Swimlanes <i class="fas fa-sliders-h"></i></a>
   <a href="{% url 'list_project_board_cos' project.id %}" class="btn btn-sm btn-outline-warning ms-2">Configure Classes of Service</a>
+        <div class="form-check form-switch ms-2">
+          <input class="form-check-input" type="checkbox" id="toggleCosBadges" checked>
+          <label class="form-check-label" for="toggleCosBadges"><small>Show Classes of Service</small></label>
+        </div>
         <a href="{% url 'view_project_tree_backlog' project.id  %}?project_id={{ project.id }}" class="btn btn-sm btn-primary">
           <i class="bi bi-arrow-left"></i> Back to Backlog
         </a>
@@ -995,7 +1011,7 @@
           FIRST ROW
           COUNTS
           -->
-          <tr>
+          <tr class="header-row">
             <td class="placeholder_column">
               <!-- Place holder for swimlane -->
             </td>
@@ -1049,7 +1065,7 @@
           SECOND ROW
           COUNTS
           -->
-          <tr>
+          <tr class="header-row">
             <td class="placeholder_column">
               <!-- Place holder for swimlane -->
             </td>
@@ -1099,7 +1115,7 @@
           THIRD ROW
           HEADER
           -->
-          <tr class="">
+          <tr class="header-row ">
             <td class="placeholder_column ">
               <!-- Place holder for swimlane -->
             </td>
@@ -1152,7 +1168,7 @@
           FOURTH ROW
           HEADER
           -->
-          <tr class="">
+          <tr class="header-row ">
             <td class="placeholder_column ">
               <!-- Place holder for swimlane -->
             </td>
@@ -1266,7 +1282,7 @@
                           <div class="card_content">
                             <div class="card_title">{{item|display_if_not_none}}
                               {% if item.class_of_service_id %}
-                                <span class="badge bg-secondary ms-2">{{ item.class_of_service.name }}</span>
+                                <span class="badge bg-secondary ms-2 cos-badge">{{ item.class_of_service.name }}</span>
                               {% endif %}
                             </div>
                             <div class="card_description">{{item.description|default:''}}</div>
@@ -1303,7 +1319,7 @@
                           <div class="card_content">
                             <div class="card_title">{{item|display_if_not_none}}
                               {% if item.class_of_service_id %}
-                                <span class="badge bg-secondary ms-2">{{ item.class_of_service.name }}</span>
+                                <span class="badge bg-secondary ms-2 cos-badge">{{ item.class_of_service.name }}</span>
                               {% endif %}
                             </div>
                             <div class="card_description">{{item.description|default:''}}</div>
@@ -1779,6 +1795,16 @@ crossorigin="anonymous" referrerpolicy="no-referrer"></script>
       setupDragAndDrop();
       countAllCards();
       addNotificationContainer();
+      // Initialize CoS badge toggle
+      const cosToggle = document.getElementById('toggleCosBadges');
+      if (cosToggle) {
+        const apply = () => {
+          const show = cosToggle.checked;
+          document.querySelectorAll('.cos-badge').forEach(el => el.style.display = show ? 'inline-block' : 'none');
+        };
+        cosToggle.addEventListener('change', apply);
+        apply();
+      }
     });
   let draggedCard = null;
   let originalFromSwimlaneId = null;
