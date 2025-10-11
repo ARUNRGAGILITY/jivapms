@@ -1250,8 +1250,8 @@
                 <div class="swimlane_title">{{ lane.name|default:'Swimlane' }}</div>
               </td>
               <!-- Backlog column per swimlane: render empty to avoid duplicating backlog items; backlog is shown only once in General row -->
-  <td class="kanban_column backlog_column sketchy_left_solid_border sketchy_right_solid_border"
-          data-id="0" data-wip-limit="100" data-column-name="Backlog" data-state-id="0" data-swimlane-id="null" data-placeholder-backlog="true">
+        <td class="kanban_column backlog_column sketchy_left_solid_border sketchy_right_solid_border"
+          data-id="0" data-wip-limit="100" data-column-name="Backlog" data-state-id="0" data-swimlane-id="{{ lane.id }}" data-placeholder-backlog="true">
                 <!-- Intentionally left blank. Backlog items are displayed only in the General row. -->
               </td>
               {% for state in project_board_states %}
@@ -1907,12 +1907,14 @@ function handleDrop(e) {
   }
   e.preventDefault();
   let destColumn = this;
+  // Track intended swimlane id (for placeholder backlog drops)
+  let intendedSwimlaneId = null;
   // If dropping into a placeholder backlog (swimlane backlog cell), redirect to the single General backlog container
   if (destColumn.classList.contains('backlog_column') && destColumn.hasAttribute('data-placeholder-backlog')) {
+    // Preserve the swimlane target while redirecting to General backlog container
+    intendedSwimlaneId = destColumn.dataset.swimlaneId || null;
     const generalBacklog = document.querySelector('.backlog_column.kanban_column[data-general-backlog="true"]');
-    if (generalBacklog) {
-      destColumn = generalBacklog;
-    }
+    if (generalBacklog) destColumn = generalBacklog;
   }
   if (draggedCard) {
     const closestCard = getClosestCard(this, e.clientY);
@@ -1941,7 +1943,11 @@ function handleDrop(e) {
     
   const toStateId = destColumn.dataset.stateId || destColumn.id;
   const toSwimlaneIdRaw = destColumn.dataset.swimlaneId;
-  const toSwimlaneId = (toSwimlaneIdRaw === undefined) ? null : (toSwimlaneIdRaw === 'null' ? null : toSwimlaneIdRaw);
+  let toSwimlaneId = (toSwimlaneIdRaw === undefined) ? null : (toSwimlaneIdRaw === 'null' ? null : toSwimlaneIdRaw);
+  // If we redirected from a lane placeholder backlog, use its lane id as destination lane
+  if (intendedSwimlaneId !== null) {
+    toSwimlaneId = intendedSwimlaneId === 'null' ? null : intendedSwimlaneId;
+  }
     
     const isBufferColumn = destColumn.classList.contains('buffer_column');
     let substate = null;
@@ -1974,8 +1980,8 @@ function handleDrop(e) {
       });
     }
     const destPositions = formattedPositions;
-  const projectId = '{{ project.id }}';
-  const boardId = '{{ project_board.id }}';
+    const projectId = '{{ project.id }}';
+    const boardId = '{{ project_board.id }}';
     const card = draggedCard;
     const cardId = draggedCard.id;
     const cardTitle = draggedCard.innerText;
@@ -1983,6 +1989,8 @@ function handleDrop(e) {
     var fromColumnName = originalFromColumnName;
     var fromSubColumnName = "";
     var fromBufferColumn = false;
+
+    // Single atomic update: pass swimlaneId to the server along with the state move
     updateCardState(
       cardId,
       originalFromStateId,
@@ -1991,18 +1999,9 @@ function handleDrop(e) {
       destColumn.dataset.columnName || destColumn.className,
       projectId,
       boardId,
-      originalFromColumnName
+      originalFromColumnName,
+      toSwimlaneId
     );
-    // If swimlane changed (including moving to/from General), persist it
-    try {
-      const prevSwimlaneIdRaw = originalFromSwimlaneId;
-      const prevSwimlaneId = (prevSwimlaneIdRaw === undefined) ? null : (prevSwimlaneIdRaw === 'null' ? null : prevSwimlaneIdRaw);
-      if (prevSwimlaneId !== toSwimlaneId) {
-        updateCardSwimlane(draggedCard.id, toSwimlaneId);
-      }
-    } catch (err) {
-      console.warn('Swimlane update skipped:', err);
-    }
     
     if (isBufferColumn && substate) {
       updateCardSubstate(draggedCard.id, toStateId, substate);
@@ -2274,41 +2273,28 @@ function countAllCards() {
 
   
 <script>
-  // Persist swimlane change for a card; accepts null (General) or lane id
+  // Helper still available if needed elsewhere
   function updateCardSwimlane(id, swimlaneId) {
-    if (id && id.startsWith('temp-')) return; // don't update temporary cards
+    if (id && id.startsWith('temp-')) return;
     let formData = new FormData();
     formData.append('id', id);
     formData.append('model_name', 'ProjectBoardCard');
     formData.append('app_name', 'app_organization');
     formData.append('field_name', 'swimlane');
     formData.append('new_value', swimlaneId === null ? '' : swimlaneId);
-    return fetch('/common/common_ajax/ajax_update_app_model_field_value/', {
-      method: 'POST',
-      headers: { 'X-CSRFToken': '{{ csrf_token }}' },
-      body: formData
-    })
-    .then(r => r.json())
-    .then(data => {
-      if (data && data.error) {
-        console.error('Swimlane Update Error:', data.error);
-      } else {
-        console.log('Swimlane Update Success:', data);
-      }
-    })
-    .catch(err => console.error('Swimlane Update Exception:', err));
+    return fetch('/common/common_ajax/ajax_update_app_model_field_value/', { method: 'POST', headers: { 'X-CSRFToken': '{{ csrf_token }}' }, body: formData });
   }
 
-function updateCardState(cardId, fromStateId, toStateId, destPositions, destColumn, projectId, boardId, fromColumn, extra = {}) {
+function updateCardState(cardId, fromStateId, toStateId, destPositions, destColumn, projectId, boardId, fromColumn, swimlaneId = null, extra = {}) {
     const isNewCard = cardId && cardId.startsWith("temp-");
       console.log("EXTRA ", extra);
-    fetch("{% url 'ajax_update_project_board_card_state' %}", {
+  return fetch("{% url 'ajax_update_project_board_card_state' %}", {
         method: "POST",
         headers: {
             "Content-Type": "application/json",
             "X-CSRFToken": "{{ csrf_token }}"
         },
-        body: JSON.stringify({
+    body: JSON.stringify({
             card_id: isNewCard ? null : cardId,
             temp_id: isNewCard ? cardId : null,
             from_state_id: fromStateId,
@@ -2318,6 +2304,7 @@ function updateCardState(cardId, fromStateId, toStateId, destPositions, destColu
             project_id: projectId,
             board_id: boardId,
             from_column: fromColumn,
+      swimlane_id: swimlaneId,
             is_new_card: isNewCard,
             title: extra.title || "Added Card",
             priority: extra.priority || "Normal",

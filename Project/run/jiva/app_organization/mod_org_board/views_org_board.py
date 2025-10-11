@@ -1096,25 +1096,27 @@ def find_and_fix_duplicate_board_cards(board_id=None):
 def ajax_update_project_board_card_state(request):
     if request.method == "POST":
         data = json.loads(request.body)
-        #data = request.POST
+        # data = request.POST
         card_id = data.get('card_id')
         board_id = data.get('board_id')
         from_state_id = data.get('from_state_id')
         to_state_id = data.get('to_state_id')
 
-        # position 
+        # position
         positions = data.get('positions')
-        from_column = data.get('from_column').strip()
-        dest_column = data.get('dest_column').strip()
+        from_column = data.get('from_column').strip() if data.get('from_column') is not None else ''
+        dest_column = data.get('dest_column').strip() if data.get('dest_column') is not None else ''
         project_id = data.get('project_id')
-        # just to set 
+
+        # just to set
         to_column = dest_column
         is_new_card = data.get('is_new_card')
         card_text = data.get('title')
         card_priority = data.get('priority')
         card_substate = data.get('substate')
+        swimlane_id = data.get('swimlane_id')
 
-        #ProjectBoardStateTransition.objects.filter(board_id=board_id).delete()
+        # ProjectBoardStateTransition.objects.filter(board_id=board_id).delete()
         print(f">>> === positions: {positions} === <<<")
         print(f">>> === from_state_id: {from_state_id} === <<<")
         print(f">>> === to_state_id: {to_state_id} === <<<")
@@ -1127,15 +1129,18 @@ def ajax_update_project_board_card_state(request):
         print(f">>> === card_text: {card_text} === <<<")
         print(f">>> === card_priority: {card_priority} === <<<")
         print(f">>> === card_substate: {card_substate} === <<<")
-       
 
-        if from_state_id != None:
-            from_state_id = int(from_state_id)
+        if from_state_id is not None:
+            try:
+                from_state_id = int(from_state_id)
+            except (TypeError, ValueError):
+                from_state_id = None
 
-        if to_state_id != None:
-            to_state_id = int(to_state_id)
-
-
+        if to_state_id is not None:
+            try:
+                to_state_id = int(to_state_id)
+            except (TypeError, ValueError):
+                to_state_id = None
 
         if is_new_card:
             # If it's a new card, create it and set its state
@@ -1143,32 +1148,42 @@ def ajax_update_project_board_card_state(request):
             story_type_id = context.get('story_type_id')
             project_backlog_root_node = context.get('project_backlog_root_node')
             print(f">>> === project_backlog_root_node: {story_type_id}  {story_type_id} === <<<")
-            backlog_item = Backlog.objects.create(name=card_text, pro_id=project_id, type_id=story_type_id, priority=card_priority,
-                                                  parent=project_backlog_root_node, author=request.user, status="Backlog")
+            backlog_item = Backlog.objects.create(
+                name=card_text,
+                pro_id=project_id,
+                type_id=story_type_id,
+                priority=card_priority,
+                parent=project_backlog_root_node,
+                author=request.user,
+                status="Backlog",
+            )
             from_state_id = 0
-            if to_state_id == 0: 
+            if to_state_id == 0:
                 to_state_id = None
             card = ProjectBoardCard.objects.create(
                 backlog=backlog_item,
                 board_id=board_id,
                 state_id=to_state_id,
+                swimlane_id=swimlane_id if swimlane_id not in [None, '', 'null'] else None,
                 position=0,  # Set the initial position
             )
             update_project_board_state_transition(board_id, card, from_state_id, to_state_id)
-            return JsonResponse({"success": True})
+            # Return the new real card id so UI can replace temp id
+            return JsonResponse({"success": True, "card_id": card.id})
         else:
-            if from_state_id == 0  and to_state_id == 0:
-                logger.debug(f">>> === Backlogx: Within column movement === <<<")
+            if from_state_id == 0 and to_state_id == 0:
+                logger.debug(">>> === Backlogx: Within column movement === <<<")
                 within_backlog_update(positions, board_id, card_id)
-            elif from_column != 'Backlog' and from_state_id !=0 and to_state_id != 0 and from_state_id == to_state_id:
+            elif from_column != 'Backlog' and from_state_id != 0 and to_state_id != 0 and from_state_id == to_state_id:
                 logger.debug(f">>> === {dest_column}: Within column movement  === <<<")
                 within_column_update(positions, board_id, card_id, dest_column, to_state_id)
-            elif from_column != 'Backlog' and from_state_id !=0 and to_state_id != 0 and from_state_id != to_state_id:
+            elif from_column != 'Backlog' and from_state_id != 0 and to_state_id != 0 and from_state_id != to_state_id:
                 logger.debug(f">>> === FSID{from_state_id},TSID{to_state_id} {from_column} to {dest_column}: Between column movement  === <<<")
                 column_to_column_update(positions, board_id, card_id, from_column, from_state_id, dest_column, to_state_id)
                 actual_card = ProjectBoardCard.objects.filter(id=card_id).first()
-                actual_card_id = actual_card.backlog.id
-                update_backlog_text_status(actual_card_id, dest_column)
+                if actual_card:
+                    actual_card_id = actual_card.backlog.id
+                    update_backlog_text_status(actual_card_id, dest_column)
             elif from_column == 'Backlog' and to_state_id != 0:
                 logger.debug(f">>> ===  FSID{from_state_id},TSID{to_state_id} {from_column} to {dest_column}: Between column movement (from Backlog) === <<<")
                 backlog_to_column_update(positions, board_id, card_id, from_column, from_state_id, dest_column, to_state_id)
@@ -1177,6 +1192,24 @@ def ajax_update_project_board_card_state(request):
                 logger.debug(f">>> ===   {from_column} to {dest_column}: Between Column Movement (to Backlog)   === <<<")
                 column_to_backlog_update(positions, board_id, card_id, from_column, from_state_id, dest_column, to_state_id)
                 update_backlog_text_status(card_id, dest_column)
+
+            # Persist swimlane change atomically with state move when client includes swimlane_id
+            try:
+                if 'swimlane_id' in data:
+                    swimlane_value = None if swimlane_id in [None, '', 'null'] else int(swimlane_id)
+                    # Primary: update by ProjectBoardCard.id (when moving between columns)
+                    updated = ProjectBoardCard.objects.filter(id=card_id).update(swimlane_id=swimlane_value)
+                    if not updated:
+                        # Fallback: if moving from backlog, 'card_id' refers to backlog.id
+                        if from_column == 'Backlog' or (from_state_id == 0):
+                            try:
+                                backlog_pk = int(card_id) if card_id is not None else None
+                            except (TypeError, ValueError):
+                                backlog_pk = None
+                            if backlog_pk is not None:
+                                ProjectBoardCard.objects.filter(board_id=board_id, backlog_id=backlog_pk, active=True).update(swimlane_id=swimlane_value)
+            except Exception as e:
+                logger.warning(f">>> === Swimlane update warning: {e} === <<<")
 
             # Update Movement: project_id, board_id, card_id, from_state_id, to_state_id, from_column, dest_column, positions
             update_movement(project_id, board_id, card_id, from_state_id, to_state_id, from_column, to_column, positions)
